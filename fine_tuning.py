@@ -700,8 +700,8 @@ if __name__ == '__main__':
         policy_ckpt=None,  # 旧代码：使用随机初始化
         # policy_ckpt='/home/zrz/SimuVNE/pretrain_outputs/checkpoint_best.pt',  # 使用预训练最优模型
         device='cpu',
-        arrival_rate=0.5,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
-        mean_lifetime=8.0,
+        arrival_rate=0.8,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
+        mean_lifetime=10.0,
         max_arrived_tasks=30,
         max_time_steps=2000,
         num_episodes_per_update=4,  # 收集4个episode后更新一次

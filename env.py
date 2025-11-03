@@ -222,24 +222,43 @@ class SimuVNEEnv:
             return None
 
     def _check_node_feasible(self, vn: Data, mapping: Dict[int, int]) -> bool:
-        # 统计映射到各SN节点的资源需求
-        node_demand: Dict[int, Dict[str, float]] = {}
+        """
+        按 VN 节点需求从高到低的顺序检查资源可行性
+        """
+        # 计算每个VN节点的绝对需求和优先级（归一化需求之和）
+        vn_demands = []
         for vn_node, sn_node in mapping.items():
             feats = vn.x[vn_node]
-            cpu = float(feats[0].item())
-            mem = float(feats[1].item())
-            disk = float(feats[2].item())
-            if sn_node not in node_demand:
-                node_demand[sn_node] = {'cpu': 0.0, 'mem': 0.0, 'disk': 0.0}
-            node_demand[sn_node]['cpu'] += cpu
-            node_demand[sn_node]['mem'] += mem
-            node_demand[sn_node]['disk'] += disk
-        # 校验
-        for sn_node, dem in node_demand.items():
-            nd = self.G_sn.nodes[sn_node]
-            if dem['cpu'] > nd['cpu_res'] + 1e-9: return False
-            if dem['mem'] > nd['mem_res'] + 1e-9: return False
-            if dem['disk'] > nd['disk_res'] + 1e-9: return False
+            norm_sum = float(feats[0].item() + feats[1].item() + feats[2].item())
+            cpu = float(feats[0].item()) * (self._sn_max_capacity['cpu_max'] + 1e-8)
+            mem = float(feats[1].item()) * (self._sn_max_capacity['mem_max'] + 1e-8)
+            disk = float(feats[2].item()) * (self._sn_max_capacity['disk_max'] + 1e-8)
+            vn_demands.append((norm_sum, vn_node, sn_node, cpu, mem, disk))
+        
+        # 按归一化需求从高到低排序
+        vn_demands.sort(key=lambda x: x[0], reverse=True)
+        
+        # 创建临时的SN剩余资源副本
+        temp_sn_res = {}
+        for n in self.G_sn.nodes:
+            nd = self.G_sn.nodes[n]
+            temp_sn_res[n] = {
+                'cpu': nd['cpu_res'],
+                'mem': nd['mem_res'],
+                'disk': nd['disk_res'],
+            }
+        
+        # 按顺序检查并扣减资源
+        for _, vn_node, sn_node, cpu, mem, disk in vn_demands:
+            res = temp_sn_res[sn_node]
+            if cpu > res['cpu'] + 1e-9: return False
+            if mem > res['mem'] + 1e-9: return False
+            if disk > res['disk'] + 1e-9: return False
+            # 扣减资源
+            res['cpu'] -= cpu
+            res['mem'] -= mem
+            res['disk'] -= disk
+        
         return True
 
     def _compute_paths_and_bw_demand(self, vn: Data, mapping: Dict[int, int]) -> Optional[List[Tuple[int, int, List[int]]]]:
@@ -290,23 +309,28 @@ class SimuVNEEnv:
         return True
 
     def _apply_mapping(self, vn: Data, mapping: Dict[int, int], vn_paths: List[Tuple[int, int, List[int]]]):
-        # 扣减节点资源
-        node_demand: Dict[int, Dict[str, float]] = {}
+        """
+        按 VN 节点需求从高到低的顺序扣减资源
+        """
+        # 计算每个VN节点的绝对需求和优先级
+        vn_demands = []
         for vn_node, sn_node in mapping.items():
             feats = vn.x[vn_node]
-            cpu = float(feats[0].item())
-            mem = float(feats[1].item())
-            disk = float(feats[2].item())
-            if sn_node not in node_demand:
-                node_demand[sn_node] = {'cpu': 0.0, 'mem': 0.0, 'disk': 0.0}
-            node_demand[sn_node]['cpu'] += cpu
-            node_demand[sn_node]['mem'] += mem
-            node_demand[sn_node]['disk'] += disk
-        for sn_node, dem in node_demand.items():
+            norm_sum = float(feats[0].item() + feats[1].item() + feats[2].item())
+            cpu = float(feats[0].item()) * (self._sn_max_capacity['cpu_max'] + 1e-8)
+            mem = float(feats[1].item()) * (self._sn_max_capacity['mem_max'] + 1e-8)
+            disk = float(feats[2].item()) * (self._sn_max_capacity['disk_max'] + 1e-8)
+            vn_demands.append((norm_sum, vn_node, sn_node, cpu, mem, disk))
+        
+        # 按归一化需求从高到低排序
+        vn_demands.sort(key=lambda x: x[0], reverse=True)
+        
+        # 按顺序扣减资源
+        for _, vn_node, sn_node, cpu, mem, disk in vn_demands:
             nd = self.G_sn.nodes[sn_node]
-            nd['cpu_res'] -= dem['cpu']
-            nd['mem_res'] -= dem['mem']
-            nd['disk_res'] -= dem['disk']
+            nd['cpu_res'] -= cpu
+            nd['mem_res'] -= mem
+            nd['disk_res'] -= disk
 
         # 扣减链路带宽（已禁用 - 不追踪带宽资源）
         # bw_demands: List[float] = []
@@ -335,9 +359,10 @@ class SimuVNEEnv:
         node_demand: Dict[int, Dict[str, float]] = {}
         for vn_node, sn_node in mapping.items():
             feats = vn.x[vn_node]
-            cpu = float(feats[0].item())
-            mem = float(feats[1].item())
-            disk = float(feats[2].item())
+            # VN 特征是归一化后的比例，这里恢复为绝对需求量
+            cpu = float(feats[0].item()) * (self._sn_max_capacity['cpu_max'] + 1e-8)
+            mem = float(feats[1].item()) * (self._sn_max_capacity['mem_max'] + 1e-8)
+            disk = float(feats[2].item()) * (self._sn_max_capacity['disk_max'] + 1e-8)
             if sn_node not in node_demand:
                 node_demand[sn_node] = {'cpu': 0.0, 'mem': 0.0, 'disk': 0.0}
             node_demand[sn_node]['cpu'] += cpu
