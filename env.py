@@ -386,7 +386,7 @@ class SimuVNEEnv:
         跳数统计（考虑资源竞争）：
         1. 统计每条SN link被多少个workflow使用
         2. 对于每个workflow，其路径上的每条link如果被k个workflow共享，则算k跳
-        3. r_t = total_hops / 当前存活的workflow数量
+        3. r_t = -total_hops / 当前存活的workflow数量（负值，跳数越少，r_t 越大）
         """
         num_workflows = len(self.active_workflows)
         if num_workflows == 0:
@@ -436,8 +436,10 @@ class SimuVNEEnv:
             
             total_hops += workflow_hops
         
-        # 第三步：按workflow数量平均
-        r_t = total_hops / float(num_workflows)
+        # 第三步：按workflow数量平均，并取负值
+        # r_t 为负数，跳数越少越好（越接近0）
+        avg_hops = total_hops / float(num_workflows)
+        r_t = -avg_hops
         return r_t
     
     def get_sn_state(self) -> Data:
@@ -524,13 +526,16 @@ class SimuVNEEnv:
 
     def compute_final_return(self) -> float:
         """
-        按题述公式：
-        最后的reward = - T_total / T_p * sum_{t=0..t_f} r_t
+        计算最终回报：
+        final_reward = T_total / T_p * sum_{t=0..t_f} r_t
+        注意：r_t 已经是负数（-avg_hops），所以不需要再加负号
+        跳数越少，r_t越大（越接近0），final_reward越大（越接近0）
         """
         T_total = float(max(1, self.max_arrived_tasks))
         T_p = float(max(1, self.accepted_count))
         sum_rt = sum(float(x['r_t']) for x in self.traj)
-        final_reward = - T_total / T_p * sum_rt
+        # 去掉负号，因为 r_t 已经是负数
+        final_reward = T_total / T_p * sum_rt
         return final_reward
 
 

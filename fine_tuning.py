@@ -215,7 +215,7 @@ def run_ppo_episode(
     env = SimuVNEEnv(
         sn_topology_path=sn_topology_path,
         device=device,
-        penalty=-50.0,
+        penalty=-100.0,
         max_arrived_tasks=max_arrived_tasks
     )
     env.reset()
@@ -702,7 +702,7 @@ if __name__ == '__main__':
         device='cpu',
         arrival_rate=0.5,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
         mean_lifetime=8.0,
-        max_arrived_tasks=15,
+        max_arrived_tasks=30,
         max_time_steps=2000,
         num_episodes_per_update=4,  # 收集4个episode后更新一次
         train_iters=3,  # 每次更新PPO算法迭代3次
