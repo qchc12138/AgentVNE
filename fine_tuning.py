@@ -215,7 +215,7 @@ def run_ppo_episode(
     env = SimuVNEEnv(
         sn_topology_path=sn_topology_path,
         device=device,
-        penalty=-100.0,
+        penalty=-150.0,
         max_arrived_tasks=max_arrived_tasks
     )
     env.reset()

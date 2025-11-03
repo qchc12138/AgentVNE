@@ -304,7 +304,17 @@ def load_pretrain_dataset(dataset_path: str) -> Tuple[List[Dict], Dict]:
     
     print(f"  加载了 {len(samples)} 个样本")
     if info:
-        print(f"  数据集信息: {json.dumps(info, indent=2, ensure_ascii=False)}")
+        print(f"  数据集信息:")
+        print(f"    样本数: {info.get('num_samples', 'N/A')}")
+        print(f"    是否归一化: {info.get('normalized', False)}")
+        if 'sn_max_capacity' in info:
+            cap = info['sn_max_capacity']
+            print(f"    归一化参数 (SN最大容量):")
+            print(f"      CPU: {cap.get('cpu_max', 'N/A')}")
+            print(f"      Memory: {cap.get('mem_max', 'N/A')}")
+            print(f"      Disk: {cap.get('disk_max', 'N/A')}")
+            print(f"      Bandwidth: {cap.get('bw_max', 'N/A')}")
+            print(f"      Comm Bandwidth: {cap.get('comm_bw_max', 'N/A')}")
     
     return samples, info
 
@@ -340,7 +350,7 @@ def main():
                        help='批大小')
     parser.add_argument('--num_epochs', type=int, default=20,
                        help='训练轮数')
-    parser.add_argument('--learning_rate', type=float, default=0.00005,
+    parser.add_argument('--learning_rate', type=float, default=0.0001,
                        help='学习率')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                        help='权重衰减')

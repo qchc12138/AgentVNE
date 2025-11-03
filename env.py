@@ -350,29 +350,33 @@ class SimuVNEEnv:
         #         self.G_sn.edges[key[0], key[1]]['bw_res'] -= bw
 
     def _release_workflow(self, wf: Dict[str, Any]):
-        """释放一个workflow占用的资源"""
+        """
+        释放一个workflow占用的资源
+        按 VN 节点需求从高到低的顺序恢复资源（与扣减顺序一致）
+        """
         mapping = wf['mapping']
         vn: Data = wf['vn']
         vn_paths = wf['paths']
         
-        # 恢复节点资源
-        node_demand: Dict[int, Dict[str, float]] = {}
+        # 计算每个VN节点的绝对需求和优先级
+        vn_demands = []
         for vn_node, sn_node in mapping.items():
             feats = vn.x[vn_node]
-            # VN 特征是归一化后的比例，这里恢复为绝对需求量
+            norm_sum = float(feats[0].item() + feats[1].item() + feats[2].item())
             cpu = float(feats[0].item()) * (self._sn_max_capacity['cpu_max'] + 1e-8)
             mem = float(feats[1].item()) * (self._sn_max_capacity['mem_max'] + 1e-8)
             disk = float(feats[2].item()) * (self._sn_max_capacity['disk_max'] + 1e-8)
-            if sn_node not in node_demand:
-                node_demand[sn_node] = {'cpu': 0.0, 'mem': 0.0, 'disk': 0.0}
-            node_demand[sn_node]['cpu'] += cpu
-            node_demand[sn_node]['mem'] += mem
-            node_demand[sn_node]['disk'] += disk
-        for sn_node, dem in node_demand.items():
+            vn_demands.append((norm_sum, vn_node, sn_node, cpu, mem, disk))
+        
+        # 按归一化需求从高到低排序
+        vn_demands.sort(key=lambda x: x[0], reverse=True)
+        
+        # 按顺序恢复资源
+        for _, vn_node, sn_node, cpu, mem, disk in vn_demands:
             nd = self.G_sn.nodes[sn_node]
-            nd['cpu_res'] += dem['cpu']
-            nd['mem_res'] += dem['mem']
-            nd['disk_res'] += dem['disk']
+            nd['cpu_res'] += cpu
+            nd['mem_res'] += mem
+            nd['disk_res'] += disk
         
         # 恢复链路带宽（已禁用 - 不追踪带宽资源）
         # bw_demands: List[float] = []

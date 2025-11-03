@@ -43,32 +43,102 @@ def _build_edge_index(links: List[Dict], directed: bool) -> torch.Tensor:
     return edge_index
 
 
-def _nodes_to_features(nodes: List[Dict]) -> torch.Tensor:
-    """将节点属性映射为 6 维特征 [type, memory, cpu, disk, comm_bw, num_nodes]。"""
-    num_nodes = len(nodes)
+def _nodes_to_features(nodes: List[Dict], is_workflow: bool = False, sn_max_capacity: Dict[str, float] = None) -> torch.Tensor:
+    """将节点属性映射为 6 维特征并归一化。
+    
+    特征顺序: [cpu, memory, disk, bandwidth, comm_bandwidth, 0.0]
+    
+    Args:
+        nodes: 节点列表
+        is_workflow: 是否为 workflow 节点（True=VN需求，False=SN容量）
+        sn_max_capacity: SN最大容量字典，用于归一化
+    
+    Returns:
+        归一化后的特征张量 [N, 6]
+    """
+    if sn_max_capacity is None:
+        sn_max_capacity = {
+            'cpu_max': 4.0,
+            'mem_max': 4.0,
+            'disk_max': 6.0,
+            'bw_max': 10.0,
+            'comm_bw_max': 10.0,
+        }
+    
     feats: List[List[float]] = []
     for n in nodes:
-        node_type = n.get('node_type', 'unknown')
-        type_val = 1.0 if isinstance(node_type, str) and node_type.lower() == 'edge' else 0.0
-        memory = float(n.get('memory', 0.0))
         cpu = float(n.get('cpu', 0.0))
+        memory = float(n.get('memory', 0.0))
         disk = float(n.get('disk', 0.0))
-        comm_bw = float(n.get('comm_bandwidth', n.get('bandwidth', 0.0)))
-        feats.append([type_val, memory, cpu, disk, comm_bw, float(num_nodes)])
+        bandwidth = float(n.get('bandwidth', 1.0))
+        comm_bw = float(n.get('comm_bandwidth', bandwidth))
+        
+        # 归一化：除以 SN 最大容量
+        cpu_norm = cpu / (sn_max_capacity['cpu_max'] + 1e-8)
+        mem_norm = memory / (sn_max_capacity['mem_max'] + 1e-8)
+        disk_norm = disk / (sn_max_capacity['disk_max'] + 1e-8)
+        bw_norm = bandwidth / (sn_max_capacity['bw_max'] + 1e-8)
+        comm_bw_norm = comm_bw / (sn_max_capacity['comm_bw_max'] + 1e-8)
+        
+        # 特征顺序: [cpu, memory, disk, bandwidth, comm_bandwidth, 0.0]
+        feats.append([cpu_norm, mem_norm, disk_norm, bw_norm, comm_bw_norm, 0.0])
+    
     return torch.tensor(feats, dtype=torch.float)
 
 
-def _topology_to_pyg_data(topo: Dict) -> Data:
-    """将拓扑 dict 转为 torch_geometric.data.Data。
+def _topology_to_pyg_data(topo: Dict, is_workflow: bool = False, sn_max_capacity: Dict[str, float] = None) -> Data:
+    """将拓扑 dict 转为 torch_geometric.data.Data（带归一化）。
     需要字段: topo['nodes'] (带资源/需求), topo['links'] (source/target)。
     使用 topo['directed'] 判断是否有向。
+    
+    Args:
+        topo: 拓扑字典
+        is_workflow: 是否为 workflow 图
+        sn_max_capacity: SN最大容量字典，用于归一化
     """
     nodes = topo['nodes']
     links = topo.get('links', [])
     directed = bool(topo.get('directed', False))
-    x = _nodes_to_features(nodes)
+    x = _nodes_to_features(nodes, is_workflow=is_workflow, sn_max_capacity=sn_max_capacity)
     edge_index = _build_edge_index(links, directed=directed)
     return Data(x=x, edge_index=edge_index)
+
+
+def _compute_sn_max_capacity(nodes: List[Dict]) -> Dict[str, float]:
+    """计算SN网络的最大容量（用于归一化）
+    
+    Args:
+        nodes: SN节点列表
+    
+    Returns:
+        最大容量字典
+    """
+    max_cpu = 0.0
+    max_mem = 0.0
+    max_disk = 0.0
+    max_bw = 0.0
+    max_comm_bw = 0.0
+    
+    for n in nodes:
+        cpu = float(n.get('cpu', 0.0))
+        mem = float(n.get('memory', 0.0))
+        disk = float(n.get('disk', 0.0))
+        bw = float(n.get('bandwidth', 0.0))
+        comm_bw = float(n.get('comm_bandwidth', bw))
+        
+        max_cpu = max(max_cpu, cpu)
+        max_mem = max(max_mem, mem)
+        max_disk = max(max_disk, disk)
+        max_bw = max(max_bw, bw)
+        max_comm_bw = max(max_comm_bw, comm_bw)
+    
+    return {
+        'cpu_max': max_cpu if max_cpu > 0 else 1.0,
+        'mem_max': max_mem if max_mem > 0 else 1.0,
+        'disk_max': max_disk if max_disk > 0 else 1.0,
+        'bw_max': max_bw if max_bw > 0 else 1.0,
+        'comm_bw_max': max_comm_bw if max_comm_bw > 0 else 1.0,
+    }
 
 
 def _compute_sn_noderank(nodes: List[Dict], links: List[Dict], directed: bool = False) -> np.ndarray:
@@ -199,7 +269,16 @@ def generate_pretrain_dataset(
     wf_rank_data = _load_json(workflow_noderank_path)
     workflow_noderank: List[float] = list(wf_rank_data['noderank'])
     
-    print(f"  底层网络节点数: {len(base_sn_topo['nodes'])}")
+    # 计算SN最大容量用于归一化
+    sn_max_capacity = _compute_sn_max_capacity(base_sn_topo['nodes'])
+    print(f"\n  SN最大容量（用于归一化）:")
+    print(f"    CPU: {sn_max_capacity['cpu_max']}")
+    print(f"    Memory: {sn_max_capacity['mem_max']}")
+    print(f"    Disk: {sn_max_capacity['disk_max']}")
+    print(f"    Bandwidth: {sn_max_capacity['bw_max']}")
+    print(f"    Comm Bandwidth: {sn_max_capacity['comm_bw_max']}")
+    
+    print(f"\n  底层网络节点数: {len(base_sn_topo['nodes'])}")
     print(f"  底层网络边数: {len(base_sn_topo.get('links', []))}")
     print(f"  Workflow 节点数: {len(base_workflow_topo['nodes'])}")
     print(f"  Workflow 边数: {len(base_workflow_topo.get('links', []))}")
@@ -211,8 +290,9 @@ def generate_pretrain_dataset(
         base_sn_noderank = _compute_sn_noderank(
             base_sn_topo['nodes'], base_sn_topo.get('links', []), directed=bool(base_sn_topo.get('directed', False))
         )
-        test_workflow_graph = _topology_to_pyg_data(base_workflow_topo)
-        test_substrate_graph = _topology_to_pyg_data(base_sn_topo)
+        # 使用归一化
+        test_workflow_graph = _topology_to_pyg_data(base_workflow_topo, is_workflow=True, sn_max_capacity=sn_max_capacity)
+        test_substrate_graph = _topology_to_pyg_data(base_sn_topo, is_workflow=False, sn_max_capacity=sn_max_capacity)
         N1_test = test_workflow_graph.x.size(0)
         N2_test = test_substrate_graph.x.size(0)
         test_y = torch.tensor(
@@ -230,7 +310,8 @@ def generate_pretrain_dataset(
                 'type': 'single_test_sample',
                 'sn_topo_path': sn_topo_path,
                 'workflow_topo_path': workflow_topo_path,
-                'workflow_noderank_path': workflow_noderank_path
+                'workflow_noderank_path': workflow_noderank_path,
+                'sn_max_capacity': sn_max_capacity
             }
         }, test_output_path)
         print(f"测试样本已保存到: {test_output_path}")
@@ -253,9 +334,9 @@ def generate_pretrain_dataset(
                     directed=bool(sn_topo.get('directed', False))
                 )
                 
-                # x: 当前的 workflow 与 SN 图（放置前状态）
-                workflow_graph = _topology_to_pyg_data(base_workflow_topo)
-                substrate_graph = _topology_to_pyg_data(sn_topo)
+                # x: 当前的 workflow 与 SN 图（放置前状态，使用归一化）
+                workflow_graph = _topology_to_pyg_data(base_workflow_topo, is_workflow=True, sn_max_capacity=sn_max_capacity)
+                substrate_graph = _topology_to_pyg_data(sn_topo, is_workflow=False, sn_max_capacity=sn_max_capacity)
                 
                 # y: 将 SN 的 noderank 重复 N1 行
                 N1 = workflow_graph.x.size(0)
@@ -293,6 +374,8 @@ def generate_pretrain_dataset(
         'sn_topo_path': sn_topo_path,
         'workflow_topo_path': workflow_topo_path,
         'workflow_noderank_path': workflow_noderank_path,
+        'sn_max_capacity': sn_max_capacity,  # 保存归一化参数
+        'normalized': True,  # 标记数据已归一化
     }
     
     torch.save({
