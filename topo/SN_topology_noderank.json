@@ -1,0 +1,136 @@
+{
+  "topology_file": "/home/zrz/SimuVNE/topo/SN_topology.json",
+  "parameters": {
+    "pJ_u": 0.8,
+    "pF_u": 0.2
+  },
+  "noderank": [
+    0.0938582623614023,
+    0.047534978951499954,
+    0.07489712710600754,
+    0.07489712710600754,
+    0.047211612860006316,
+    0.046889716611846634,
+    0.22704393253724167,
+    0.0938582623614023,
+    0.2273504724588001,
+    0.06645850764578577
+  ],
+  "initial_noderank": [
+    0.08333333333333333,
+    0.08333333333333333,
+    0.08333333333333333,
+    0.08333333333333333,
+    0.08333333333333333,
+    0.08333333333333333,
+    0.16666666666666666,
+    0.08333333333333333,
+    0.16666666666666666,
+    0.08333333333333333
+  ],
+  "resource_evaluation": [
+    20.0,
+    20.0,
+    20.0,
+    20.0,
+    20.0,
+    20.0,
+    40.0,
+    20.0,
+    40.0,
+    20.0
+  ],
+  "iterations": 1,
+  "node_details": [
+    {
+      "node_id": 8,
+      "node_type": "edge",
+      "cpu": 4,
+      "comm_bandwidth": 10,
+      "noderank": 0.2273504724588001,
+      "initial_noderank": 0.16666666666666666,
+      "resource_evaluation": 40.0
+    },
+    {
+      "node_id": 6,
+      "node_type": "edge",
+      "cpu": 4,
+      "comm_bandwidth": 10,
+      "noderank": 0.22704393253724167,
+      "initial_noderank": 0.16666666666666666,
+      "resource_evaluation": 40.0
+    },
+    {
+      "node_id": 0,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.0938582623614023,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    },
+    {
+      "node_id": 7,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.0938582623614023,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    },
+    {
+      "node_id": 2,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.07489712710600754,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    },
+    {
+      "node_id": 3,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.07489712710600754,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    },
+    {
+      "node_id": 9,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.06645850764578577,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    },
+    {
+      "node_id": 1,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.047534978951499954,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    },
+    {
+      "node_id": 4,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.047211612860006316,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    },
+    {
+      "node_id": 5,
+      "node_type": "edge",
+      "cpu": 2,
+      "comm_bandwidth": 10,
+      "noderank": 0.046889716611846634,
+      "initial_noderank": 0.08333333333333333,
+      "resource_evaluation": 20.0
+    }
+  ]
+}

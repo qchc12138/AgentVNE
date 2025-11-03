@@ -1,0 +1,24 @@
+============================================================
+PPO Training Summary
+============================================================
+
+Training Time: 20251103_152637
+Total Updates: 5
+Total Samples: 300
+
+------------------------------------------------------------
+Training Progress:
+------------------------------------------------------------
+Update 1: Return=-1334.84, Acceptance=88.33%, Samples=60
+Update 2: Return=-1270.53, Acceptance=90.00%, Samples=60
+Update 3: Return=-776.49, Acceptance=88.33%, Samples=60
+Update 4: Return=-1011.73, Acceptance=76.67%, Samples=60
+Update 5: Return=-1171.71, Acceptance=85.00%, Samples=60
+
+------------------------------------------------------------
+Final Results:
+------------------------------------------------------------
+Final Average Return: -1171.71
+Final Acceptance Rate: 85.00%
+Best Return: -776.49
+Best Acceptance Rate: 90.00%

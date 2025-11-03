@@ -1,0 +1,100 @@
+{
+  "timestamp": "20251103_040711",
+  "num_updates": 3,
+  "training_stats": [
+    {
+      "update_idx": 0,
+      "avg_return": -8837.37802056736,
+      "avg_accepted": 72.75,
+      "avg_arrived": 100.0,
+      "total_samples": 400,
+      "episode_stats": [
+        {
+          "final_return": -8241.985294117649,
+          "arrived": 100,
+          "accepted": 68
+        },
+        {
+          "final_return": -9284.930555555555,
+          "arrived": 100,
+          "accepted": 72
+        },
+        {
+          "final_return": -9414.414414414414,
+          "arrived": 100,
+          "accepted": 74
+        },
+        {
+          "final_return": -8408.181818181818,
+          "arrived": 100,
+          "accepted": 77
+        }
+      ]
+    },
+    {
+      "update_idx": 1,
+      "avg_return": -9152.72775814567,
+      "avg_accepted": 68.75,
+      "avg_arrived": 100.0,
+      "total_samples": 400,
+      "episode_stats": [
+        {
+          "final_return": -7489.567099567099,
+          "arrived": 100,
+          "accepted": 77
+        },
+        {
+          "final_return": -10430.50505050505,
+          "arrived": 100,
+          "accepted": 66
+        },
+        {
+          "final_return": -8687.736318407962,
+          "arrived": 100,
+          "accepted": 67
+        },
+        {
+          "final_return": -10003.102564102564,
+          "arrived": 100,
+          "accepted": 65
+        }
+      ]
+    },
+    {
+      "update_idx": 2,
+      "avg_return": -7897.539870689655,
+      "avg_accepted": 78.25,
+      "avg_arrived": 100.0,
+      "total_samples": 400,
+      "episode_stats": [
+        {
+          "final_return": -6481.0344827586205,
+          "arrived": 100,
+          "accepted": 87
+        },
+        {
+          "final_return": -8562.458333333332,
+          "arrived": 100,
+          "accepted": 80
+        },
+        {
+          "final_return": -8417.123287671233,
+          "arrived": 100,
+          "accepted": 73
+        },
+        {
+          "final_return": -8129.543378995433,
+          "arrived": 100,
+          "accepted": 73
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "final_avg_return": -7897.539870689655,
+    "final_acceptance_rate": 0.7825,
+    "best_return": -7897.539870689655,
+    "best_acceptance_rate": 0.7825,
+    "total_samples": 1200
+  }
+}

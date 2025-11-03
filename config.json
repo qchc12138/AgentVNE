@@ -1,0 +1,30 @@
+{
+  "model": {
+    "input_dim": 6,
+    "hidden_dim": 64,
+    "hist_dim": 32
+  },
+  "training": {
+    "learning_rate": 0.001,
+    "weight_decay": 1e-5,
+    "batch_size": 16,
+    "num_epochs": 100,
+    "train_ratio": 0.8,
+    "lr_step_size": 50,
+    "lr_gamma": 0.5
+  },
+  "data": {
+    "data_dir": "/home/zrz/SimuVNE/data",
+    "normalize_features": true
+  },
+  "logging": {
+    "output_dir": "/home/zrz/SimuVNE/outputs",
+    "use_tensorboard": true,
+    "log_interval": 5,
+    "save_interval": 10
+  },
+  "system": {
+    "device": "auto",
+    "num_workers": 0
+  }
+}

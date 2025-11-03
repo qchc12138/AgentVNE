@@ -1,0 +1,119 @@
+============================================================
+PPO Training Summary
+============================================================
+
+Training Time: 20251103_050833
+Total Updates: 100
+Total Samples: 40000
+
+------------------------------------------------------------
+Training Progress:
+------------------------------------------------------------
+Update 1: Return=-8742.20, Acceptance=70.25%, Samples=400
+Update 2: Return=-9391.84, Acceptance=69.75%, Samples=400
+Update 3: Return=-7718.66, Acceptance=74.00%, Samples=400
+Update 4: Return=-8447.23, Acceptance=74.00%, Samples=400
+Update 5: Return=-9198.13, Acceptance=71.25%, Samples=400
+Update 6: Return=-8492.13, Acceptance=75.25%, Samples=400
+Update 7: Return=-8907.99, Acceptance=76.25%, Samples=400
+Update 8: Return=-8772.07, Acceptance=76.75%, Samples=400
+Update 9: Return=-8569.60, Acceptance=78.25%, Samples=400
+Update 10: Return=-9171.34, Acceptance=74.00%, Samples=400
+Update 11: Return=-9127.54, Acceptance=76.75%, Samples=400
+Update 12: Return=-8894.62, Acceptance=75.00%, Samples=400
+Update 13: Return=-8975.83, Acceptance=73.75%, Samples=400
+Update 14: Return=-8021.07, Acceptance=74.25%, Samples=400
+Update 15: Return=-9137.93, Acceptance=76.25%, Samples=400
+Update 16: Return=-9372.75, Acceptance=75.50%, Samples=400
+Update 17: Return=-9138.96, Acceptance=76.50%, Samples=400
+Update 18: Return=-10003.18, Acceptance=73.75%, Samples=400
+Update 19: Return=-8429.14, Acceptance=76.50%, Samples=400
+Update 20: Return=-8166.52, Acceptance=80.25%, Samples=400
+Update 21: Return=-8583.43, Acceptance=75.00%, Samples=400
+Update 22: Return=-8209.91, Acceptance=75.25%, Samples=400
+Update 23: Return=-7999.50, Acceptance=72.50%, Samples=400
+Update 24: Return=-8832.96, Acceptance=76.00%, Samples=400
+Update 25: Return=-9011.05, Acceptance=73.00%, Samples=400
+Update 26: Return=-8363.58, Acceptance=78.50%, Samples=400
+Update 27: Return=-9272.16, Acceptance=78.25%, Samples=400
+Update 28: Return=-8410.90, Acceptance=80.00%, Samples=400
+Update 29: Return=-8719.56, Acceptance=78.50%, Samples=400
+Update 30: Return=-9374.20, Acceptance=78.00%, Samples=400
+Update 31: Return=-8454.18, Acceptance=75.00%, Samples=400
+Update 32: Return=-8211.16, Acceptance=78.00%, Samples=400
+Update 33: Return=-8640.96, Acceptance=78.00%, Samples=400
+Update 34: Return=-8672.13, Acceptance=76.50%, Samples=400
+Update 35: Return=-9113.59, Acceptance=74.25%, Samples=400
+Update 36: Return=-8259.97, Acceptance=79.00%, Samples=400
+Update 37: Return=-8909.49, Acceptance=78.50%, Samples=400
+Update 38: Return=-8554.84, Acceptance=80.25%, Samples=400
+Update 39: Return=-9090.28, Acceptance=74.50%, Samples=400
+Update 40: Return=-8857.59, Acceptance=76.50%, Samples=400
+Update 41: Return=-9692.47, Acceptance=76.25%, Samples=400
+Update 42: Return=-8579.10, Acceptance=79.00%, Samples=400
+Update 43: Return=-8903.40, Acceptance=74.50%, Samples=400
+Update 44: Return=-8236.54, Acceptance=77.25%, Samples=400
+Update 45: Return=-8208.20, Acceptance=76.25%, Samples=400
+Update 46: Return=-8251.48, Acceptance=82.50%, Samples=400
+Update 47: Return=-8209.66, Acceptance=79.75%, Samples=400
+Update 48: Return=-9375.33, Acceptance=75.50%, Samples=400
+Update 49: Return=-8852.56, Acceptance=75.75%, Samples=400
+Update 50: Return=-8986.93, Acceptance=74.75%, Samples=400
+Update 51: Return=-8287.76, Acceptance=76.50%, Samples=400
+Update 52: Return=-9890.12, Acceptance=76.50%, Samples=400
+Update 53: Return=-8406.44, Acceptance=72.75%, Samples=400
+Update 54: Return=-8898.92, Acceptance=78.50%, Samples=400
+Update 55: Return=-8739.26, Acceptance=75.50%, Samples=400
+Update 56: Return=-8626.87, Acceptance=78.00%, Samples=400
+Update 57: Return=-8121.87, Acceptance=78.25%, Samples=400
+Update 58: Return=-8179.93, Acceptance=81.75%, Samples=400
+Update 59: Return=-9303.95, Acceptance=81.00%, Samples=400
+Update 60: Return=-8376.62, Acceptance=76.25%, Samples=400
+Update 61: Return=-9075.01, Acceptance=80.25%, Samples=400
+Update 62: Return=-9227.92, Acceptance=78.25%, Samples=400
+Update 63: Return=-8931.12, Acceptance=78.75%, Samples=400
+Update 64: Return=-8428.67, Acceptance=79.00%, Samples=400
+Update 65: Return=-8927.62, Acceptance=79.00%, Samples=400
+Update 66: Return=-8397.82, Acceptance=82.75%, Samples=400
+Update 67: Return=-9591.58, Acceptance=76.00%, Samples=400
+Update 68: Return=-9195.83, Acceptance=81.00%, Samples=400
+Update 69: Return=-9050.95, Acceptance=78.25%, Samples=400
+Update 70: Return=-8135.64, Acceptance=81.25%, Samples=400
+Update 71: Return=-8850.11, Acceptance=75.50%, Samples=400
+Update 72: Return=-8514.72, Acceptance=77.75%, Samples=400
+Update 73: Return=-9311.79, Acceptance=73.00%, Samples=400
+Update 74: Return=-8619.65, Acceptance=78.00%, Samples=400
+Update 75: Return=-8946.37, Acceptance=79.50%, Samples=400
+Update 76: Return=-9120.65, Acceptance=77.25%, Samples=400
+Update 77: Return=-8359.86, Acceptance=76.25%, Samples=400
+Update 78: Return=-8199.73, Acceptance=79.25%, Samples=400
+Update 79: Return=-9761.70, Acceptance=79.00%, Samples=400
+Update 80: Return=-9009.01, Acceptance=80.00%, Samples=400
+Update 81: Return=-9024.98, Acceptance=74.75%, Samples=400
+Update 82: Return=-9114.44, Acceptance=77.25%, Samples=400
+Update 83: Return=-9475.12, Acceptance=75.75%, Samples=400
+Update 84: Return=-8706.55, Acceptance=75.00%, Samples=400
+Update 85: Return=-8962.14, Acceptance=80.75%, Samples=400
+Update 86: Return=-8952.75, Acceptance=78.50%, Samples=400
+Update 87: Return=-9632.99, Acceptance=79.50%, Samples=400
+Update 88: Return=-8994.34, Acceptance=81.25%, Samples=400
+Update 89: Return=-8170.73, Acceptance=78.75%, Samples=400
+Update 90: Return=-7824.26, Acceptance=81.00%, Samples=400
+Update 91: Return=-9489.58, Acceptance=76.50%, Samples=400
+Update 92: Return=-7914.29, Acceptance=79.50%, Samples=400
+Update 93: Return=-8660.61, Acceptance=77.00%, Samples=400
+Update 94: Return=-8548.52, Acceptance=77.50%, Samples=400
+Update 95: Return=-8335.92, Acceptance=80.25%, Samples=400
+Update 96: Return=-9192.96, Acceptance=80.75%, Samples=400
+Update 97: Return=-8755.93, Acceptance=77.00%, Samples=400
+Update 98: Return=-8673.00, Acceptance=74.75%, Samples=400
+Update 99: Return=-9162.60, Acceptance=76.00%, Samples=400
+Update 100: Return=-8983.01, Acceptance=75.75%, Samples=400
+
+------------------------------------------------------------
+Final Results:
+------------------------------------------------------------
+Final Average Return: -8983.01
+Final Acceptance Rate: 75.75%
+Best Return: -7718.66
+Best Acceptance Rate: 82.75%

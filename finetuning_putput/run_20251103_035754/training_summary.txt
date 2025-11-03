@@ -1,0 +1,49 @@
+============================================================
+PPO Training Summary
+============================================================
+
+Training Time: 20251103_035754
+Total Updates: 30
+Total Samples: 12000
+
+------------------------------------------------------------
+Training Progress:
+------------------------------------------------------------
+Update 1: Return=-80625.45, Acceptance=18.25%, Samples=400
+Update 2: Return=-93723.18, Acceptance=16.25%, Samples=400
+Update 3: Return=-72447.45, Acceptance=20.75%, Samples=400
+Update 4: Return=-55800.05, Acceptance=24.50%, Samples=400
+Update 5: Return=-78478.78, Acceptance=20.00%, Samples=400
+Update 6: Return=-90732.56, Acceptance=17.00%, Samples=400
+Update 7: Return=-97217.14, Acceptance=17.25%, Samples=400
+Update 8: Return=-74449.99, Acceptance=20.50%, Samples=400
+Update 9: Return=-78719.35, Acceptance=21.00%, Samples=400
+Update 10: Return=-68410.77, Acceptance=20.00%, Samples=400
+Update 11: Return=-63168.49, Acceptance=23.75%, Samples=400
+Update 12: Return=-64494.40, Acceptance=20.50%, Samples=400
+Update 13: Return=-64889.20, Acceptance=19.75%, Samples=400
+Update 14: Return=-98983.90, Acceptance=16.25%, Samples=400
+Update 15: Return=-83176.84, Acceptance=17.50%, Samples=400
+Update 16: Return=-92630.32, Acceptance=16.50%, Samples=400
+Update 17: Return=-79739.98, Acceptance=18.00%, Samples=400
+Update 18: Return=-73404.31, Acceptance=19.50%, Samples=400
+Update 19: Return=-81223.28, Acceptance=19.25%, Samples=400
+Update 20: Return=-73632.56, Acceptance=18.75%, Samples=400
+Update 21: Return=-69306.51, Acceptance=19.50%, Samples=400
+Update 22: Return=-83036.15, Acceptance=17.00%, Samples=400
+Update 23: Return=-79011.35, Acceptance=17.75%, Samples=400
+Update 24: Return=-84921.65, Acceptance=15.50%, Samples=400
+Update 25: Return=-86133.46, Acceptance=17.25%, Samples=400
+Update 26: Return=-79145.32, Acceptance=19.75%, Samples=400
+Update 27: Return=-77943.08, Acceptance=19.00%, Samples=400
+Update 28: Return=-90874.22, Acceptance=17.75%, Samples=400
+Update 29: Return=-94914.27, Acceptance=15.25%, Samples=400
+Update 30: Return=-75544.23, Acceptance=18.75%, Samples=400
+
+------------------------------------------------------------
+Final Results:
+------------------------------------------------------------
+Final Average Return: -75544.23
+Final Acceptance Rate: 18.75%
+Best Return: -55800.05
+Best Acceptance Rate: 24.50%

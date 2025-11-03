@@ -1,0 +1,213 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "pos": [
+        37.454011884736246,
+        95.07143064099162
+      ],
+      "x": 37.454011884736246,
+      "y": 95.07143064099162,
+      "id": 0,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        73.1993941811405,
+        59.86584841970366
+      ],
+      "x": 73.1993941811405,
+      "y": 59.86584841970366,
+      "id": 1,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        15.601864044243651,
+        15.599452033620265
+      ],
+      "x": 15.601864044243651,
+      "y": 15.599452033620265,
+      "id": 2,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        5.8083612168199465,
+        86.61761457749351
+      ],
+      "x": 5.8083612168199465,
+      "y": 86.61761457749351,
+      "id": 3,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        60.11150117432088,
+        70.80725777960456
+      ],
+      "x": 60.11150117432088,
+      "y": 70.80725777960456,
+      "id": 4,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        2.0584494295802447,
+        96.99098521619943
+      ],
+      "x": 2.0584494295802447,
+      "y": 96.99098521619943,
+      "id": 5,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        83.24426408004217,
+        21.233911067827616
+      ],
+      "x": 83.24426408004217,
+      "y": 21.233911067827616,
+      "id": 6,
+      "cpu": 4,
+      "memory": 4,
+      "disk": 6,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        18.182496720710063,
+        18.34045098534338
+      ],
+      "x": 18.182496720710063,
+      "y": 18.34045098534338,
+      "id": 7,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        30.42422429595377,
+        52.475643163223786
+      ],
+      "x": 30.42422429595377,
+      "y": 52.475643163223786,
+      "id": 8,
+      "cpu": 4,
+      "memory": 4,
+      "disk": 6,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    },
+    {
+      "pos": [
+        43.194501864211574,
+        29.122914019804192
+      ],
+      "x": 43.194501864211574,
+      "y": 29.122914019804192,
+      "id": 9,
+      "cpu": 2,
+      "memory": 2,
+      "disk": 4,
+      "bandwidth": 10,
+      "comm_bandwidth": 10,
+      "node_type": "edge"
+    }
+  ],
+  "links": [
+    {
+      "weight": 43.171970355713015,
+      "source": 0,
+      "target": 8,
+      "bandwidth": 10
+    },
+    {
+      "weight": 72.64288903176,
+      "source": 1,
+      "target": 2,
+      "bandwidth": 10
+    },
+    {
+      "weight": 39.743626352643325,
+      "source": 2,
+      "target": 8,
+      "bandwidth": 10
+    },
+    {
+      "weight": 42.090556270777356,
+      "source": 3,
+      "target": 8,
+      "bandwidth": 10
+    },
+    {
+      "weight": 56.55792067712963,
+      "source": 3,
+      "target": 4,
+      "bandwidth": 10
+    },
+    {
+      "weight": 44.98632437022885,
+      "source": 4,
+      "target": 9,
+      "bandwidth": 10
+    },
+    {
+      "weight": 79.3615139587427,
+      "source": 5,
+      "target": 9,
+      "bandwidth": 10
+    },
+    {
+      "weight": 40.819355961612956,
+      "source": 6,
+      "target": 9,
+      "bandwidth": 10
+    },
+    {
+      "weight": 65.1260752937622,
+      "source": 6,
+      "target": 7,
+      "bandwidth": 10
+    }
+  ]
+}
