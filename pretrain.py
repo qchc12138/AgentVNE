@@ -350,7 +350,7 @@ def main():
                        help='批大小')
     parser.add_argument('--num_epochs', type=int, default=20,
                        help='训练轮数')
-    parser.add_argument('--learning_rate', type=float, default=0.0001,
+    parser.add_argument('--learning_rate', type=float, default=0.00005,
                        help='学习率')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                        help='权重衰减')
