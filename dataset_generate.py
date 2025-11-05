@@ -15,7 +15,8 @@ import torch
 import os
 import json
 import numpy as np
-from typing import List, Dict, Tuple
+import networkx as nx
+from typing import List, Dict, Tuple, Set, Optional
 from torch_geometric.data import Data
 from tqdm import tqdm
 
@@ -194,42 +195,229 @@ def _compute_sn_noderank(nodes: List[Dict], links: List[Dict], directed: bool = 
     return NR_final
 
 
+def _get_vn_neighbors_from_topo(workflow_topo: Dict) -> Dict[int, Set[int]]:
+    """从 workflow 拓扑获取 VN 节点的邻居关系（无向，即使边是有向的）"""
+    nodes = workflow_topo['nodes']
+    N1 = len(nodes)
+    neighbors = {i: set() for i in range(N1)}
+    
+    # 创建节点 ID 到索引的映射
+    node_id_to_idx = {}
+    for idx, node in enumerate(nodes):
+        node_id = int(node.get('id', idx))
+        node_id_to_idx[node_id] = idx
+    
+    links = workflow_topo.get('links', [])
+    for link in links:
+        u_id = int(link['source'])
+        v_id = int(link['target'])
+        u_idx = node_id_to_idx.get(u_id)
+        v_idx = node_id_to_idx.get(v_id)
+        if u_idx is not None and v_idx is not None:
+            neighbors[u_idx].add(v_idx)
+            neighbors[v_idx].add(u_idx)  # 即使边是有向的，也互为邻居
+    
+    return neighbors
+
+
+def _get_sn_k_hop_neighbors_from_topo(sn_topo: Dict, sn_node_id: int, k: int) -> Set[int]:
+    """从 SN 拓扑获取节点的 k 跳邻居（包括 k 跳内的所有节点）"""
+    if k == 0:
+        return {sn_node_id}
+    
+    # 构建 NetworkX 图
+    G = nx.Graph()
+    for node in sn_topo['nodes']:
+        node_id = int(node.get('id', len(G.nodes)))
+        G.add_node(node_id)
+    
+    for link in sn_topo.get('links', []):
+        u = int(link['source'])
+        v = int(link['target'])
+        G.add_edge(u, v)
+    
+    # 计算 k 跳邻居
+    try:
+        paths = nx.single_source_shortest_path_length(G, sn_node_id, cutoff=k)
+        return set(paths.keys())
+    except:
+        return {sn_node_id}
+
+
+def _check_sn_resource_for_placement(
+    sn_nodes: List[Dict],
+    sn_node_idx: int,
+    wf_nodes: List[Dict],
+    wf_node_idx: int,
+    temp_mapping: Optional[Dict[int, int]] = None
+) -> bool:
+    """检查 SN 节点是否有足够资源放置 VN 节点"""
+    sn_node = sn_nodes[sn_node_idx]
+    wf_node = wf_nodes[wf_node_idx]
+    
+    # 计算绝对资源需求
+    demand_cpu = float(wf_node.get('cpu', 0.0))
+    demand_mem = float(wf_node.get('memory', 0.0))
+    demand_disk = float(wf_node.get('disk', 0.0))
+    
+    # 计算当前 SN 节点的可用资源（考虑临时映射中已放置的节点）
+    available_cpu = float(sn_node.get('cpu', 0.0))
+    available_mem = float(sn_node.get('memory', 0.0))
+    available_disk = float(sn_node.get('disk', 0.0))
+    
+    if temp_mapping:
+        # 虚拟扣减当前轮已放置在该SN节点上的VN节点的资源
+        for vn_idx, sn_idx in temp_mapping.items():
+            if sn_idx == sn_node_idx:
+                vn_node_temp = wf_nodes[vn_idx]
+                available_cpu -= float(vn_node_temp.get('cpu', 0.0))
+                available_mem -= float(vn_node_temp.get('memory', 0.0))
+                available_disk -= float(vn_node_temp.get('disk', 0.0))
+    
+    # 检查剩余资源
+    if demand_cpu > available_cpu + 1e-9:
+        return False
+    if demand_mem > available_mem + 1e-9:
+        return False
+    if demand_disk > available_disk + 1e-9:
+        return False
+    return True
+
+
 def _greedy_place_workflow(
     workflow_topo: Dict,
+    sn_topo: Dict,
     sn_nodes: List[Dict],
     sn_noderank: np.ndarray,
-    workflow_noderank: List[float]
+    workflow_noderank: List[float],
+    k_hop: int = 1
 ) -> None:
-    """将一个 workflow 的所有节点贪心放置到底层网络，并原地更新 sn_nodes 的 cpu/memory/disk。
-    放置顺序：按 workflow_noderank 从高到低选 workflow 节点；为其在 SN 中按 sn_noderank 从高到低选能满足资源的节点。
-    仅检查并扣减 cpu、memory、disk。
     """
-    # 排序索引
+    使用 BFS 扩展策略将一个 workflow 的所有节点贪心放置到底层网络。
+    参考 test.py 的 place_with_bfs_strategy 逻辑。
+    
+    放置规则：
+    1. 选择资源占用最大的 VN 节点作为第一个
+    2. 基于 VN 图的 BFS 扩展，优先放在同一 SN 节点上
+    3. 如果资源不足，在 k 跳邻居中查找
+    4. 按 NodeRank 排序确定优先级
+    
+    Args:
+        workflow_topo: Workflow 拓扑字典
+        sn_topo: SN 拓扑字典
+        sn_nodes: SN 节点列表（会被原地修改）
+        sn_noderank: SN 节点 NodeRank 数组
+        workflow_noderank: Workflow 节点 NodeRank 列表
+        k_hop: k 跳邻居参数（默认 1）
+    """
     wf_nodes = workflow_topo['nodes']
     N1 = len(wf_nodes)
-    wf_order = list(sorted(range(N1), key=lambda i: workflow_noderank[i], reverse=True))
-    sn_order = list(sorted(range(len(sn_nodes)), key=lambda j: sn_noderank[j], reverse=True))
-
-    for i in wf_order:
-        demand_cpu = float(wf_nodes[i].get('cpu', 0.0))
-        demand_mem = float(wf_nodes[i].get('memory', 0.0))
-        demand_disk = float(wf_nodes[i].get('disk', 0.0))
-
-        placed = False
-        for j in sn_order:
-            cap_cpu = float(sn_nodes[j].get('cpu', 0.0))
-            cap_mem = float(sn_nodes[j].get('memory', 0.0))
-            cap_disk = float(sn_nodes[j].get('disk', 0.0))
-            if cap_cpu >= demand_cpu and cap_mem >= demand_mem and cap_disk >= demand_disk:
-                # 扣减资源
-                sn_nodes[j]['cpu'] = cap_cpu - demand_cpu
-                sn_nodes[j]['memory'] = cap_mem - demand_mem
-                sn_nodes[j]['disk'] = cap_disk - demand_disk
-                placed = True
-                break
-        # 若无法放置，按指示仅跳过（不放置该节点）
-        if not placed:
-            continue
+    N2 = len(sn_nodes)
+    
+    # 1. 生成优先级列表（基于 NodeRank，按降序排序）
+    # 对每个 VN 节点，SN 节点的优先级列表就是按 sn_noderank 降序排序
+    sn_order = list(sorted(range(N2), key=lambda j: sn_noderank[j], reverse=True))
+    priority_lists = [sn_order.copy() for _ in range(N1)]  # 每个 VN 节点使用相同的优先级列表
+    
+    # 2. 获取 VN 邻居关系
+    vn_neighbors = _get_vn_neighbors_from_topo(workflow_topo)
+    
+    # 3. 计算 VN 节点度
+    vn_degrees = {i: len(vn_neighbors[i]) for i in range(N1)}
+    
+    # 4. 计算 VN 节点资源需求（用于排序）
+    vn_resource_demands = {}
+    for i in range(N1):
+        node = wf_nodes[i]
+        vn_resource_demands[i] = float(node.get('cpu', 0.0)) + float(node.get('memory', 0.0)) + float(node.get('disk', 0.0))
+    
+    # 5. 获取 SN 节点 ID 到索引的映射
+    sn_id_to_idx = {}
+    for idx, node in enumerate(sn_nodes):
+        sn_id = int(node.get('id', idx))
+        sn_id_to_idx[sn_id] = idx
+    
+    # 6. 选择第一个 VN 节点（资源占用最大）
+    first_vn = max(range(N1), key=lambda i: vn_resource_demands[i])
+    
+    # 7. 放置第一个 VN 节点
+    mapping: Dict[int, int] = {}  # VN节点索引 -> SN节点索引
+    first_sn_idx = priority_lists[first_vn][0]  # 优先级最高的 SN 节点
+    mapping[first_vn] = first_sn_idx
+    
+    # 扣减第一个节点的资源
+    first_sn_node = sn_nodes[first_sn_idx]
+    first_wf_node = wf_nodes[first_vn]
+    first_sn_node['cpu'] = float(first_sn_node.get('cpu', 0.0)) - float(first_wf_node.get('cpu', 0.0))
+    first_sn_node['memory'] = float(first_sn_node.get('memory', 0.0)) - float(first_wf_node.get('memory', 0.0))
+    first_sn_node['disk'] = float(first_sn_node.get('disk', 0.0)) - float(first_wf_node.get('disk', 0.0))
+    
+    # 8. BFS 扩展放置
+    placed_vn: Set[int] = {first_vn}
+    queue = [first_vn]
+    
+    while queue and len(placed_vn) < N1:
+        new_placed: List[int] = []
+        
+        for vi in queue:
+            vi_sn_idx = mapping[vi]
+            vi_sn_id = int(sn_nodes[vi_sn_idx].get('id', vi_sn_idx))
+            
+            # 找到 vi 的未放置邻居
+            unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn]
+            
+            # 对每个邻居尝试放置
+            for u in unplaced_neighbors:
+                # 首先尝试放在同一个 SN 节点上
+                if _check_sn_resource_for_placement(sn_nodes, vi_sn_idx, wf_nodes, u, temp_mapping=mapping):
+                    mapping[u] = vi_sn_idx
+                    placed_vn.add(u)
+                    new_placed.append(u)
+                    
+                    # 扣减资源
+                    sn_node = sn_nodes[vi_sn_idx]
+                    wf_node = wf_nodes[u]
+                    sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) - float(wf_node.get('cpu', 0.0))
+                    sn_node['memory'] = float(sn_node.get('memory', 0.0)) - float(wf_node.get('memory', 0.0))
+                    sn_node['disk'] = float(sn_node.get('disk', 0.0)) - float(wf_node.get('disk', 0.0))
+                    continue
+                
+                # 否则在 k 跳邻居中找
+                k = 1
+                max_k = k_hop + 5
+                placed = False
+                
+                while k <= max_k and not placed:
+                    k_hop_neighbors = _get_sn_k_hop_neighbors_from_topo(sn_topo, vi_sn_id, k)
+                    # 将 k 跳邻居的 ID 转换为索引
+                    k_hop_neighbor_indices = set()
+                    for sn_id in k_hop_neighbors:
+                        if sn_id in sn_id_to_idx:
+                            k_hop_neighbor_indices.add(sn_id_to_idx[sn_id])
+                    
+                    # 按优先级列表顺序尝试
+                    for sn_idx in priority_lists[u]:
+                        if sn_idx in k_hop_neighbor_indices and _check_sn_resource_for_placement(sn_nodes, sn_idx, wf_nodes, u, temp_mapping=mapping):
+                            mapping[u] = sn_idx
+                            placed_vn.add(u)
+                            new_placed.append(u)
+                            
+                            # 扣减资源
+                            sn_node = sn_nodes[sn_idx]
+                            wf_node = wf_nodes[u]
+                            sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) - float(wf_node.get('cpu', 0.0))
+                            sn_node['memory'] = float(sn_node.get('memory', 0.0)) - float(wf_node.get('memory', 0.0))
+                            sn_node['disk'] = float(sn_node.get('disk', 0.0)) - float(wf_node.get('disk', 0.0))
+                            placed = True
+                            break
+                    k += 1
+        
+        # 更新队列：按度降序；若度相同，则按资源需求降序
+        queue = sorted(
+            new_placed,
+            key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
+            reverse=True
+        )
 
 
 def generate_pretrain_dataset(
@@ -355,12 +543,14 @@ def generate_pretrain_dataset(
                 
                 pbar.update(1)
                 
-                # 放置该 workflow 并更新 SN 资源
+                # 放置该 workflow 并更新 SN 资源（使用 BFS 策略）
                 _greedy_place_workflow(
-                    base_workflow_topo, 
-                    sn_topo['nodes'], 
-                    sn_noderank, 
-                    workflow_noderank
+                    base_workflow_topo,
+                    sn_topo,
+                    sn_topo['nodes'],
+                    sn_noderank,
+                    workflow_noderank,
+                    k_hop=1
                 )
     
     # 保存数据集
