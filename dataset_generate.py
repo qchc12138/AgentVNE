@@ -290,8 +290,9 @@ def _greedy_place_workflow(
     sn_nodes: List[Dict],
     sn_noderank: np.ndarray,
     workflow_noderank: List[float],
-    k_hop: int = 1
-) -> None:
+    k_hop: int = 1,
+    return_placement_order: bool = False
+) -> Tuple[Dict[int, int], List[Tuple[int, int, Dict[str, float]]]]:
     """
     使用 BFS 扩展策略将一个 workflow 的所有节点贪心放置到底层网络。
     参考 test.py 的 place_with_bfs_strategy 逻辑。
@@ -309,6 +310,12 @@ def _greedy_place_workflow(
         sn_noderank: SN 节点 NodeRank 数组
         workflow_noderank: Workflow 节点 NodeRank 列表
         k_hop: k 跳邻居参数（默认 1）
+        return_placement_order: 是否返回放置顺序和资源状态
+    
+    Returns:
+        mapping: VN节点索引到SN节点索引的映射字典
+        placement_order: 放置顺序列表，每个元素为 (vn_idx, sn_idx, sn_resources_after)
+                        其中 sn_resources_after 是放置后的 SN 节点资源字典
     """
     wf_nodes = workflow_topo['nodes']
     N1 = len(wf_nodes)
@@ -342,6 +349,7 @@ def _greedy_place_workflow(
     
     # 7. 放置第一个 VN 节点
     mapping: Dict[int, int] = {}  # VN节点索引 -> SN节点索引
+    placement_order: List[Tuple[int, int, Dict[str, float]]] = []  # 放置顺序记录
     first_sn_idx = priority_lists[first_vn][0]  # 优先级最高的 SN 节点
     mapping[first_vn] = first_sn_idx
     
@@ -351,6 +359,18 @@ def _greedy_place_workflow(
     first_sn_node['cpu'] = float(first_sn_node.get('cpu', 0.0)) - float(first_wf_node.get('cpu', 0.0))
     first_sn_node['memory'] = float(first_sn_node.get('memory', 0.0)) - float(first_wf_node.get('memory', 0.0))
     first_sn_node['disk'] = float(first_sn_node.get('disk', 0.0)) - float(first_wf_node.get('disk', 0.0))
+    
+    # 记录第一个节点的放置顺序和资源状态
+    if return_placement_order:
+        placement_order.append((
+            first_vn,
+            first_sn_idx,
+            {
+                'cpu': float(first_sn_node.get('cpu', 0.0)),
+                'memory': float(first_sn_node.get('memory', 0.0)),
+                'disk': float(first_sn_node.get('disk', 0.0))
+            }
+        ))
     
     # 8. BFS 扩展放置
     placed_vn: Set[int] = {first_vn}
@@ -369,7 +389,11 @@ def _greedy_place_workflow(
             # 对每个邻居尝试放置
             for u in unplaced_neighbors:
                 # 首先尝试放在同一个 SN 节点上
-                if _check_sn_resource_for_placement(sn_nodes, vi_sn_idx, wf_nodes, u, temp_mapping=mapping):
+                # 注意：temp_mapping 应该只包含当前轮新放置但尚未扣减资源的节点
+                # 由于资源已经实时扣减，这里传入空字典或不传入 temp_mapping
+                # 但为了保持兼容性，传入当前轮新放置的节点（这些节点的资源还未扣减）
+                current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
+                if _check_sn_resource_for_placement(sn_nodes, vi_sn_idx, wf_nodes, u, temp_mapping=current_round_temp):
                     mapping[u] = vi_sn_idx
                     placed_vn.add(u)
                     new_placed.append(u)
@@ -380,6 +404,18 @@ def _greedy_place_workflow(
                     sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) - float(wf_node.get('cpu', 0.0))
                     sn_node['memory'] = float(sn_node.get('memory', 0.0)) - float(wf_node.get('memory', 0.0))
                     sn_node['disk'] = float(sn_node.get('disk', 0.0)) - float(wf_node.get('disk', 0.0))
+                    
+                    # 记录放置顺序和资源状态
+                    if return_placement_order:
+                        placement_order.append((
+                            u,
+                            vi_sn_idx,
+                            {
+                                'cpu': float(sn_node.get('cpu', 0.0)),
+                                'memory': float(sn_node.get('memory', 0.0)),
+                                'disk': float(sn_node.get('disk', 0.0))
+                            }
+                        ))
                     continue
                 
                 # 否则在 k 跳邻居中找
@@ -396,8 +432,10 @@ def _greedy_place_workflow(
                             k_hop_neighbor_indices.add(sn_id_to_idx[sn_id])
                     
                     # 按优先级列表顺序尝试
+                    # 同样，temp_mapping 只包含当前轮新放置的节点
+                    current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
                     for sn_idx in priority_lists[u]:
-                        if sn_idx in k_hop_neighbor_indices and _check_sn_resource_for_placement(sn_nodes, sn_idx, wf_nodes, u, temp_mapping=mapping):
+                        if sn_idx in k_hop_neighbor_indices and _check_sn_resource_for_placement(sn_nodes, sn_idx, wf_nodes, u, temp_mapping=current_round_temp):
                             mapping[u] = sn_idx
                             placed_vn.add(u)
                             new_placed.append(u)
@@ -408,6 +446,18 @@ def _greedy_place_workflow(
                             sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) - float(wf_node.get('cpu', 0.0))
                             sn_node['memory'] = float(sn_node.get('memory', 0.0)) - float(wf_node.get('memory', 0.0))
                             sn_node['disk'] = float(sn_node.get('disk', 0.0)) - float(wf_node.get('disk', 0.0))
+                            
+                            # 记录放置顺序和资源状态
+                            if return_placement_order:
+                                placement_order.append((
+                                    u,
+                                    sn_idx,
+                                    {
+                                        'cpu': float(sn_node.get('cpu', 0.0)),
+                                        'memory': float(sn_node.get('memory', 0.0)),
+                                        'disk': float(sn_node.get('disk', 0.0))
+                                    }
+                                ))
                             placed = True
                             break
                     k += 1
@@ -418,6 +468,11 @@ def _greedy_place_workflow(
             key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
             reverse=True
         )
+    
+    if return_placement_order:
+        return mapping, placement_order
+    else:
+        return mapping, []
 
 
 def generate_pretrain_dataset(
@@ -427,7 +482,9 @@ def generate_pretrain_dataset(
     output_path: str,
     test_output_path: str = None,
     workflows_per_episode: int = 10,
-    num_episodes: int = 50
+    num_episodes: int = 50,
+    test_mode: bool = False,
+    test_episode_idx: int = 0
 ) -> None:
     """生成预训练数据集并保存到文件。
     
@@ -438,6 +495,8 @@ def generate_pretrain_dataset(
         output_path: 输出数据集文件路径（.pt 格式）
         workflows_per_episode: 每个 episode 放置的 workflow 数量
         num_episodes: episode 数量（重复次数）
+        test_mode: 是否启用测试模式（打印标签和放置动作）
+        test_episode_idx: 测试模式下的 episode 索引（默认第一个 episode）
     """
     print("=" * 60)
     print("开始生成预训练数据集")
@@ -509,10 +568,18 @@ def generate_pretrain_dataset(
     total_samples = num_episodes * workflows_per_episode
     
     print(f"\n开始生成 {total_samples} 个样本...")
+    if test_mode:
+        print(f"\n{'='*60}")
+        print(f"测试模式：将打印 Episode {test_episode_idx} 的详细放置信息")
+        print(f"{'='*60}\n")
+    
     with tqdm(total=total_samples, desc="生成样本") as pbar:
         for episode_idx in range(num_episodes):
             # 重置 SN 到初始状态（深拷贝）
             sn_topo = json.loads(json.dumps(base_sn_topo))
+            
+            # 测试模式：只在指定的 episode 打印详细信息
+            is_test_episode = test_mode and (episode_idx == test_episode_idx)
             
             for wf_idx in range(workflows_per_episode):
                 # 计算当前 SN 的 noderank
@@ -534,6 +601,29 @@ def generate_pretrain_dataset(
                     dtype=torch.float
                 )
                 
+                # 测试模式：打印标签 y
+                y_np = None
+                if is_test_episode:
+                    print(f"\n{'='*60}")
+                    print(f"Episode {episode_idx + 1}, Workflow {wf_idx + 1}")
+                    print(f"{'='*60}")
+                    print(f"\n【放置前标签 y (NodeRank 矩阵)】")
+                    print(f"形状: {y.shape} (VN节点数 × SN节点数)")
+                    print(f"标签矩阵:")
+                    y_np = y.numpy()
+                    for vn_idx in range(N1):
+                        print(f"  VN节点 {vn_idx}: {y_np[vn_idx]}")
+                    print(f"\nSN NodeRank 值 (降序):")
+                    sn_noderank_sorted = sorted(enumerate(sn_noderank), key=lambda x: x[1], reverse=True)
+                    for sn_idx, rank_val in sn_noderank_sorted[:5]:  # 只显示前5个
+                        sn_node = sn_topo['nodes'][sn_idx]
+                        sn_id = sn_node.get('id', sn_idx)
+                        cpu = sn_node.get('cpu', 0.0)
+                        mem = sn_node.get('memory', 0.0)
+                        disk = sn_node.get('disk', 0.0)
+                        print(f"  SN节点 {sn_idx} (ID={sn_id}): NodeRank={rank_val:.6f}, "
+                              f"剩余资源 [CPU={cpu:.2f}, Mem={mem:.2f}, Disk={disk:.2f}]")
+                
                 # 保存样本
                 samples.append({
                     'workflow_graph': workflow_graph,
@@ -544,14 +634,75 @@ def generate_pretrain_dataset(
                 pbar.update(1)
                 
                 # 放置该 workflow 并更新 SN 资源（使用 BFS 策略）
-                _greedy_place_workflow(
-                    base_workflow_topo,
-                    sn_topo,
-                    sn_topo['nodes'],
-                    sn_noderank,
-                    workflow_noderank,
-                    k_hop=1
-                )
+                if is_test_episode:
+                    mapping, placement_order = _greedy_place_workflow(
+                        base_workflow_topo,
+                        sn_topo,
+                        sn_topo['nodes'],
+                        sn_noderank,
+                        workflow_noderank,
+                        k_hop=1,
+                        return_placement_order=True
+                    )
+                else:
+                    mapping, _ = _greedy_place_workflow(
+                        base_workflow_topo,
+                        sn_topo,
+                        sn_topo['nodes'],
+                        sn_noderank,
+                        workflow_noderank,
+                        k_hop=1,
+                        return_placement_order=False
+                    )
+                    placement_order = []
+                
+                # 测试模式：打印放置动作（按放置顺序）
+                if is_test_episode and y_np is not None:
+                    print(f"\n【放置动作】（按放置顺序）")
+                    print(f"成功放置 {len(mapping)}/{N1} 个 VN 节点")
+                    wf_nodes = base_workflow_topo['nodes']
+                    
+                    # 按放置顺序打印
+                    if placement_order:
+                        for place_idx, (vn_idx, sn_idx, sn_resources_after) in enumerate(placement_order, 1):
+                            vn_node = wf_nodes[vn_idx]
+                            sn_node = sn_topo['nodes'][sn_idx]
+                            vn_id = vn_node.get('id', vn_idx)
+                            sn_id = sn_node.get('id', sn_idx)
+                            vn_cpu = vn_node.get('cpu', 0.0)
+                            vn_mem = vn_node.get('memory', 0.0)
+                            vn_disk = vn_node.get('disk', 0.0)
+                            
+                            print(f"\n  步骤 {place_idx}: 放置 VN节点 {vn_idx} (ID={vn_id})")
+                            print(f"    VN节点需求: CPU={vn_cpu:.2f}, Mem={vn_mem:.2f}, Disk={vn_disk:.2f}")
+                            print(f"    -> SN节点 {sn_idx} (ID={sn_id})")
+                            print(f"    放置后 SN 节点剩余资源: CPU={sn_resources_after['cpu']:.2f}, "
+                                  f"Mem={sn_resources_after['memory']:.2f}, Disk={sn_resources_after['disk']:.2f}")
+                            print(f"    标签 y[{vn_idx}, {sn_idx}] = {y_np[vn_idx, sn_idx]:.6f}")
+                    else:
+                        # 如果无法获取放置顺序，使用原来的方式
+                        print(f"放置映射 (VN节点索引 -> SN节点索引):")
+                        for vn_idx in sorted(mapping.keys()):
+                            sn_idx = mapping[vn_idx]
+                            vn_node = wf_nodes[vn_idx]
+                            sn_node = sn_topo['nodes'][sn_idx]
+                            vn_id = vn_node.get('id', vn_idx)
+                            sn_id = sn_node.get('id', sn_idx)
+                            vn_cpu = vn_node.get('cpu', 0.0)
+                            vn_mem = vn_node.get('memory', 0.0)
+                            vn_disk = vn_node.get('disk', 0.0)
+                            sn_cpu = sn_node.get('cpu', 0.0)
+                            sn_mem = sn_node.get('memory', 0.0)
+                            sn_disk = sn_node.get('disk', 0.0)
+                            print(f"  VN节点 {vn_idx} (ID={vn_id}) [需求: CPU={vn_cpu:.2f}, Mem={vn_mem:.2f}, Disk={vn_disk:.2f}]")
+                            print(f"    -> SN节点 {sn_idx} (ID={sn_id}) [剩余: CPU={sn_cpu:.2f}, Mem={sn_mem:.2f}, Disk={sn_disk:.2f}]")
+                            print(f"    -> 标签 y[{vn_idx}, {sn_idx}] = {y_np[vn_idx, sn_idx]:.6f}")
+                    
+                    # 检查未放置的节点
+                    unplaced = [i for i in range(N1) if i not in mapping]
+                    if unplaced:
+                        print(f"\n未成功放置的 VN 节点: {unplaced}")
+                    print(f"{'='*60}\n")
     
     # 保存数据集
     print(f"\n保存数据集到 {output_path}...")
@@ -604,6 +755,10 @@ def main():
                        help='每个 episode 放置的 workflow 数量')
     parser.add_argument('--num_episodes', type=int, default=50,
                        help='Episode 数量（重复次数）')
+    parser.add_argument('--test_mode', action='store_true',
+                       help='启用测试模式，打印放置前标签和放置动作')
+    parser.add_argument('--test_episode_idx', type=int, default=0,
+                       help='测试模式下要打印的 episode 索引（默认 0）')
     
     args = parser.parse_args()
     
@@ -614,7 +769,9 @@ def main():
         output_path=args.output,
         test_output_path=args.test_output,
         workflows_per_episode=args.workflows_per_episode,
-        num_episodes=args.num_episodes
+        num_episodes=args.num_episodes,
+        test_mode=args.test_mode,
+        test_episode_idx=args.test_episode_idx
     )
 
 

@@ -242,8 +242,12 @@ class PPOAgent:
                 
                 # 对每个邻居尝试放置
                 for u in unplaced_neighbors:
-                    # 首先尝试放在同一个SN节点上（考虑当前轮已放置的节点）
-                    if self._check_sn_resource(env, vi_sn_id, u, vn, temp_mapping=mapping):
+                    # 首先尝试放在同一个SN节点上
+                    # 注意：temp_mapping 应该只包含当前轮新放置但尚未扣减资源的节点
+                    # 由于资源在 env.try_place_task() 时才扣减，这里传入当前轮新放置的节点
+                    # 用于防止同一轮中多个节点都放在同一SN节点导致超分配
+                    current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
+                    if self._check_sn_resource(env, vi_sn_id, u, vn, temp_mapping=current_round_temp):
                         mapping[u] = vi_sn_id  # 存储实际SN节点ID
                         placed_vn.add(u)
                         new_placed.append(u)
@@ -257,9 +261,11 @@ class PPOAgent:
                     while k <= max_k and not placed:
                         k_hop_neighbors = self._get_sn_k_hop_neighbors(env, vi_sn_id, k)
                         # 按优先级列表顺序尝试
+                        # 同样，temp_mapping 只包含当前轮新放置的节点
+                        current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
                         for sn_idx in priority_lists[u]:
                             sn_id = sn_node_list[sn_idx]  # 将索引转换为实际SN节点ID
-                            if sn_id in k_hop_neighbors and self._check_sn_resource(env, sn_id, u, vn, temp_mapping=mapping):
+                            if sn_id in k_hop_neighbors and self._check_sn_resource(env, sn_id, u, vn, temp_mapping=current_round_temp):
                                 mapping[u] = sn_id  # 存储实际SN节点ID
                                 placed_vn.add(u)
                                 new_placed.append(u)

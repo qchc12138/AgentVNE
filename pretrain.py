@@ -69,8 +69,8 @@ class PretrainTrainer:
             kl = kl_row.mean()
             # MSE 元素级平均
             mse = torch.mean((output - label) ** 2)
-            # return kl + mse*25
-            return mse
+            return kl + mse*25
+            #return mse
         self.criterion = kl_mse_loss
         
         # 优化器
@@ -350,7 +350,7 @@ def main():
                        help='批大小')
     parser.add_argument('--num_epochs', type=int, default=20,
                        help='训练轮数')
-    parser.add_argument('--learning_rate', type=float, default=0.00005,
+    parser.add_argument('--learning_rate', type=float, default=0.0005,
                        help='学习率')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                        help='权重衰减')

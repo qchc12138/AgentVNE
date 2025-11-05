@@ -133,7 +133,7 @@
       "id": 8,
       "cpu": 4,
       "memory": 4,
-      "disk": 6,
+      "disk": 8,
       "bandwidth": 10,
       "comm_bandwidth": 10,
       "node_type": "edge"
