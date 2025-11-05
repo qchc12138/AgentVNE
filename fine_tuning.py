@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Set, Optional
 
 import torch
 import torch.nn as nn
@@ -13,6 +13,7 @@ from torch_geometric.data import Data
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')  # 使用非交互式后端
+import networkx as nx
 
 from model import SimuVNE
 from env import SimuVNEEnv, WorkflowGenerator
@@ -70,9 +71,95 @@ class PPOAgent:
         self.opt_pi = optim.Adam(self.policy.parameters(), lr=lr_policy)
         self.opt_v = optim.Adam(self.value_net.parameters(), lr=lr_value)
 
+    def _generate_priority_lists(self, probs_matrix: torch.Tensor) -> List[List[int]]:
+        """从概率矩阵采样生成优先级列表"""
+        N_v, N_s = probs_matrix.shape
+        priority_lists = []
+        
+        for i in range(N_v):
+            probs = probs_matrix[i]  # [N_s]
+            # 采样：从概率分布中采样SN节点，按采样顺序排序
+            cat = Categorical(probs=probs)
+            samples = []
+            seen = set()
+            # 采样直到得到所有SN节点
+            max_samples = N_s * 2
+            for _ in range(max_samples):
+                sample = cat.sample().item()
+                if sample not in seen:
+                    samples.append(sample)
+                    seen.add(sample)
+                    if len(samples) >= N_s:
+                        break
+            priority_lists.append(samples)
+        
+        return priority_lists
+
+    def _get_vn_neighbors(self, vn: Data) -> Dict[int, Set[int]]:
+        """获取VN节点的邻居关系（无向，即使边是有向的）"""
+        neighbors = {i: set() for i in range(vn.x.size(0))}
+        edge_index = vn.edge_index
+        for i in range(edge_index.size(1)):
+            u = int(edge_index[0, i].item())
+            v = int(edge_index[1, i].item())
+            neighbors[u].add(v)  # u的邻居包括v
+            neighbors[v].add(u)  # v的邻居包括u（即使边是有向的）
+        return neighbors
+
+    def _get_sn_k_hop_neighbors(self, env: SimuVNEEnv, sn_node_id: int, k: int) -> Set[int]:
+        """获取SN节点的k跳邻居（包括k跳内的所有节点）"""
+        if k == 0:
+            return {sn_node_id}
+        # 使用networkx的single_source_shortest_path_length
+        paths = nx.single_source_shortest_path_length(env.G_sn, sn_node_id, cutoff=k)
+        return set(paths.keys())  # 包括距离0到k的所有节点
+
+    def _check_sn_resource(self, env: SimuVNEEnv, sn_node_id: int, vn_node_idx: int, vn: Data, 
+                          temp_mapping: Optional[Dict[int, int]] = None) -> bool:
+        """
+        检查SN节点是否有足够资源放置VN节点
+        
+        Args:
+            env: 环境对象
+            sn_node_id: SN节点ID
+            vn_node_idx: VN节点索引
+            vn: VN图数据
+            temp_mapping: 临时映射（当前轮已放置的节点），用于虚拟扣减资源
+        """
+        sn_node = env.G_sn.nodes[sn_node_id]
+        vn_feats = vn.x[vn_node_idx]
+        
+        # 计算绝对资源需求
+        cpu_demand = float(vn_feats[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+        mem_demand = float(vn_feats[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+        disk_demand = float(vn_feats[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+        
+        # 计算当前SN节点的可用资源（考虑临时映射中已放置的节点）
+        available_cpu = sn_node['cpu_res']
+        available_mem = sn_node['mem_res']
+        available_disk = sn_node['disk_res']
+        
+        if temp_mapping:
+            # 虚拟扣减当前轮已放置在该SN节点上的VN节点的资源
+            for vn_idx, sn_id in temp_mapping.items():
+                if sn_id == sn_node_id:
+                    vn_feats_temp = vn.x[vn_idx]
+                    available_cpu -= float(vn_feats_temp[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+                    available_mem -= float(vn_feats_temp[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+                    available_disk -= float(vn_feats_temp[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+        
+        # 检查剩余资源
+        if cpu_demand > available_cpu + 1e-9:
+            return False
+        if mem_demand > available_mem + 1e-9:
+            return False
+        if disk_demand > available_disk + 1e-9:
+            return False
+        return True
+
     @torch.no_grad()
-    def act(self, vn: Data, sn: Data) -> Tuple[Dict[int, int], torch.Tensor, torch.Tensor]:
-        # 输出放置概率矩阵 [N_v, N_s]，对VN每个节点按行采样SN节点
+    def _act_original(self, vn: Data, sn: Data) -> Tuple[Dict[int, int], torch.Tensor, torch.Tensor]:
+        """原始的随机采样策略（向后兼容）"""
         vn = vn.to(self.device)
         sn = sn.to(self.device)
         probs_matrix = self.policy(vn, sn)  # softmax 已在模型内部做过
@@ -85,6 +172,121 @@ class PPOAgent:
             a = cat.sample()
             mapping[i] = int(a.item())
             logprob_sum += float(cat.log_prob(a).item())
+        value = self.value_net(vn, sn)
+        return mapping, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
+
+    @torch.no_grad()
+    def act(self, vn: Data, sn: Data, env: Optional[SimuVNEEnv] = None, k_hop: int = 1) -> Tuple[Dict[int, int], torch.Tensor, torch.Tensor]:
+        """
+        新的放置策略：基于优先级列表和BFS扩展
+        
+        Args:
+            vn: VN图数据
+            sn: SN图数据
+            env: 环境对象（如果为None，使用原始随机采样策略）
+            k_hop: k跳邻居参数（默认1）
+        
+        Returns:
+            (mapping, logprob, value): 节点映射、对数概率、价值估计
+        """
+        # 如果没有提供env，使用原来的随机采样策略（向后兼容）
+        if env is None:
+            return self._act_original(vn, sn)
+        
+        vn = vn.to(self.device)
+        sn = sn.to(self.device)
+        probs_matrix = self.policy(vn, sn)  # [N_v, N_s]
+        N_v, N_s = probs_matrix.shape
+        
+        # 1. 生成优先级列表
+        priority_lists = self._generate_priority_lists(probs_matrix)
+        
+        # 2. 获取VN邻居关系
+        vn_neighbors = self._get_vn_neighbors(vn)
+        
+        # 3. 计算VN节点度
+        vn_degrees = {i: len(vn_neighbors[i]) for i in range(N_v)}
+        
+        # 4. 计算VN节点资源需求（用于排序）
+        vn_resource_demands = {}
+        for i in range(N_v):
+            feats = vn.x[i]
+            vn_resource_demands[i] = float(feats[0].item() + feats[1].item() + feats[2].item())
+        
+        # 5. 获取SN节点ID列表（用于索引映射）
+        sn_node_list = sorted(env.G_sn.nodes())
+        
+        # 6. 选择第一个VN节点（资源占用最大）
+        first_vn = max(range(N_v), key=lambda i: vn_resource_demands[i])
+        
+        # 7. 放置第一个VN节点
+        mapping: Dict[int, int] = {}
+        first_sn_idx = priority_lists[first_vn][0]  # 优先级最高的SN节点（索引）
+        first_sn_id = sn_node_list[first_sn_idx]  # 转换为实际SN节点ID
+        mapping[first_vn] = first_sn_id  # mapping中存储实际SN节点ID
+        
+        # 8. BFS扩展放置
+        placed_vn: Set[int] = {first_vn}
+        queue = [first_vn]  # 按度排序的队列
+        
+        while queue and len(placed_vn) < N_v:
+            # 当前轮新放置的节点
+            new_placed: List[int] = []
+            
+            # 对队列中的每个VN节点
+            for vi in queue:
+                vi_sn_id = mapping[vi]  # mapping中存储的是实际SN节点ID
+                
+                # 找到vi的未放置邻居
+                unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn]
+                
+                # 对每个邻居尝试放置
+                for u in unplaced_neighbors:
+                    # 首先尝试放在同一个SN节点上（考虑当前轮已放置的节点）
+                    if self._check_sn_resource(env, vi_sn_id, u, vn, temp_mapping=mapping):
+                        mapping[u] = vi_sn_id  # 存储实际SN节点ID
+                        placed_vn.add(u)
+                        new_placed.append(u)
+                        continue
+                    
+                    # 否则在k跳邻居中找
+                    k = 1
+                    max_k = k_hop + 5  # 允许扩展到k_hop+5跳
+                    placed = False
+                    
+                    while k <= max_k and not placed:
+                        k_hop_neighbors = self._get_sn_k_hop_neighbors(env, vi_sn_id, k)
+                        # 按优先级列表顺序尝试
+                        for sn_idx in priority_lists[u]:
+                            sn_id = sn_node_list[sn_idx]  # 将索引转换为实际SN节点ID
+                            if sn_id in k_hop_neighbors and self._check_sn_resource(env, sn_id, u, vn, temp_mapping=mapping):
+                                mapping[u] = sn_id  # 存储实际SN节点ID
+                                placed_vn.add(u)
+                                new_placed.append(u)
+                                placed = True
+                                break
+                        k += 1
+                    
+                    # 如果无法放置，跳过该节点（不加入mapping）
+                    # 这样会导致部分节点未放置，但不会导致整个映射失败
+            
+            # 更新队列：按度降序；若度相同，则按资源需求降序
+            queue = sorted(
+                new_placed,
+                key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
+                reverse=True
+            )
+        
+        # 9. 计算logprob和value（用于PPO训练）
+        # 注意：mapping中存储的是SN节点ID，需要转换为索引来计算logprob
+        logprob_sum = 0.0
+        sn_id_to_idx = {sn_id: idx for idx, sn_id in enumerate(sn_node_list)}
+        for vn_idx, sn_id in mapping.items():
+            probs = probs_matrix[vn_idx]
+            cat = Categorical(probs=probs)
+            sn_idx = sn_id_to_idx[sn_id]  # 将SN节点ID转换为索引
+            logprob_sum += float(cat.log_prob(torch.tensor(sn_idx, device=self.device)).item())
+        
         value = self.value_net(vn, sn)
         return mapping, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
 
@@ -271,8 +473,8 @@ def run_ppo_episode(
             value = None
             
             for attempt in range(1, max_retries + 1):
-                # 调用策略网络生成放置方案
-                mapping, logprob, value = agent.act(vn, sn_state)
+                # 调用策略网络生成放置方案（传入env以使用新的放置策略）
+                mapping, logprob, value = agent.act(vn, sn_state, env=env, k_hop=1)
                 
                 # 尝试放置
                 success, r_t = env.try_place_task(vn, mapping, lifetime, task_id)

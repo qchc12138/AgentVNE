@@ -5,6 +5,11 @@
 """
 import torch
 import numpy as np
+import networkx as nx
+from typing import Dict, List, Set, Optional, Tuple
+from torch.distributions import Categorical
+from torch_geometric.data import Data
+
 from model import SimuVNE
 from fine_tuning import ValueNet, PPOAgent
 from env import SimuVNEEnv, WorkflowGenerator
@@ -33,6 +38,179 @@ def print_sn_residual(env, title="SN剩余容量"):
         print(f"    节点{n}: CPU={nd['cpu_res']:.2f}, Mem={nd['mem_res']:.2f}, Disk={nd['disk_res']:.2f}")
     if len(env.G_sn.nodes) > 10:
         print(f"    ... (共 {len(env.G_sn.nodes)} 个节点)")
+
+
+def generate_priority_lists_deterministic(probs_matrix: torch.Tensor) -> List[List[int]]:
+    """从概率矩阵生成优先级列表（测试时：按概率值降序排序，不采样）"""
+    N_v, N_s = probs_matrix.shape
+    priority_lists = []
+    
+    for i in range(N_v):
+        probs = probs_matrix[i].cpu().numpy()  # [N_s]
+        # 按概率值降序排序，得到SN节点索引
+        sorted_indices = np.argsort(probs)[::-1]  # 降序
+        priority_lists.append(sorted_indices.tolist())
+    
+    return priority_lists
+
+
+def get_vn_neighbors(vn: Data) -> Dict[int, Set[int]]:
+    """获取VN节点的邻居关系（无向，即使边是有向的）"""
+    neighbors = {i: set() for i in range(vn.x.size(0))}
+    edge_index = vn.edge_index
+    for i in range(edge_index.size(1)):
+        u = int(edge_index[0, i].item())
+        v = int(edge_index[1, i].item())
+        neighbors[u].add(v)
+        neighbors[v].add(u)  # 即使边是有向的，也互为邻居
+    return neighbors
+
+
+def get_sn_k_hop_neighbors(env: SimuVNEEnv, sn_node_id: int, k: int) -> Set[int]:
+    """获取SN节点的k跳邻居（包括k跳内的所有节点）"""
+    if k == 0:
+        return {sn_node_id}
+    paths = nx.single_source_shortest_path_length(env.G_sn, sn_node_id, cutoff=k)
+    return set(paths.keys())
+
+
+def check_sn_resource(env: SimuVNEEnv, sn_node_id: int, vn_node_idx: int, vn: Data,
+                     temp_mapping: Optional[Dict[int, int]] = None) -> bool:
+    """检查SN节点是否有足够资源放置VN节点"""
+    sn_node = env.G_sn.nodes[sn_node_id]
+    vn_feats = vn.x[vn_node_idx]
+    
+    # 计算绝对资源需求
+    cpu_demand = float(vn_feats[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+    mem_demand = float(vn_feats[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+    disk_demand = float(vn_feats[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+    
+    # 计算当前SN节点的可用资源（考虑临时映射中已放置的节点）
+    available_cpu = sn_node['cpu_res']
+    available_mem = sn_node['mem_res']
+    available_disk = sn_node['disk_res']
+    
+    if temp_mapping:
+        # 虚拟扣减当前轮已放置在该SN节点上的VN节点的资源
+        for vn_idx, sn_id in temp_mapping.items():
+            if sn_id == sn_node_id:
+                vn_feats_temp = vn.x[vn_idx]
+                available_cpu -= float(vn_feats_temp[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+                available_mem -= float(vn_feats_temp[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+                available_disk -= float(vn_feats_temp[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+    
+    # 检查剩余资源
+    if cpu_demand > available_cpu + 1e-9:
+        return False
+    if mem_demand > available_mem + 1e-9:
+        return False
+    if disk_demand > available_disk + 1e-9:
+        return False
+    return True
+
+
+def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv, 
+                            probs_matrix: torch.Tensor, k_hop: int = 1) -> Tuple[Dict[int, int], float]:
+    """
+    使用BFS扩展策略进行放置（测试版本：按概率值排序）
+    
+    Args:
+        vn: VN图数据
+        sn_state: SN状态数据
+        env: 环境对象
+        probs_matrix: 概率矩阵 [N_v, N_s]
+        k_hop: k跳邻居参数（默认1）
+    
+    Returns:
+        (mapping, logprob): 节点映射和对数概率
+    """
+    N_v, N_s = probs_matrix.shape
+    device = probs_matrix.device
+    
+    # 1. 生成优先级列表（按概率值降序）
+    priority_lists = generate_priority_lists_deterministic(probs_matrix)
+    
+    # 2. 获取VN邻居关系
+    vn_neighbors = get_vn_neighbors(vn)
+    
+    # 3. 计算VN节点度
+    vn_degrees = {i: len(vn_neighbors[i]) for i in range(N_v)}
+    
+    # 4. 计算VN节点资源需求（用于排序）
+    vn_resource_demands = {}
+    for i in range(N_v):
+        feats = vn.x[i]
+        vn_resource_demands[i] = float(feats[0].item() + feats[1].item() + feats[2].item())
+    
+    # 5. 获取SN节点ID列表（用于索引映射）
+    sn_node_list = sorted(env.G_sn.nodes())
+    
+    # 6. 选择第一个VN节点（资源占用最大）
+    first_vn = max(range(N_v), key=lambda i: vn_resource_demands[i])
+    
+    # 7. 放置第一个VN节点
+    mapping: Dict[int, int] = {}
+    first_sn_idx = priority_lists[first_vn][0]  # 优先级最高的SN节点（索引）
+    first_sn_id = sn_node_list[first_sn_idx]  # 转换为实际SN节点ID
+    mapping[first_vn] = first_sn_id
+    
+    # 8. BFS扩展放置
+    placed_vn: Set[int] = {first_vn}
+    queue = [first_vn]
+    
+    while queue and len(placed_vn) < N_v:
+        new_placed: List[int] = []
+        
+        for vi in queue:
+            vi_sn_id = mapping[vi]
+            
+            # 找到vi的未放置邻居
+            unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn]
+            
+            # 对每个邻居尝试放置
+            for u in unplaced_neighbors:
+                # 首先尝试放在同一个SN节点上
+                if check_sn_resource(env, vi_sn_id, u, vn, temp_mapping=mapping):
+                    mapping[u] = vi_sn_id
+                    placed_vn.add(u)
+                    new_placed.append(u)
+                    continue
+                
+                # 否则在k跳邻居中找
+                k = 1
+                max_k = k_hop + 5
+                placed = False
+                
+                while k <= max_k and not placed:
+                    k_hop_neighbors = get_sn_k_hop_neighbors(env, vi_sn_id, k)
+                    # 按优先级列表顺序尝试
+                    for sn_idx in priority_lists[u]:
+                        sn_id = sn_node_list[sn_idx]
+                        if sn_id in k_hop_neighbors and check_sn_resource(env, sn_id, u, vn, temp_mapping=mapping):
+                            mapping[u] = sn_id
+                            placed_vn.add(u)
+                            new_placed.append(u)
+                            placed = True
+                            break
+                    k += 1
+        
+        # 更新队列：按度降序；若度相同，则按资源需求降序
+        queue = sorted(
+            new_placed,
+            key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
+            reverse=True
+        )
+    
+    # 9. 计算logprob
+    logprob_sum = 0.0
+    sn_id_to_idx = {sn_id: idx for idx, sn_id in enumerate(sn_node_list)}
+    for vn_idx, sn_id in mapping.items():
+        probs = probs_matrix[vn_idx]
+        cat = Categorical(probs=probs)
+        sn_idx = sn_id_to_idx[sn_id]
+        logprob_sum += float(cat.log_prob(torch.tensor(sn_idx, device=device)).item())
+    
+    return mapping, logprob_sum
 
 
 def test_placement_with_model(model_path=None, num_tasks=5):
@@ -145,39 +323,31 @@ def test_placement_with_model(model_path=None, num_tasks=5):
         # 打印概率矩阵
         print_probability_matrix(probs_matrix, vn.x.size(0), sn_state.x.size(0))
         
-        # 采样放置动作
-        print(f"\n  【采样放置动作】")
-        mapping, logprob, value = agent.act(vn, sn_state)
+        # 使用新的BFS放置策略
+        print(f"\n  【BFS放置策略】")
+        mapping, logprob = place_with_bfs_strategy(vn, sn_state, env, probs_matrix, k_hop=1)
         print(f"  映射: {mapping}")
-        print(f"  Log概率: {logprob.item():.4f}")
+        print(f"  Log概率: {logprob:.4f}")
+        
+        # 计算状态价值
+        with torch.no_grad():
+            value = agent.value_net(vn.to(device), sn_state.to(device))
         print(f"  状态价值: {value.item():.4f}")
         
         # 打印放置前SN状态
         print(f"\n  【放置前SN状态】")
         print_sn_residual(env, "放置前SN剩余容量")
         
-        # 尝试放置（带重试）
+        # 尝试放置
         print(f"\n  【尝试放置】")
-        max_retries = 3
-        success = False
-        r_t = None
+        success, r_t = env.try_place_task(vn, mapping, lifetime, task_id)
         
-        for attempt in range(1, max_retries + 1):
-            if attempt > 1:
-                # 重新采样
-                mapping, logprob, value = agent.act(vn, sn_state)
-                print(f"  重试 {attempt-1}: 新映射 {mapping}")
-            
-            success, r_t = env.try_place_task(vn, mapping, lifetime, task_id)
-            
-            if success:
-                print(f"  ✓ 放置成功 (尝试 {attempt} 次)")
-                print(f"    r_t = {r_t:.3f}")
-                placed_count += 1
-                break
-        
-        if not success:
-            print(f"  ✗ 放置失败 (尝试 {max_retries} 次)")
+        if success:
+            print(f"  ✓ 放置成功")
+            print(f"    r_t = {r_t:.3f}")
+            placed_count += 1
+        else:
+            print(f"  ✗ 放置失败")
             print(f"    penalty = {r_t:.3f}")
             failed_count += 1
         
