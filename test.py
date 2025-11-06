@@ -3,6 +3,7 @@
 测试脚本：加载fine_tuning模型，生成任务并放置
 打印：概率矩阵、采样动作、放置前后SN剩余容量
 """
+import os
 import torch
 import numpy as np
 import networkx as nx
@@ -74,9 +75,20 @@ def get_sn_k_hop_neighbors(env: SimuVNEEnv, sn_node_id: int, k: int) -> Set[int]
     return set(paths.keys())
 
 
-def check_sn_resource(env: SimuVNEEnv, sn_node_id: int, vn_node_idx: int, vn: Data,
-                     temp_mapping: Optional[Dict[int, int]] = None) -> bool:
-    """检查SN节点是否有足够资源放置VN节点"""
+def check_and_deduct_resource(env: SimuVNEEnv, sn_node_id: int, vn_node_idx: int, vn: Data, verbose: bool = False) -> bool:
+    """
+    检查资源并立即扣减（如果资源足够）
+    
+    Args:
+        env: 环境对象
+        sn_node_id: SN节点ID
+        vn_node_idx: VN节点索引
+        vn: VN图数据
+        verbose: 是否打印详细信息
+    
+    Returns:
+        True if 资源足够且已扣减, False otherwise
+    """
     sn_node = env.G_sn.nodes[sn_node_id]
     vn_feats = vn.x[vn_node_idx]
     
@@ -85,34 +97,69 @@ def check_sn_resource(env: SimuVNEEnv, sn_node_id: int, vn_node_idx: int, vn: Da
     mem_demand = float(vn_feats[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
     disk_demand = float(vn_feats[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
     
-    # 计算当前SN节点的可用资源（考虑临时映射中已放置的节点）
-    available_cpu = sn_node['cpu_res']
-    available_mem = sn_node['mem_res']
-    available_disk = sn_node['disk_res']
+    # 检查资源是否足够
+    if cpu_demand > sn_node['cpu_res'] + 1e-9:
+        if verbose:
+            print(f"        [资源检查] VN节点{vn_node_idx} → SN节点{sn_node_id}: CPU不足 (需求={cpu_demand:.3f}, 可用={sn_node['cpu_res']:.3f})")
+        return False
+    if mem_demand > sn_node['mem_res'] + 1e-9:
+        if verbose:
+            print(f"        [资源检查] VN节点{vn_node_idx} → SN节点{sn_node_id}: MEM不足 (需求={mem_demand:.3f}, 可用={sn_node['mem_res']:.3f})")
+        return False
+    if disk_demand > sn_node['disk_res'] + 1e-9:
+        if verbose:
+            print(f"        [资源检查] VN节点{vn_node_idx} → SN节点{sn_node_id}: DISK不足 (需求={disk_demand:.3f}, 可用={sn_node['disk_res']:.3f})")
+        return False
     
-    if temp_mapping:
-        # 虚拟扣减当前轮已放置在该SN节点上的VN节点的资源
-        for vn_idx, sn_id in temp_mapping.items():
-            if sn_id == sn_node_id:
-                vn_feats_temp = vn.x[vn_idx]
-                available_cpu -= float(vn_feats_temp[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
-                available_mem -= float(vn_feats_temp[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
-                available_disk -= float(vn_feats_temp[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+    # 立即扣减资源
+    sn_node['cpu_res'] -= cpu_demand
+    sn_node['mem_res'] -= mem_demand
+    sn_node['disk_res'] -= disk_demand
     
-    # 检查剩余资源
-    if cpu_demand > available_cpu + 1e-9:
-        return False
-    if mem_demand > available_mem + 1e-9:
-        return False
-    if disk_demand > available_disk + 1e-9:
-        return False
+    if verbose:
+        print(f"        [资源扣减] VN节点{vn_node_idx} → SN节点{sn_node_id}")
+        print(f"          需求: CPU={cpu_demand:.3f}, MEM={mem_demand:.3f}, DISK={disk_demand:.3f}")
+        print(f"          扣减后剩余: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+    
     return True
 
 
-def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv, 
-                            probs_matrix: torch.Tensor, k_hop: int = 1) -> Tuple[Dict[int, int], float]:
+def rollback_resource_deductions(env: SimuVNEEnv, deduction_history: List[Tuple[int, int]], vn: Data, verbose: bool = False):
     """
-    使用BFS扩展策略进行放置（测试版本：按概率值排序）
+    回滚资源扣减
+    
+    Args:
+        env: 环境对象
+        deduction_history: [(sn_node_id, vn_node_idx), ...] 资源扣减历史记录
+        vn: VN图数据
+        verbose: 是否打印详细信息
+    """
+    if verbose:
+        print(f"        回滚 {len(deduction_history)} 个节点的资源扣减:")
+    
+    for sn_node_id, vn_node_idx in deduction_history:
+        sn_node = env.G_sn.nodes[sn_node_id]
+        vn_feats = vn.x[vn_node_idx]
+        
+        # 计算需要恢复的资源
+        cpu_restore = float(vn_feats[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+        mem_restore = float(vn_feats[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+        disk_restore = float(vn_feats[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+        
+        # 恢复资源
+        sn_node['cpu_res'] += cpu_restore
+        sn_node['mem_res'] += mem_restore
+        sn_node['disk_res'] += disk_restore
+        
+        if verbose:
+            print(f"          恢复: VN节点{vn_node_idx} → SN节点{sn_node_id} (CPU={cpu_restore:.3f}, MEM={mem_restore:.3f}, DISK={disk_restore:.3f})")
+            print(f"            SN节点{sn_node_id}剩余资源: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+
+
+def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv, 
+                            probs_matrix: torch.Tensor, k_hop: int = 1, verbose: bool = False) -> Tuple[Dict[int, int], float]:
+    """
+    使用BFS扩展策略进行放置（测试版本：按概率值排序，立即扣减资源）
     
     Args:
         vn: VN图数据
@@ -120,6 +167,7 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
         env: 环境对象
         probs_matrix: 概率矩阵 [N_v, N_s]
         k_hop: k跳邻居参数（默认1）
+        verbose: 是否打印详细信息
     
     Returns:
         (mapping, logprob): 节点映射和对数概率
@@ -129,6 +177,17 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
     
     # 1. 生成优先级列表（按概率值降序）
     priority_lists = generate_priority_lists_deterministic(probs_matrix)
+    
+    if verbose:
+        print(f"    【步骤1】生成优先级列表（按概率值降序）:")
+        sn_node_list = sorted(env.G_sn.nodes())
+        for i in range(N_v):
+            priority_sn_ids = [sn_node_list[idx] for idx in priority_lists[i]]
+            priority_probs = [float(probs_matrix[i][idx].item()) for idx in priority_lists[i]]
+            if len(priority_sn_ids) > 10:
+                print(f"      VN节点{i}: 优先级序列 = {priority_sn_ids[:10]}... (共{len(priority_sn_ids)}个)")
+            else:
+                print(f"      VN节点{i}: 优先级序列 = {priority_sn_ids}")
     
     # 2. 获取VN邻居关系
     vn_neighbors = get_vn_neighbors(vn)
@@ -142,72 +201,162 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
         feats = vn.x[i]
         vn_resource_demands[i] = float(feats[0].item() + feats[1].item() + feats[2].item())
     
+    if verbose:
+        print(f"\n    【步骤2】VN节点资源需求:")
+        for i in range(N_v):
+            feats = vn.x[i]
+            cpu_norm = float(feats[0].item())
+            mem_norm = float(feats[1].item())
+            disk_norm = float(feats[2].item())
+            cpu_abs = cpu_norm * (env._sn_max_capacity['cpu_max'] + 1e-8)
+            mem_abs = mem_norm * (env._sn_max_capacity['mem_max'] + 1e-8)
+            disk_abs = disk_norm * (env._sn_max_capacity['disk_max'] + 1e-8)
+            print(f"      VN节点{i}: 归一化=(CPU:{cpu_norm:.4f}, MEM:{mem_norm:.4f}, DISK:{disk_norm:.4f}), "
+                  f"绝对=(CPU:{cpu_abs:.3f}, MEM:{mem_abs:.3f}, DISK:{disk_abs:.3f}), 度={vn_degrees[i]}")
+    
     # 5. 获取SN节点ID列表（用于索引映射）
     sn_node_list = sorted(env.G_sn.nodes())
+    
+    if verbose:
+        print(f"\n    【步骤3】SN节点当前资源状态:")
+        for sn_id in sn_node_list[:10]:
+            sn_node = env.G_sn.nodes[sn_id]
+            print(f"      SN节点{sn_id}: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
     
     # 6. 选择第一个VN节点（资源占用最大）
     first_vn = max(range(N_v), key=lambda i: vn_resource_demands[i])
     
-    # 7. 放置第一个VN节点（按概率优先级依次尝试，使用资源可行性检查，不做实际扣减）
+    if verbose:
+        print(f"\n    【步骤4】选择第一个VN节点:")
+        print(f"      选择: VN节点{first_vn} (资源需求最大: {vn_resource_demands[first_vn]:.4f})")
+    
+    # 7. 放置第一个VN节点（按优先级顺序逐一尝试，成功则立即扣减资源）
     mapping: Dict[int, int] = {}
+    resource_deduction_history: List[Tuple[int, int]] = []
     placed_first = False
+    tried_count_first = 0
+    
     for first_sn_idx in priority_lists[first_vn]:
         first_sn_id = sn_node_list[first_sn_idx]
-        # 对首个节点，当前轮临时映射为空，无需临时扣减
-        if check_sn_resource(env, first_sn_id, first_vn, vn, temp_mapping=None):
+        tried_count_first += 1
+        if verbose:
+            print(f"      尝试优先级第{tried_count_first}个: SN节点{first_sn_id} (索引{first_sn_idx})")
+        if check_and_deduct_resource(env, first_sn_id, first_vn, vn, verbose=verbose):
             mapping[first_vn] = first_sn_id
+            resource_deduction_history.append((first_sn_id, first_vn))
             placed_first = True
+            if verbose:
+                print(f"      ✓ 成功放置: VN节点{first_vn} → SN节点{first_sn_id}")
             break
+        else:
+            if verbose:
+                print(f"      ✗ 失败: SN节点{first_sn_id}资源不足")
+    
     if not placed_first:
-        # 无法在任何SN上放置首个节点，直接返回（失败的mapping，后续env.try_place_task将失败）
+        if verbose:
+            print(f"      ✗ 无法在任一SN节点上放置第一个VN节点，任务失败")
         return {}, 0.0
     
-    # 8. BFS扩展放置
+    # 8. BFS扩展放置（实时扣减资源）
     placed_vn: Set[int] = {first_vn}
     queue = [first_vn]
+    bfs_round = 0
+    
+    if verbose:
+        print(f"\n    【步骤5】BFS扩展放置:")
     
     while queue and len(placed_vn) < N_v:
+        bfs_round += 1
         new_placed: List[int] = []
+        
+        if verbose:
+            print(f"\n      --- BFS轮次 {bfs_round} ---")
+            print(f"      队列: {queue} (已放置: {sorted(placed_vn)})")
         
         for vi in queue:
             vi_sn_id = mapping[vi]
             
+            if verbose:
+                print(f"\n      处理队列节点: VN节点{vi} (当前在SN节点{vi_sn_id})")
+            
             # 找到vi的未放置邻居
             unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn]
             
+            if verbose:
+                print(f"        未放置的邻居VN节点: {unplaced_neighbors}")
+            
             # 对每个邻居尝试放置
             for u in unplaced_neighbors:
-                # 首先尝试放在同一个SN节点上
-                # 注意：temp_mapping 应该只包含当前轮新放置但尚未扣减资源的节点
-                # 由于资源在 env.try_place_task() 时才扣减，这里传入当前轮新放置的节点
-                current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
-                if check_sn_resource(env, vi_sn_id, u, vn, temp_mapping=current_round_temp):
+                if verbose:
+                    print(f"\n        尝试放置邻居: VN节点{u}")
+                
+                # 策略1: 尝试放在同一个SN节点上
+                if verbose:
+                    print(f"        策略1: 尝试放在同一SN节点{vi_sn_id}上")
+                
+                if check_and_deduct_resource(env, vi_sn_id, u, vn, verbose=verbose):
                     mapping[u] = vi_sn_id
                     placed_vn.add(u)
                     new_placed.append(u)
+                    resource_deduction_history.append((vi_sn_id, u))
+                    if verbose:
+                        print(f"        ✓ 成功放置: VN节点{u} → SN节点{vi_sn_id}")
                     continue
+                else:
+                    if verbose:
+                        print(f"        ✗ 失败: SN节点{vi_sn_id}资源不足")
                 
-                # 否则在k跳邻居中找
+                # 策略2: 在k跳邻居中找
                 k = 1
-                # 允许扩展到整个SN网络（最大跳数为SN节点数）
                 max_k = len(sn_node_list)
                 placed = False
                 
+                if verbose:
+                    print(f"        策略2: 在k跳邻居中搜索 (从k=1开始, 最大k={max_k})")
+                
                 while k <= max_k and not placed:
                     k_hop_neighbors = get_sn_k_hop_neighbors(env, vi_sn_id, k)
+                    
+                    if verbose:
+                        print(f"          k={k}: k跳邻居SN节点 = {sorted(k_hop_neighbors)}")
+                    
+                    tried_count = 0
                     # 按优先级列表顺序尝试
-                    # 同样，temp_mapping 只包含当前轮新放置的节点
-                    current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
                     for sn_idx in priority_lists[u]:
                         sn_id = sn_node_list[sn_idx]
-                        if sn_id in k_hop_neighbors and check_sn_resource(env, sn_id, u, vn, temp_mapping=current_round_temp):
-                            mapping[u] = sn_id
-                            placed_vn.add(u)
-                            new_placed.append(u)
-                            placed = True
-                            break
-                    # 如果当前k跳内没有找到可放置节点，扩展到k+1跳
+                        if sn_id in k_hop_neighbors:
+                            tried_count += 1
+                            if verbose:
+                                print(f"            尝试优先级第{tried_count}个: SN节点{sn_id} (索引{sn_idx})", end=' ')
+                            
+                            if check_and_deduct_resource(env, sn_id, u, vn, verbose=verbose):
+                                mapping[u] = sn_id
+                                placed_vn.add(u)
+                                new_placed.append(u)
+                                resource_deduction_history.append((sn_id, u))
+                                placed = True
+                                if verbose:
+                                    print(f"→ ✓ 成功放置!")
+                                break
+                            else:
+                                if verbose:
+                                    print(f"→ ✗ 资源不足")
+                    
+                    if placed:
+                        break
+                    
+                    if verbose:
+                        print(f"          k={k}跳内无法放置，扩展到k={k+1}")
+                    
                     k += 1
+                
+                if not placed:
+                    # 无法放置，需要回滚所有资源扣减
+                    if verbose:
+                        print(f"\n        ⚠️ 放置失败: VN节点{u} 在所有k跳内都无法找到合适位置")
+                        print(f"        开始回滚资源扣减...")
+                    rollback_resource_deductions(env, resource_deduction_history, vn, verbose=verbose)
+                    return {}, 0.0
         
         # 更新队列：按度降序；若度相同，则按资源需求降序
         queue = sorted(
@@ -215,6 +364,27 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
             key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
             reverse=True
         )
+        
+        if verbose:
+            if queue:
+                print(f"\n      本轮新放置: {sorted(new_placed)}")
+                print(f"      下一轮队列: {queue}")
+            else:
+                print(f"\n      本轮无新放置，BFS结束")
+    
+    # 检查是否所有节点都已放置
+    if len(placed_vn) < N_v:
+        if verbose:
+            print(f"\n        ⚠️ 部分节点未放置 ({len(placed_vn)}/{N_v})，回滚资源扣减...")
+        rollback_resource_deductions(env, resource_deduction_history, vn, verbose=verbose)
+        return {}, 0.0
+    
+    if verbose:
+        print(f"\n    【步骤6】放置完成:")
+        print(f"      已放置VN节点: {sorted(placed_vn)} / {N_v}")
+        print(f"      最终映射:")
+        for vn_idx in sorted(mapping.keys()):
+            print(f"        VN节点{vn_idx} → SN节点{mapping[vn_idx]}")
     
     # 9. 计算logprob
     logprob_sum = 0.0
@@ -228,13 +398,22 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
     return mapping, logprob_sum
 
 
-def test_placement_with_model(model_path=None, num_tasks=5):
+def test_placement_with_model(model_path=None, 
+                              arrival_rate: float = 1.0,
+                              mean_lifetime: float = 10.0,
+                              max_arrived_tasks: int = 10,
+                              max_time_steps: int = 1000,
+                              seed: int = 42):
     """
-    测试任务放置流程
+    测试任务放置流程（时间驱动版本）
     
     Args:
         model_path: 模型checkpoint路径，None则使用随机初始化
-        num_tasks: 测试任务数量
+        arrival_rate: 泊松到达率（每个时间单位的任务到达率）
+        mean_lifetime: 平均生存时间（指数分布）
+        max_arrived_tasks: 最大到达任务数
+        max_time_steps: 最大时间步数
+        seed: 随机种子
     """
     print("=" * 80)
     print("测试：加载模型并进行任务放置")
@@ -253,20 +432,22 @@ def test_placement_with_model(model_path=None, num_tasks=5):
         sn_topology_path=sn_path,
         device=device,
         penalty=-150.0,
-        max_arrived_tasks=num_tasks
+        max_arrived_tasks=max_arrived_tasks
     )
     env.reset()
+    env.current_time = 0.0  # 确保时间从0开始
     sn_capacity = env.get_sn_max_capacity()
     
     print(f"  SN拓扑: {len(env.G_sn.nodes)} 个节点, {len(env.G_sn.edges)} 条边")
     print(f"  SN最大容量: CPU={sn_capacity['cpu_max']}, Mem={sn_capacity['mem_max']}, Disk={sn_capacity['disk_max']}")
+    print(f"  任务参数: 到达率={arrival_rate}, 平均生存时间={mean_lifetime}, 最大任务数={max_arrived_tasks}, 最大时间步={max_time_steps}")
     
     # 创建工作流生成器
     wf_gen = WorkflowGenerator(
         workflow_types=workflow_types,
-        arrival_rate=1.0,  # 每个时间单位必定到达
-        mean_lifetime=10.0,
-        seed=42,
+        arrival_rate=arrival_rate,
+        mean_lifetime=mean_lifetime,
+        seed=seed,
         sn_capacity_for_norm=sn_capacity
     )
     
@@ -278,9 +459,33 @@ def test_placement_with_model(model_path=None, num_tasks=5):
     if model_path:
         try:
             ckpt = torch.load(model_path, map_location='cpu')
-            state_dict = ckpt.get('model_state_dict', ckpt)
+            # 处理不同的checkpoint格式
+            if isinstance(ckpt, dict) and 'model_state_dict' in ckpt:
+                state_dict = ckpt['model_state_dict']
+                if 'model_config' in ckpt:
+                    print(f"  模型配置: {ckpt['model_config']}")
+            else:
+                # 如果checkpoint本身就是state_dict
+                state_dict = ckpt
+            
             policy.load_state_dict(state_dict, strict=False)
-            print(f"  ✓ 已加载模型: {model_path}")
+            print(f"  ✓ 已成功加载策略网络: {model_path}")
+            
+            # 尝试加载价值网络（如果存在）
+            value_model_path = model_path.replace('policy_network.pth', 'value_network.pth')
+            if os.path.exists(value_model_path):
+                try:
+                    value_ckpt = torch.load(value_model_path, map_location='cpu')
+                    if isinstance(value_ckpt, dict) and 'model_state_dict' in value_ckpt:
+                        value_state_dict = value_ckpt['model_state_dict']
+                    else:
+                        value_state_dict = value_ckpt
+                    value_net.load_state_dict(value_state_dict, strict=False)
+                    print(f"  ✓ 已成功加载价值网络: {value_model_path}")
+                except Exception as e:
+                    print(f"  ⚠ 加载价值网络失败: {e}，使用随机初始化的价值网络")
+            else:
+                print(f"  → 未找到价值网络文件，使用随机初始化的价值网络")
         except Exception as e:
             print(f"  ✗ 加载模型失败: {e}")
             print(f"  → 使用随机初始化的模型")
@@ -294,23 +499,33 @@ def test_placement_with_model(model_path=None, num_tasks=5):
     print(f"\n【3. 初始SN状态】")
     print_sn_residual(env, "SN初始剩余容量")
     
-    # 开始放置任务
+    # 开始放置任务（时间驱动版本）
     print(f"\n{'=' * 80}")
-    print(f"【4. 开始任务放置】 (共 {num_tasks} 个任务)")
+    print(f"【4. 开始任务放置】 (时间驱动: 到达率={arrival_rate}, 最大任务数={max_arrived_tasks}, 最大时间步={max_time_steps})")
     print(f"{'=' * 80}")
     
     placed_count = 0
     failed_count = 0
+    time_step = 0
     
-    for task_id in range(num_tasks):
-        print(f"\n{'-' * 80}")
-        print(f"任务 #{task_id}")
-        print(f"{'-' * 80}")
+    while time_step < max_time_steps and not env.is_done():
+        # 1) 推进时间，移除到期任务
+        env.step_time(time_delta=1.0)
         
-        # 生成VN任务
+        # 2) 检查是否有任务到达
+        has_arrival = wf_gen.check_arrival(time_unit=1.0)
+        
+        if has_arrival and not env.is_done():
+            # 任务到达
         wf_type = wf_gen.sample_workflow_type()
         vn = wf_gen.load_workflow_graph(wf_type)
         lifetime = wf_gen.sample_lifetime()
+            task_id = env.arrived_count
+            env.arrived_count += 1
+            
+            print(f"\n{'-' * 80}")
+            print(f"[t={env.current_time:.1f}] 任务 #{task_id} 到达")
+            print(f"{'-' * 80}")
         
         print(f"  任务类型: {wf_type}")
         print(f"  VN节点数: {vn.x.size(0)}")
@@ -338,31 +553,56 @@ def test_placement_with_model(model_path=None, num_tasks=5):
         # 打印概率矩阵
         print_probability_matrix(probs_matrix, vn.x.size(0), sn_state.x.size(0))
         
-        # 使用新的BFS放置策略
-        print(f"\n  【BFS放置策略】")
-        mapping, logprob = place_with_bfs_strategy(vn, sn_state, env, probs_matrix, k_hop=1)
-        print(f"  映射: {mapping}")
-        print(f"  Log概率: {logprob:.4f}")
-        
-        # 计算状态价值
-        with torch.no_grad():
-            value = agent.value_net(vn.to(device), sn_state.to(device))
-        print(f"  状态价值: {value.item():.4f}")
-        
         # 打印放置前SN状态
         print(f"\n  【放置前SN状态】")
         print_sn_residual(env, "放置前SN剩余容量")
         
-        # 尝试放置
-        print(f"\n  【尝试放置】")
-        success, r_t = env.try_place_task(vn, mapping, lifetime, task_id)
-        
-        if success:
-            print(f"  ✓ 放置成功")
-            print(f"    r_t = {r_t:.3f}")
-            placed_count += 1
-        else:
-            print(f"  ✗ 放置失败")
+            # 使用新的BFS放置策略（资源已在策略中扣减）
+            print(f"\n  【BFS放置策略】")
+            print(f"  {'='*70}")
+            mapping, logprob = place_with_bfs_strategy(vn, sn_state, env, probs_matrix, k_hop=1, verbose=True)
+            print(f"  {'='*70}")
+            print(f"  最终映射: {mapping}")
+            print(f"  Log概率: {logprob:.4f}")
+            
+            # 计算状态价值
+            with torch.no_grad():
+                value = agent.value_net(vn.to(device), sn_state.to(device))
+            print(f"  状态价值: {value.item():.4f}")
+            
+            # 检查是否成功放置（所有节点都已映射，资源已在place_with_bfs_strategy中扣减）
+            print(f"\n  【尝试放置】")
+            if len(mapping) == vn.x.size(0):
+                # 所有节点都已放置，资源已在place_with_bfs_strategy中扣减，只需要检查路径并添加工作流
+                vn_paths = env._compute_paths_and_bw_demand(vn, mapping)
+                if vn_paths is None:
+                    # 路径不存在，需要回滚资源
+                    rollback_history = [(sn_id, vn_idx) for vn_idx, sn_id in mapping.items()]
+                    rollback_resource_deductions(env, rollback_history, vn, verbose=False)
+                    success, r_t = False, env.penalty
+                    print(f"  ✗ 放置失败: 路径不存在")
+                    print(f"    penalty = {r_t:.3f}")
+                    failed_count += 1
+                else:
+                    # 路径存在，添加工作流（资源已扣减，不需要再次扣减）
+                    expire_time = env.current_time + lifetime
+                    env.active_workflows.append({
+                        'vn': vn,
+                        'mapping': mapping,
+                        'paths': vn_paths,
+                        'expire_time': expire_time,
+                        'task_id': task_id,
+                    })
+                    env.accepted_count += 1
+                    r_t = env._compute_rt()
+                    success = True
+                    print(f"  ✓ 放置成功")
+                print(f"    r_t = {r_t:.3f}")
+                placed_count += 1
+            else:
+                # 部分节点未放置，资源已在place_with_bfs_strategy中回滚
+                success, r_t = False, env.penalty
+                print(f"  ✗ 放置失败: 部分节点未放置 ({len(mapping)}/{vn.x.size(0)})")
             print(f"    penalty = {r_t:.3f}")
             failed_count += 1
         
@@ -370,19 +610,24 @@ def test_placement_with_model(model_path=None, num_tasks=5):
         print(f"\n  【放置后SN状态】")
         print_sn_residual(env, "放置后SN剩余容量")
         print(f"  当前存活任务数: {len(env.active_workflows)}")
+            print(f"  [t={env.current_time:.1f}] 任务 #{task_id} {'✓成功' if success else '✗失败'} (r_t={r_t:.3f}, 存活任务数:{len(env.active_workflows)})")
         
-        # 推进时间（模拟任务过期）
-        env.arrived_count += 1
-        env.step_time(time_delta=2.0)  # 推进2个时间单位
+        time_step += 1
     
     # 统计结果
     print(f"\n{'=' * 80}")
     print(f"【5. 测试结果统计】")
     print(f"{'=' * 80}")
-    print(f"  总任务数: {num_tasks}")
-    print(f"  成功放置: {placed_count} ({placed_count/num_tasks*100:.1f}%)")
-    print(f"  放置失败: {failed_count} ({failed_count/num_tasks*100:.1f}%)")
+    print(f"  时间步数: {time_step} / {max_time_steps}")
+    print(f"  到达任务数: {env.arrived_count} / {max_arrived_tasks}")
+    if env.arrived_count > 0:
+        print(f"  成功放置: {placed_count} ({placed_count/env.arrived_count*100:.1f}%)")
+        print(f"  放置失败: {failed_count} ({failed_count/env.arrived_count*100:.1f}%)")
+    else:
+        print(f"  成功放置: {placed_count}")
+        print(f"  放置失败: {failed_count}")
     print(f"  最终存活任务数: {len(env.active_workflows)}")
+    print(f"  最终时间: {env.current_time:.1f}")
     
     # 打印最终SN状态
     print(f"\n【6. 最终SN状态】")
@@ -393,27 +638,74 @@ def test_placement_with_model(model_path=None, num_tasks=5):
     print(f"{'=' * 80}")
 
 
-if __name__ == '__main__':
-    # 测试场景1: 使用随机初始化模型
-    print("\n【场景1: 随机初始化模型】")
-    test_placement_with_model(model_path=None, num_tasks=3)
+def find_latest_finetuning_model(finetuning_dir='/home/zrz/SimuVNE/finetuning_putput'):
+    """
+    查找最新的fine-tuning模型
     
-    # 测试场景2: 使用预训练模型（如果存在）
-    # pretrained_model = '/home/zrz/SimuVNE/pretrain_outputs/checkpoint_best.pt'
-    # print("\n\n【场景2: 预训练模型】")
-    # test_placement_with_model(model_path=pretrained_model, num_tasks=3)
+    Args:
+        finetuning_dir: fine-tuning输出目录
     
-    # 测试场景3: 使用fine-tuning模型（如果存在）
-    # 查找最新的fine-tuning输出
+    Returns:
+        最新的模型路径，如果不存在则返回None
+    """
     import os
     import glob
-    finetuning_dir = '/home/zrz/SimuVNE/finetuning_putput'
+    
+    if not os.path.exists(finetuning_dir):
+        return None
+    
     runs = sorted(glob.glob(f"{finetuning_dir}/run_*/policy_network.pth"))
     if runs:
-        latest_model = runs[-1]
-        print(f"\n\n【场景3: Fine-tuning模型】")
-        print(f"最新模型: {latest_model}")
-        test_placement_with_model(model_path=latest_model, num_tasks=3)
+        return runs[-1]  # 返回最新的模型
+    return None
+
+
+if __name__ == '__main__':
+    # 优先使用fine-tuning模型
+    finetuning_dir = '/home/zrz/SimuVNE/finetuning_putput'
+    latest_finetuning_model = find_latest_finetuning_model(finetuning_dir)
+    
+    if latest_finetuning_model:
+        print("\n" + "=" * 80)
+        print("【使用Fine-tuning模型进行测试】")
+        print("=" * 80)
+        print(f"模型路径: {latest_finetuning_model}")
+        test_placement_with_model(
+            model_path=latest_finetuning_model,
+            arrival_rate=1.0,
+            mean_lifetime=10.0,
+            max_arrived_tasks=10,
+            max_time_steps=1000,
+            seed=42
+        )
     else:
-        print(f"\n未找到fine-tuning模型，跳过场景3")
+        # 如果找不到fine-tuning模型，尝试使用预训练模型
+        pretrained_model = '/home/zrz/SimuVNE/pretrain_outputs/checkpoint_best.pt'
+        if os.path.exists(pretrained_model):
+            print("\n" + "=" * 80)
+            print("【未找到Fine-tuning模型，使用预训练模型】")
+            print("=" * 80)
+            print(f"模型路径: {pretrained_model}")
+            test_placement_with_model(
+                model_path=pretrained_model,
+                arrival_rate=1.0,
+                mean_lifetime=10.0,
+                max_arrived_tasks=10,
+                max_time_steps=1000,
+                seed=42
+            )
+        else:
+            # 如果预训练模型也不存在，使用随机初始化模型
+            print("\n" + "=" * 80)
+            print("【未找到Fine-tuning和预训练模型，使用随机初始化模型】")
+            print("=" * 80)
+            print("警告: 使用随机初始化的模型，测试结果可能不准确")
+            test_placement_with_model(
+                model_path=None,
+                arrival_rate=1.0,
+                mean_lifetime=10.0,
+                max_arrived_tasks=10,
+                max_time_steps=1000,
+                seed=42
+            )
 
