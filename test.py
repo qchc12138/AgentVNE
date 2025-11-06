@@ -148,11 +148,19 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
     # 6. 选择第一个VN节点（资源占用最大）
     first_vn = max(range(N_v), key=lambda i: vn_resource_demands[i])
     
-    # 7. 放置第一个VN节点
+    # 7. 放置第一个VN节点（按概率优先级依次尝试，使用资源可行性检查，不做实际扣减）
     mapping: Dict[int, int] = {}
-    first_sn_idx = priority_lists[first_vn][0]  # 优先级最高的SN节点（索引）
-    first_sn_id = sn_node_list[first_sn_idx]  # 转换为实际SN节点ID
-    mapping[first_vn] = first_sn_id
+    placed_first = False
+    for first_sn_idx in priority_lists[first_vn]:
+        first_sn_id = sn_node_list[first_sn_idx]
+        # 对首个节点，当前轮临时映射为空，无需临时扣减
+        if check_sn_resource(env, first_sn_id, first_vn, vn, temp_mapping=None):
+            mapping[first_vn] = first_sn_id
+            placed_first = True
+            break
+    if not placed_first:
+        # 无法在任何SN上放置首个节点，直接返回（失败的mapping，后续env.try_place_task将失败）
+        return {}, 0.0
     
     # 8. BFS扩展放置
     placed_vn: Set[int] = {first_vn}
@@ -181,7 +189,8 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
                 
                 # 否则在k跳邻居中找
                 k = 1
-                max_k = k_hop + 5
+                # 允许扩展到整个SN网络（最大跳数为SN节点数）
+                max_k = len(sn_node_list)
                 placed = False
                 
                 while k <= max_k and not placed:
@@ -197,6 +206,7 @@ def place_with_bfs_strategy(vn: Data, sn_state: Data, env: SimuVNEEnv,
                             new_placed.append(u)
                             placed = True
                             break
+                    # 如果当前k跳内没有找到可放置节点，扩展到k+1跳
                     k += 1
         
         # 更新队列：按度降序；若度相同，则按资源需求降序

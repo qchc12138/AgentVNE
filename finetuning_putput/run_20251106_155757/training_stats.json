@@ -1,0 +1,27 @@
+{
+  "timestamp": "20251106_155757",
+  "num_updates": 1,
+  "training_stats": [
+    {
+      "update_idx": 0,
+      "avg_return": -3500.0,
+      "avg_accepted": 3.0,
+      "avg_arrived": 10.0,
+      "total_samples": 10,
+      "episode_stats": [
+        {
+          "final_return": -3500.0,
+          "arrived": 10,
+          "accepted": 3
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "final_avg_return": -3500.0,
+    "final_acceptance_rate": 0.3,
+    "best_return": -3500.0,
+    "best_acceptance_rate": 0.3,
+    "total_samples": 10
+  }
+}

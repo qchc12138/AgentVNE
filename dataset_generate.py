@@ -92,6 +92,8 @@ def _topology_to_pyg_data(topo: Dict, is_workflow: bool = False, sn_max_capacity
     需要字段: topo['nodes'] (带资源/需求), topo['links'] (source/target)。
     使用 topo['directed'] 判断是否有向。
     
+    节点按ID排序，确保节点顺序与ID一致。
+    
     Args:
         topo: 拓扑字典
         is_workflow: 是否为 workflow 图
@@ -100,8 +102,36 @@ def _topology_to_pyg_data(topo: Dict, is_workflow: bool = False, sn_max_capacity
     nodes = topo['nodes']
     links = topo.get('links', [])
     directed = bool(topo.get('directed', False))
-    x = _nodes_to_features(nodes, is_workflow=is_workflow, sn_max_capacity=sn_max_capacity)
-    edge_index = _build_edge_index(links, directed=directed)
+    
+    # 按节点ID排序，确保节点顺序与ID一致
+    # 创建 (节点, 原始索引) 的列表
+    nodes_with_idx = [(node, idx) for idx, node in enumerate(nodes)]
+    # 按节点ID排序（如果节点没有id字段，使用原始索引作为ID）
+    nodes_with_idx.sort(key=lambda x: x[0].get('id', x[1]))
+    sorted_nodes = [node for node, _ in nodes_with_idx]
+    
+    # 创建节点ID（或原始索引）到新索引的映射
+    node_id_to_new_idx = {}
+    for new_idx, (node, old_idx) in enumerate(nodes_with_idx):
+        node_id = node.get('id', old_idx)
+        node_id_to_new_idx[node_id] = new_idx
+    
+    # 更新边的索引：将source/target从节点ID（或原始索引）映射到新索引
+    updated_links = []
+    for link in links:
+        source_id = link.get('source')
+        target_id = link.get('target')
+        # 如果source/target是节点ID，映射到新索引；否则直接使用（假设已经是索引）
+        new_source = node_id_to_new_idx.get(source_id, source_id)
+        new_target = node_id_to_new_idx.get(target_id, target_id)
+        updated_link = link.copy()
+        updated_link['source'] = new_source
+        updated_link['target'] = new_target
+        updated_links.append(updated_link)
+    
+    # 使用排序后的节点和更新后的边构建图
+    x = _nodes_to_features(sorted_nodes, is_workflow=is_workflow, sn_max_capacity=sn_max_capacity)
+    edge_index = _build_edge_index(updated_links, directed=directed)
     return Data(x=x, edge_index=edge_index)
 
 
@@ -420,7 +450,8 @@ def _greedy_place_workflow(
                 
                 # 否则在 k 跳邻居中找
                 k = 1
-                max_k = k_hop + 5
+                # 允许扩展到整个SN网络（最大跳数为SN节点数）
+                max_k = len(sn_nodes)
                 placed = False
                 
                 while k <= max_k and not placed:
@@ -460,6 +491,7 @@ def _greedy_place_workflow(
                                 ))
                             placed = True
                             break
+                    # 如果当前k跳内没有找到可放置节点，扩展到k+1跳
                     k += 1
         
         # 更新队列：按度降序；若度相同，则按资源需求降序

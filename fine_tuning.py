@@ -72,26 +72,33 @@ class PPOAgent:
         self.opt_v = optim.Adam(self.value_net.parameters(), lr=lr_value)
 
     def _generate_priority_lists(self, probs_matrix: torch.Tensor) -> List[List[int]]:
-        """从概率矩阵采样生成优先级列表"""
+        """从概率矩阵采样生成优先级列表（逐步排除方式）"""
         N_v, N_s = probs_matrix.shape
         priority_lists = []
         
         for i in range(N_v):
-            probs = probs_matrix[i]  # [N_s]
-            # 采样：从概率分布中采样SN节点，按采样顺序排序
-            cat = Categorical(probs=probs)
-            samples = []
-            seen = set()
-            # 采样直到得到所有SN节点
-            max_samples = N_s * 2
-            for _ in range(max_samples):
-                sample = cat.sample().item()
-                if sample not in seen:
-                    samples.append(sample)
-                    seen.add(sample)
-                    if len(samples) >= N_s:
-                        break
-            priority_lists.append(samples)
+            probs = probs_matrix[i].clone()  # [N_s] 复制原始概率
+            priority_list = []
+            remaining_indices = list(range(N_s))  # 剩余可选的SN节点索引
+            
+            # 逐步采样：每次采样一个节点，排除它，然后对剩余节点重新softmax
+            while len(remaining_indices) > 0:
+                # 对剩余节点的概率进行softmax归一化
+                remaining_probs = probs[remaining_indices]
+                remaining_probs_normalized = F.softmax(remaining_probs, dim=0)
+                
+                # 从归一化后的概率分布中采样
+                cat = Categorical(probs=remaining_probs_normalized)
+                sampled_idx_in_remaining = cat.sample().item()
+                
+                # 获取实际的SN节点索引
+                actual_sn_idx = remaining_indices[sampled_idx_in_remaining]
+                priority_list.append(actual_sn_idx)
+                
+                # 从剩余列表中移除已选中的节点
+                remaining_indices.remove(actual_sn_idx)
+            
+            priority_lists.append(priority_list)
         
         return priority_lists
 
@@ -114,8 +121,87 @@ class PPOAgent:
         paths = nx.single_source_shortest_path_length(env.G_sn, sn_node_id, cutoff=k)
         return set(paths.keys())  # 包括距离0到k的所有节点
 
+    def _check_and_deduct_resource(self, env: SimuVNEEnv, sn_node_id: int, vn_node_idx: int, vn: Data, verbose: bool = False) -> bool:
+        """
+        检查资源并立即扣减（如果资源足够）
+        
+        Args:
+            env: 环境对象
+            sn_node_id: SN节点ID
+            vn_node_idx: VN节点索引
+            vn: VN图数据
+            verbose: 是否打印详细信息
+        
+        Returns:
+            True if 资源足够且已扣减, False otherwise
+        """
+        sn_node = env.G_sn.nodes[sn_node_id]
+        vn_feats = vn.x[vn_node_idx]
+        
+        # 计算绝对资源需求
+        cpu_demand = float(vn_feats[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+        mem_demand = float(vn_feats[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+        disk_demand = float(vn_feats[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+        
+        # 检查资源是否足够
+        if cpu_demand > sn_node['cpu_res'] + 1e-9:
+            if verbose:
+                print(f"        [资源检查] VN节点{vn_node_idx} → SN节点{sn_node_id}: CPU不足 (需求={cpu_demand:.3f}, 可用={sn_node['cpu_res']:.3f})")
+            return False
+        if mem_demand > sn_node['mem_res'] + 1e-9:
+            if verbose:
+                print(f"        [资源检查] VN节点{vn_node_idx} → SN节点{sn_node_id}: MEM不足 (需求={mem_demand:.3f}, 可用={sn_node['mem_res']:.3f})")
+            return False
+        if disk_demand > sn_node['disk_res'] + 1e-9:
+            if verbose:
+                print(f"        [资源检查] VN节点{vn_node_idx} → SN节点{sn_node_id}: DISK不足 (需求={disk_demand:.3f}, 可用={sn_node['disk_res']:.3f})")
+            return False
+        
+        # 立即扣减资源
+        sn_node['cpu_res'] -= cpu_demand
+        sn_node['mem_res'] -= mem_demand
+        sn_node['disk_res'] -= disk_demand
+        
+        if verbose:
+            print(f"        [资源扣减] VN节点{vn_node_idx} → SN节点{sn_node_id}")
+            print(f"          需求: CPU={cpu_demand:.3f}, MEM={mem_demand:.3f}, DISK={disk_demand:.3f}")
+            print(f"          扣减后剩余: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+        
+        return True
+    
+    def _rollback_resource_deductions(self, env: SimuVNEEnv, deduction_history: List[Tuple[int, int]], vn: Data, verbose: bool = False):
+        """
+        回滚资源扣减
+        
+        Args:
+            env: 环境对象
+            deduction_history: [(sn_node_id, vn_node_idx), ...] 资源扣减历史记录
+            vn: VN图数据
+            verbose: 是否打印详细信息
+        """
+        if verbose:
+            print(f"        回滚 {len(deduction_history)} 个节点的资源扣减:")
+        
+        for sn_node_id, vn_node_idx in deduction_history:
+            sn_node = env.G_sn.nodes[sn_node_id]
+            vn_feats = vn.x[vn_node_idx]
+            
+            # 计算需要恢复的资源
+            cpu_restore = float(vn_feats[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+            mem_restore = float(vn_feats[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+            disk_restore = float(vn_feats[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+            
+            # 恢复资源
+            sn_node['cpu_res'] += cpu_restore
+            sn_node['mem_res'] += mem_restore
+            sn_node['disk_res'] += disk_restore
+            
+            if verbose:
+                print(f"          恢复: VN节点{vn_node_idx} → SN节点{sn_node_id} (CPU={cpu_restore:.3f}, MEM={mem_restore:.3f}, DISK={disk_restore:.3f})")
+                print(f"            SN节点{sn_node_id}剩余资源: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+
     def _check_sn_resource(self, env: SimuVNEEnv, sn_node_id: int, vn_node_idx: int, vn: Data, 
-                          temp_mapping: Optional[Dict[int, int]] = None) -> bool:
+                          temp_mapping: Optional[Dict[int, int]] = None, verbose: bool = False) -> bool:
         """
         检查SN节点是否有足够资源放置VN节点
         
@@ -125,6 +211,7 @@ class PPOAgent:
             vn_node_idx: VN节点索引
             vn: VN图数据
             temp_mapping: 临时映射（当前轮已放置的节点），用于虚拟扣减资源
+            verbose: 是否打印详细信息
         """
         sn_node = env.G_sn.nodes[sn_node_id]
         vn_feats = vn.x[vn_node_idx]
@@ -139,21 +226,49 @@ class PPOAgent:
         available_mem = sn_node['mem_res']
         available_disk = sn_node['disk_res']
         
+        if verbose:
+            print(f"        [资源检查] VN节点{vn_node_idx} → SN节点{sn_node_id}")
+            print(f"          需求: CPU={cpu_demand:.3f}, MEM={mem_demand:.3f}, DISK={disk_demand:.3f}")
+            print(f"          初始可用: CPU={available_cpu:.3f}, MEM={available_mem:.3f}, DISK={available_disk:.3f}")
+        
         if temp_mapping:
             # 虚拟扣减当前轮已放置在该SN节点上的VN节点的资源
+            temp_deduct_cpu = 0.0
+            temp_deduct_mem = 0.0
+            temp_deduct_disk = 0.0
             for vn_idx, sn_id in temp_mapping.items():
                 if sn_id == sn_node_id:
                     vn_feats_temp = vn.x[vn_idx]
-                    available_cpu -= float(vn_feats_temp[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
-                    available_mem -= float(vn_feats_temp[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
-                    available_disk -= float(vn_feats_temp[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+                    cpu_temp = float(vn_feats_temp[0].item()) * (env._sn_max_capacity['cpu_max'] + 1e-8)
+                    mem_temp = float(vn_feats_temp[1].item()) * (env._sn_max_capacity['mem_max'] + 1e-8)
+                    disk_temp = float(vn_feats_temp[2].item()) * (env._sn_max_capacity['disk_max'] + 1e-8)
+                    available_cpu -= cpu_temp
+                    available_mem -= mem_temp
+                    available_disk -= disk_temp
+                    temp_deduct_cpu += cpu_temp
+                    temp_deduct_mem += mem_temp
+                    temp_deduct_disk += disk_temp
+            
+            if verbose and (temp_deduct_cpu > 0 or temp_deduct_mem > 0 or temp_deduct_disk > 0):
+                print(f"          临时扣减 (temp_mapping={list(temp_mapping.keys())}): CPU={temp_deduct_cpu:.3f}, MEM={temp_deduct_mem:.3f}, DISK={temp_deduct_disk:.3f}")
+        
+        if verbose:
+            print(f"          最终可用: CPU={available_cpu:.3f}, MEM={available_mem:.3f}, DISK={available_disk:.3f}")
         
         # 检查剩余资源
-        if cpu_demand > available_cpu + 1e-9:
+        cpu_ok = cpu_demand <= available_cpu + 1e-9
+        mem_ok = mem_demand <= available_mem + 1e-9
+        disk_ok = disk_demand <= available_disk + 1e-9
+        
+        if verbose:
+            result = "✓通过" if (cpu_ok and mem_ok and disk_ok) else "✗失败"
+            print(f"          结果: {result} (CPU:{'✓' if cpu_ok else '✗'}, MEM:{'✓' if mem_ok else '✗'}, DISK:{'✓' if disk_ok else '✗'})")
+        
+        if not cpu_ok:
             return False
-        if mem_demand > available_mem + 1e-9:
+        if not mem_ok:
             return False
-        if disk_demand > available_disk + 1e-9:
+        if not disk_ok:
             return False
         return True
 
@@ -176,7 +291,7 @@ class PPOAgent:
         return mapping, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
 
     @torch.no_grad()
-    def act(self, vn: Data, sn: Data, env: Optional[SimuVNEEnv] = None, k_hop: int = 1) -> Tuple[Dict[int, int], torch.Tensor, torch.Tensor]:
+    def act(self, vn: Data, sn: Data, env: Optional[SimuVNEEnv] = None, k_hop: int = 1, verbose: bool = False) -> Tuple[Dict[int, int], torch.Tensor, torch.Tensor]:
         """
         新的放置策略：基于优先级列表和BFS扩展
         
@@ -185,6 +300,7 @@ class PPOAgent:
             sn: SN图数据
             env: 环境对象（如果为None，使用原始随机采样策略）
             k_hop: k跳邻居参数（默认1）
+            verbose: 是否打印详细信息
         
         Returns:
             (mapping, logprob, value): 节点映射、对数概率、价值估计
@@ -198,8 +314,28 @@ class PPOAgent:
         probs_matrix = self.policy(vn, sn)  # [N_v, N_s]
         N_v, N_s = probs_matrix.shape
         
+        if verbose:
+            print(f"\n      {'='*60}")
+            print(f"      【放置策略开始】VN节点数={N_v}, SN节点数={N_s}")
+            print(f"      {'='*60}")
+        
         # 1. 生成优先级列表
         priority_lists = self._generate_priority_lists(probs_matrix)
+        
+        # 5. 获取SN节点ID列表（用于索引映射）
+        sn_node_list = sorted(env.G_sn.nodes())
+        
+        if verbose:
+            print(f"\n      【步骤1】生成优先级列表（通过采样）:")
+            for i in range(N_v):
+                priority_sn_ids = [sn_node_list[idx] for idx in priority_lists[i]]
+                priority_probs = [float(probs_matrix[i][idx].item()) for idx in priority_lists[i]]
+                if len(priority_sn_ids) > 10:
+                    print(f"        VN节点{i}: 优先级序列 = {priority_sn_ids[:10]}... (共{len(priority_sn_ids)}个)")
+                    print(f"          对应概率 = {[f'{p:.4f}' for p in priority_probs[:10]]}...")
+                else:
+                    print(f"        VN节点{i}: 优先级序列 = {priority_sn_ids}")
+                    print(f"          对应概率 = {[f'{p:.4f}' for p in priority_probs]}")
         
         # 2. 获取VN邻居关系
         vn_neighbors = self._get_vn_neighbors(vn)
@@ -213,75 +349,192 @@ class PPOAgent:
             feats = vn.x[i]
             vn_resource_demands[i] = float(feats[0].item() + feats[1].item() + feats[2].item())
         
-        # 5. 获取SN节点ID列表（用于索引映射）
-        sn_node_list = sorted(env.G_sn.nodes())
+        if verbose:
+            print(f"\n      【步骤2】VN节点资源需求:")
+            for i in range(N_v):
+                feats = vn.x[i]
+                cpu_norm = float(feats[0].item())
+                mem_norm = float(feats[1].item())
+                disk_norm = float(feats[2].item())
+                print(f"        VN节点{i}: 归一化需求 = (CPU:{cpu_norm:.4f}, MEM:{mem_norm:.4f}, DISK:{disk_norm:.4f}), "
+                      f"总和={vn_resource_demands[i]:.4f}, 度={vn_degrees[i]}")
         
         # 6. 选择第一个VN节点（资源占用最大）
         first_vn = max(range(N_v), key=lambda i: vn_resource_demands[i])
         
-        # 7. 放置第一个VN节点
+        # 7. 放置第一个VN节点（按优先级顺序逐一尝试，成功则立即扣减资源）
         mapping: Dict[int, int] = {}
-        first_sn_idx = priority_lists[first_vn][0]  # 优先级最高的SN节点（索引）
-        first_sn_id = sn_node_list[first_sn_idx]  # 转换为实际SN节点ID
-        mapping[first_vn] = first_sn_id  # mapping中存储实际SN节点ID
+        resource_deduction_history: List[Tuple[int, int]] = []
+        placed_first = False
+        tried_count_first = 0
+        for first_sn_idx in priority_lists[first_vn]:
+            first_sn_id = sn_node_list[first_sn_idx]
+            tried_count_first += 1
+            if verbose:
+                print(f"\n      【步骤3】选择第一个VN节点:")
+                print(f"        选择: VN节点{first_vn} (资源需求最大: {vn_resource_demands[first_vn]:.4f})")
+                print(f"        尝试优先级第{tried_count_first}个: SN节点{first_sn_id} (索引{first_sn_idx})")
+            if self._check_and_deduct_resource(env, first_sn_id, first_vn, vn, verbose=verbose):
+                mapping[first_vn] = first_sn_id
+                resource_deduction_history.append((first_sn_id, first_vn))
+                placed_first = True
+                if verbose:
+                    sn_node = env.G_sn.nodes[first_sn_id]
+                    print(f"        ✓ 放置成功: VN节点{first_vn} → SN节点{first_sn_id} (已扣减资源)")
+                    print(f"          SN节点{first_sn_id}剩余资源: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+                break
+            else:
+                if verbose:
+                    print(f"        ✗ 放置失败: 资源不足，尝试下一个优先级SN节点")
         
-        # 8. BFS扩展放置
+        if not placed_first:
+            if verbose:
+                print(f"        ✗ 无法在任一SN节点上放置第一个VN节点，任务失败")
+            logprob_sum = 0.0
+            value = self.value_net(vn, sn)
+            return {}, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
+        
+        # 8. BFS扩展放置（实时扣减资源）
         placed_vn: Set[int] = {first_vn}
-        queue = [first_vn]  # 按度排序的队列
+        queue = [first_vn]
+        bfs_round = 0
+        
+        if verbose:
+            print(f"\n      【步骤4】BFS扩展放置:")
         
         while queue and len(placed_vn) < N_v:
-            # 当前轮新放置的节点
+            bfs_round += 1
+            if verbose:
+                print(f"\n        --- BFS轮次 {bfs_round} ---")
+                print(f"        队列: {queue} (已放置: {sorted(placed_vn)})")
+            
             new_placed: List[int] = []
             
-            # 对队列中的每个VN节点
             for vi in queue:
-                vi_sn_id = mapping[vi]  # mapping中存储的是实际SN节点ID
+                vi_sn_id = mapping[vi]
                 
-                # 找到vi的未放置邻居
+                if verbose:
+                    print(f"\n        处理队列节点: VN节点{vi} (当前在SN节点{vi_sn_id})")
+                
                 unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn]
                 
-                # 对每个邻居尝试放置
+                if verbose:
+                    print(f"          未放置的邻居VN节点: {unplaced_neighbors}")
+                
                 for u in unplaced_neighbors:
-                    # 首先尝试放在同一个SN节点上
-                    # 注意：temp_mapping 应该只包含当前轮新放置但尚未扣减资源的节点
-                    # 由于资源在 env.try_place_task() 时才扣减，这里传入当前轮新放置的节点
-                    # 用于防止同一轮中多个节点都放在同一SN节点导致超分配
-                    current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
-                    if self._check_sn_resource(env, vi_sn_id, u, vn, temp_mapping=current_round_temp):
-                        mapping[u] = vi_sn_id  # 存储实际SN节点ID
+                    if verbose:
+                        print(f"\n          尝试放置邻居: VN节点{u}")
+                    
+                    # 策略1: 尝试放在同一个SN节点上
+                    if verbose:
+                        print(f"          策略1: 尝试放在同一SN节点{vi_sn_id}上")
+                    
+                    if self._check_and_deduct_resource(env, vi_sn_id, u, vn, verbose=verbose):
+                        mapping[u] = vi_sn_id
                         placed_vn.add(u)
                         new_placed.append(u)
+                        resource_deduction_history.append((vi_sn_id, u))
+                        if verbose:
+                            print(f"          ✓ 成功放置: VN节点{u} → SN节点{vi_sn_id} (已扣减资源)")
+                            sn_node = env.G_sn.nodes[vi_sn_id]
+                            print(f"            SN节点{vi_sn_id}剩余资源: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
                         continue
+                    else:
+                        if verbose:
+                            print(f"          ✗ 失败: SN节点{vi_sn_id}资源不足")
                     
-                    # 否则在k跳邻居中找
+                    # 策略2: 在k跳邻居中找
                     k = 1
-                    max_k = k_hop + 5  # 允许扩展到k_hop+5跳
+                    max_k = len(sn_node_list)
                     placed = False
+                    
+                    if verbose:
+                        print(f"          策略2: 在k跳邻居中搜索 (从k=1开始, 最大k={max_k})")
                     
                     while k <= max_k and not placed:
                         k_hop_neighbors = self._get_sn_k_hop_neighbors(env, vi_sn_id, k)
-                        # 按优先级列表顺序尝试
-                        # 同样，temp_mapping 只包含当前轮新放置的节点
-                        current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
+                        
+                        if verbose:
+                            print(f"            k={k}: k跳邻居SN节点 = {sorted(k_hop_neighbors)}")
+                        
+                        tried_count = 0
                         for sn_idx in priority_lists[u]:
-                            sn_id = sn_node_list[sn_idx]  # 将索引转换为实际SN节点ID
-                            if sn_id in k_hop_neighbors and self._check_sn_resource(env, sn_id, u, vn, temp_mapping=current_round_temp):
-                                mapping[u] = sn_id  # 存储实际SN节点ID
-                                placed_vn.add(u)
-                                new_placed.append(u)
-                                placed = True
+                            sn_id = sn_node_list[sn_idx]
+                            
+                            if sn_id in k_hop_neighbors:
+                                tried_count += 1
+                                if verbose:
+                                    print(f"              尝试优先级第{tried_count}个: SN节点{sn_id} (索引{sn_idx})", end=' ')
+                                
+                                if self._check_and_deduct_resource(env, sn_id, u, vn, verbose=verbose):
+                                    mapping[u] = sn_id
+                                    placed_vn.add(u)
+                                    new_placed.append(u)
+                                    resource_deduction_history.append((sn_id, u))
+                                    placed = True
+                                    if verbose:
+                                        print(f"→ ✓ 成功放置! (已扣减资源)")
+                                        sn_node = env.G_sn.nodes[sn_id]
+                                        print(f"                SN节点{sn_id}剩余资源: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+                                    break
+                                else:
+                                    if verbose:
+                                        print(f"→ ✗ 资源不足")
+                            
+                            if tried_count >= 5 and verbose:
+                                remaining = sum(1 for sid in priority_lists[u] if sn_node_list[sid] in k_hop_neighbors) - tried_count
+                                if remaining > 0:
+                                    print(f"              ... (还有{remaining}个节点在k={k}跳内未尝试)")
                                 break
+                        
+                        if placed:
+                            break
+                        
+                        if verbose:
+                            print(f"            k={k}跳内无法放置，扩展到k={k+1}")
+                        
                         k += 1
                     
-                    # 如果无法放置，跳过该节点（不加入mapping）
-                    # 这样会导致部分节点未放置，但不会导致整个映射失败
+                    if not placed:
+                        if verbose:
+                            print(f"          ✗ 无法放置: VN节点{u} 在所有k跳内都无法找到合适位置")
+                        # 无法放置，需要回滚所有资源扣减
+                        if verbose:
+                            print(f"\n        ⚠️ 放置失败，开始回滚资源扣减...")
+                        self._rollback_resource_deductions(env, resource_deduction_history, vn, verbose=verbose)
+                        logprob_sum = 0.0
+                        value = self.value_net(vn, sn)
+                        return {}, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
             
-            # 更新队列：按度降序；若度相同，则按资源需求降序
             queue = sorted(
                 new_placed,
                 key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
                 reverse=True
             )
+            
+            if verbose:
+                if queue:
+                    print(f"\n        本轮新放置: {sorted(new_placed)}")
+                    print(f"        下一轮队列: {queue}")
+                else:
+                    print(f"\n        本轮无新放置，BFS结束")
+        
+        # 检查是否所有节点都已放置
+        if len(placed_vn) < N_v:
+            if verbose:
+                print(f"\n        ⚠️ 部分节点未放置 ({len(placed_vn)}/{N_v})，回滚资源扣减...")
+            self._rollback_resource_deductions(env, resource_deduction_history, vn, verbose=verbose)
+            logprob_sum = 0.0
+            value = self.value_net(vn, sn)
+            return {}, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
+        
+        if verbose:
+            print(f"\n      【步骤5】放置完成:")
+            print(f"        已放置VN节点: {sorted(placed_vn)} / {N_v}")
+            print(f"        最终映射:")
+            for vn_idx in sorted(mapping.keys()):
+                print(f"          VN节点{vn_idx} → SN节点{mapping[vn_idx]}")
+            print(f"      {'='*60}\n")
         
         # 9. 计算logprob和value（用于PPO训练）
         # 注意：mapping中存储的是SN节点ID，需要转换为索引来计算logprob
@@ -343,13 +596,48 @@ class PPOAgent:
                 vn = vn.to(self.device)
                 sn = sn.to(self.device)
                 probs_matrix = self.policy(vn, sn)
+                
+                # 从mapping中提取所有SN节点ID，构建ID到索引的映射
+                # SN节点ID可能是任意整数，但probs_matrix的索引是0到N_s-1
+                # 我们需要将SN节点ID映射到0到N_s-1的索引
+                N_s = probs_matrix.shape[1]
+                N_s_from_sn = sn.x.size(0)  # 从sn_list获取SN节点数量
+                
+                if len(mapping) > 0:
+                    all_sn_ids = sorted(set(mapping.values()))
+                    min_sn_id = min(all_sn_ids)
+                    max_sn_id = max(all_sn_ids)
+                    
+                    # 如果SN节点ID范围在0到N_s-1之间，直接使用
+                    if min_sn_id >= 0 and max_sn_id < N_s:
+                        sn_id_to_idx = {sn_id: sn_id for sn_id in all_sn_ids}
+                    # 如果SN节点ID范围在某个偏移量范围内，假设它们是从min_sn_id开始的连续整数
+                    elif max_sn_id - min_sn_id < N_s:
+                        sn_id_to_idx = {sn_id: sn_id - min_sn_id for sn_id in all_sn_ids}
+                    else:
+                        # 如果范围太大，尝试使用模运算或直接使用（假设ID就是索引）
+                        # 这里我们假设SN节点ID就是索引（可能不准确，但至少不会崩溃）
+                        sn_id_to_idx = {sn_id: sn_id % N_s for sn_id in all_sn_ids}
+                else:
+                    sn_id_to_idx = {}
+                
                 # 计算映射对应的logprob之和
-                lp_sum = 0.0
-                ent_sum = 0.0
-                for i, j in mapping.items():
-                    cat = Categorical(probs=probs_matrix[i])
-                    lp_sum += cat.log_prob(torch.tensor(j, device=self.device)).sum()
-                    ent_sum += cat.entropy().mean()
+                lp_sum = torch.tensor(0.0, device=self.device)
+                ent_sum = torch.tensor(0.0, device=self.device)
+                for vn_idx, sn_id in mapping.items():
+                    # 将SN节点ID转换为索引
+                    if sn_id in sn_id_to_idx:
+                        sn_idx = sn_id_to_idx[sn_id]
+                    else:
+                        # 如果不在映射中，尝试直接使用（假设ID就是索引）
+                        sn_idx = sn_id
+                    
+                    # 确保索引在有效范围内
+                    if sn_idx >= 0 and sn_idx < probs_matrix.shape[1]:
+                        cat = Categorical(probs=probs_matrix[vn_idx])
+                        lp_sum = lp_sum + cat.log_prob(torch.tensor(sn_idx, device=self.device))
+                        ent_sum = ent_sum + cat.entropy()
+                
                 new_logprobs.append(lp_sum)
                 entropies.append(ent_sum)
             new_logprobs = torch.stack(new_logprobs)
@@ -465,39 +753,43 @@ def run_ppo_episode(
             env.arrived_count += 1
             
             # 打印任务到达信息
-            print(f"    [t={env.current_time:.1f}] 任务 #{task_id} 到达 (类型:{wf_type}, 节点数:{vn.x.size(0)}, 生存时间:{lifetime:.1f})", end='')
+            print(f"    [t={env.current_time:.1f}] 任务 #{task_id} 到达 (类型:{wf_type}, 节点数:{vn.x.size(0)}, 生存时间:{lifetime:.1f})")
             
             # 获取当前SN状态（包含剩余资源）
             sn_state = env.get_sn_state()
             
-            # 重试策略：最多尝试3次采样
-            max_retries = 7
-            success = False
-            r_t = None
-            mapping = None
-            logprob = None
-            value = None
+            # 调用策略网络生成放置方案（一次性采样，传入env以使用新的放置策略）
+            mapping, logprob, value = agent.act(vn, sn_state, env=env, k_hop=1, verbose=True)
             
-            for attempt in range(1, max_retries + 1):
-                # 调用策略网络生成放置方案（传入env以使用新的放置策略）
-                mapping, logprob, value = agent.act(vn, sn_state, env=env, k_hop=1)
-                
-                # 尝试放置
-                success, r_t = env.try_place_task(vn, mapping, lifetime, task_id)
-                
-                if success:
-                    # 成功放置，跳出重试循环
-                    break
+            # 检查是否成功放置（所有节点都已映射，资源已在act()中扣减）
+            if len(mapping) == vn.x.size(0):
+                # 所有节点都已放置，资源已在act()中扣减，只需要添加到存活集合
+                vn_paths = env._compute_paths_and_bw_demand(vn, mapping)
+                if vn_paths is None:
+                    # 路径不存在，需要回滚资源
+                    # 根据mapping构建回滚历史
+                    rollback_history = [(sn_id, vn_idx) for vn_idx, sn_id in mapping.items()]
+                    agent._rollback_resource_deductions(env, rollback_history, vn, verbose=False)
+                    success, r_t = False, env.penalty
+                else:
+                    expire_time = env.current_time + lifetime
+                    env.active_workflows.append({
+                        'vn': vn,
+                        'mapping': mapping,
+                        'paths': vn_paths,
+                        'expire_time': expire_time,
+                        'task_id': task_id,
+                    })
+                    env.accepted_count += 1
+                    r_t = env._compute_rt()
+                    success = True
+            else:
+                # 部分节点未放置，资源已在act()中回滚，返回失败
+                success, r_t = False, env.penalty
             
             # 打印放置结果
             status = "✓成功" if success else "✗失败"
-            if success and attempt == 1:
-                attempts_info = ""  # 第一次就成功，不显示尝试次数
-            elif success and attempt > 1:
-                attempts_info = f" (重试{attempt-1}次后成功)"  # 重试后成功
-            else:
-                attempts_info = f" (尝试{attempt}次均失败)"  # 所有尝试都失败
-            print(f" → {status}{attempts_info} (r_t={r_t:.3f}, 存活任务数:{len(env.active_workflows)})")
+            print(f"    [t={env.current_time:.1f}] 任务 #{task_id} {status} (r_t={r_t:.3f}, 存活任务数:{len(env.active_workflows)})")
             
             # 记录轨迹
             env.traj.append({
@@ -505,7 +797,6 @@ def run_ppo_episode(
                 'task_id': task_id,
                 'success': success,
                 'r_t': r_t,
-                'attempts': attempt,  # 记录尝试次数
                 'done': False,
             })
             
@@ -905,16 +1196,16 @@ if __name__ == '__main__':
     training_stats, agent = run_ppo_batch_training(
         sn_topology_path=sn_path,
         workflow_types=workflow_types,
-        policy_ckpt=None,  # 旧代码：使用随机初始化
-        # policy_ckpt='/home/zrz/SimuVNE/pretrain_outputs/checkpoint_best.pt',  # 使用预训练最优模型
+        #policy_ckpt=None,  # 旧代码：使用随机初始化
+        policy_ckpt='/home/zrz/SimuVNE/pretrain_outputs/checkpoint_best.pt',  # 使用预训练最优模型
         device='cpu',
-        arrival_rate=0.8,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
+        arrival_rate=1,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
         mean_lifetime=10.0,
-        max_arrived_tasks=30,
+        max_arrived_tasks=10,
         max_time_steps=2000,
-        num_episodes_per_update=4,  # 收集4个episode后更新一次
+        num_episodes_per_update=1,  # 收集4个episode后更新一次
         train_iters=3,  # 每次更新PPO算法迭代3次
-        num_updates=5  # 总共30次批量更新
+        num_updates=1  # 总共30次批量更新
     )
     
     print("\n批量训练统计:")
