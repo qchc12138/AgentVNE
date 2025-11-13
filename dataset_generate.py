@@ -87,52 +87,35 @@ def _nodes_to_features(nodes: List[Dict], is_workflow: bool = False, sn_max_capa
     return torch.tensor(feats, dtype=torch.float)
 
 
-def _topology_to_pyg_data(topo: Dict, is_workflow: bool = False, sn_max_capacity: Dict[str, float] = None) -> Data:
+def _topology_to_pyg_data(
+    topo: Dict,
+    is_workflow: bool = False,
+    sn_max_capacity: Dict[str, float] = None
+) -> Data:
     """将拓扑 dict 转为 torch_geometric.data.Data（带归一化）。
     需要字段: topo['nodes'] (带资源/需求), topo['links'] (source/target)。
     使用 topo['directed'] 判断是否有向。
     
-    节点按ID排序，确保节点顺序与ID一致。
+    注意：保持原始节点顺序，不进行排序。links中的source/target应为节点索引。
     
     Args:
         topo: 拓扑字典
         is_workflow: 是否为 workflow 图
         sn_max_capacity: SN最大容量字典，用于归一化
+    
+    Returns:
+        Data对象，节点顺序与topo['nodes']一致
     """
     nodes = topo['nodes']
     links = topo.get('links', [])
     directed = bool(topo.get('directed', False))
     
-    # 按节点ID排序，确保节点顺序与ID一致
-    # 创建 (节点, 原始索引) 的列表
-    nodes_with_idx = [(node, idx) for idx, node in enumerate(nodes)]
-    # 按节点ID排序（如果节点没有id字段，使用原始索引作为ID）
-    nodes_with_idx.sort(key=lambda x: x[0].get('id', x[1]))
-    sorted_nodes = [node for node, _ in nodes_with_idx]
+    # 直接使用原始节点顺序，无需排序
+    x = _nodes_to_features(nodes, is_workflow=is_workflow, sn_max_capacity=sn_max_capacity)
+    edge_index = _build_edge_index(links, directed=directed)
+    data_obj = Data(x=x, edge_index=edge_index)
     
-    # 创建节点ID（或原始索引）到新索引的映射
-    node_id_to_new_idx = {}
-    for new_idx, (node, old_idx) in enumerate(nodes_with_idx):
-        node_id = node.get('id', old_idx)
-        node_id_to_new_idx[node_id] = new_idx
-    
-    # 更新边的索引：将source/target从节点ID（或原始索引）映射到新索引
-    updated_links = []
-    for link in links:
-        source_id = link.get('source')
-        target_id = link.get('target')
-        # 如果source/target是节点ID，映射到新索引；否则直接使用（假设已经是索引）
-        new_source = node_id_to_new_idx.get(source_id, source_id)
-        new_target = node_id_to_new_idx.get(target_id, target_id)
-        updated_link = link.copy()
-        updated_link['source'] = new_source
-        updated_link['target'] = new_target
-        updated_links.append(updated_link)
-    
-    # 使用排序后的节点和更新后的边构建图
-    x = _nodes_to_features(sorted_nodes, is_workflow=is_workflow, sn_max_capacity=sn_max_capacity)
-    edge_index = _build_edge_index(updated_links, directed=directed)
-    return Data(x=x, edge_index=edge_index)
+    return data_obj
 
 
 def _compute_sn_max_capacity(nodes: List[Dict]) -> Dict[str, float]:
@@ -314,6 +297,51 @@ def _check_sn_resource_for_placement(
     return True
 
 
+def _deduct_resource(
+    sn_nodes: List[Dict],
+    sn_node_idx: int,
+    wf_nodes: List[Dict],
+    wf_node_idx: int
+) -> None:
+    """扣减 SN 节点的资源"""
+    sn_node = sn_nodes[sn_node_idx]
+    wf_node = wf_nodes[wf_node_idx]
+    
+    demand_cpu = float(wf_node.get('cpu', 0.0))
+    demand_mem = float(wf_node.get('memory', 0.0))
+    demand_disk = float(wf_node.get('disk', 0.0))
+    
+    sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) - demand_cpu
+    sn_node['memory'] = float(sn_node.get('memory', 0.0)) - demand_mem
+    sn_node['disk'] = float(sn_node.get('disk', 0.0)) - demand_disk
+
+
+def _rollback_resource_deductions(
+    sn_nodes: List[Dict],
+    wf_nodes: List[Dict],
+    deduction_history: List[Tuple[int, int]]
+) -> None:
+    """回滚资源扣减
+    
+    Args:
+        sn_nodes: SN节点列表（会被原地修改）
+        wf_nodes: VN节点列表
+        deduction_history: [(sn_node_idx, wf_node_idx), ...] 资源扣减历史记录
+    """
+    for sn_node_idx, wf_node_idx in deduction_history:
+        sn_node = sn_nodes[sn_node_idx]
+        wf_node = wf_nodes[wf_node_idx]
+        
+        # 恢复资源
+        restore_cpu = float(wf_node.get('cpu', 0.0))
+        restore_mem = float(wf_node.get('memory', 0.0))
+        restore_disk = float(wf_node.get('disk', 0.0))
+        
+        sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) + restore_cpu
+        sn_node['memory'] = float(sn_node.get('memory', 0.0)) + restore_mem
+        sn_node['disk'] = float(sn_node.get('disk', 0.0)) + restore_disk
+
+
 def _greedy_place_workflow(
     workflow_topo: Dict,
     sn_topo: Dict,
@@ -377,30 +405,37 @@ def _greedy_place_workflow(
     # 6. 选择第一个 VN 节点（资源占用最大）
     first_vn = max(range(N1), key=lambda i: vn_resource_demands[i])
     
-    # 7. 放置第一个 VN 节点
+    # 7. 放置第一个 VN 节点（遍历优先级列表，找到第一个能放置的）
     mapping: Dict[int, int] = {}  # VN节点索引 -> SN节点索引
     placement_order: List[Tuple[int, int, Dict[str, float]]] = []  # 放置顺序记录
-    first_sn_idx = priority_lists[first_vn][0]  # 优先级最高的 SN 节点
-    mapping[first_vn] = first_sn_idx
+    resource_deduction_history: List[Tuple[int, int]] = []  # 资源扣减历史记录
     
-    # 扣减第一个节点的资源
-    first_sn_node = sn_nodes[first_sn_idx]
-    first_wf_node = wf_nodes[first_vn]
-    first_sn_node['cpu'] = float(first_sn_node.get('cpu', 0.0)) - float(first_wf_node.get('cpu', 0.0))
-    first_sn_node['memory'] = float(first_sn_node.get('memory', 0.0)) - float(first_wf_node.get('memory', 0.0))
-    first_sn_node['disk'] = float(first_sn_node.get('disk', 0.0)) - float(first_wf_node.get('disk', 0.0))
+    first_placed = False
+    for first_sn_idx in priority_lists[first_vn]:
+        if _check_sn_resource_for_placement(sn_nodes, first_sn_idx, wf_nodes, first_vn, temp_mapping=None):
+            # 资源足够，立即扣减
+            _deduct_resource(sn_nodes, first_sn_idx, wf_nodes, first_vn)
+            mapping[first_vn] = first_sn_idx
+            resource_deduction_history.append((first_sn_idx, first_vn))
+            first_placed = True
+            
+            # 记录第一个节点的放置顺序和资源状态
+            if return_placement_order:
+                first_sn_node = sn_nodes[first_sn_idx]
+                placement_order.append((
+                    first_vn,
+                    first_sn_idx,
+                    {
+                        'cpu': float(first_sn_node.get('cpu', 0.0)),
+                        'memory': float(first_sn_node.get('memory', 0.0)),
+                        'disk': float(first_sn_node.get('disk', 0.0))
+                    }
+                ))
+            break
     
-    # 记录第一个节点的放置顺序和资源状态
-    if return_placement_order:
-        placement_order.append((
-            first_vn,
-            first_sn_idx,
-            {
-                'cpu': float(first_sn_node.get('cpu', 0.0)),
-                'memory': float(first_sn_node.get('memory', 0.0)),
-                'disk': float(first_sn_node.get('disk', 0.0))
-            }
-        ))
+    # 如果无法放置第一个节点，返回空映射
+    if not first_placed:
+        return {}, []
     
     # 8. BFS 扩展放置
     placed_vn: Set[int] = {first_vn}
@@ -420,23 +455,18 @@ def _greedy_place_workflow(
             for u in unplaced_neighbors:
                 # 首先尝试放在同一个 SN 节点上
                 # 注意：temp_mapping 应该只包含当前轮新放置但尚未扣减资源的节点
-                # 由于资源已经实时扣减，这里传入空字典或不传入 temp_mapping
-                # 但为了保持兼容性，传入当前轮新放置的节点（这些节点的资源还未扣减）
                 current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
                 if _check_sn_resource_for_placement(sn_nodes, vi_sn_idx, wf_nodes, u, temp_mapping=current_round_temp):
+                    # 资源足够，立即扣减
+                    _deduct_resource(sn_nodes, vi_sn_idx, wf_nodes, u)
                     mapping[u] = vi_sn_idx
                     placed_vn.add(u)
                     new_placed.append(u)
-                    
-                    # 扣减资源
-                    sn_node = sn_nodes[vi_sn_idx]
-                    wf_node = wf_nodes[u]
-                    sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) - float(wf_node.get('cpu', 0.0))
-                    sn_node['memory'] = float(sn_node.get('memory', 0.0)) - float(wf_node.get('memory', 0.0))
-                    sn_node['disk'] = float(sn_node.get('disk', 0.0)) - float(wf_node.get('disk', 0.0))
+                    resource_deduction_history.append((vi_sn_idx, u))
                     
                     # 记录放置顺序和资源状态
                     if return_placement_order:
+                        sn_node = sn_nodes[vi_sn_idx]
                         placement_order.append((
                             u,
                             vi_sn_idx,
@@ -467,19 +497,17 @@ def _greedy_place_workflow(
                     current_round_temp = {vn: sn for vn, sn in mapping.items() if vn in new_placed}
                     for sn_idx in priority_lists[u]:
                         if sn_idx in k_hop_neighbor_indices and _check_sn_resource_for_placement(sn_nodes, sn_idx, wf_nodes, u, temp_mapping=current_round_temp):
+                            # 资源足够，立即扣减
+                            _deduct_resource(sn_nodes, sn_idx, wf_nodes, u)
                             mapping[u] = sn_idx
                             placed_vn.add(u)
                             new_placed.append(u)
-                            
-                            # 扣减资源
-                            sn_node = sn_nodes[sn_idx]
-                            wf_node = wf_nodes[u]
-                            sn_node['cpu'] = float(sn_node.get('cpu', 0.0)) - float(wf_node.get('cpu', 0.0))
-                            sn_node['memory'] = float(sn_node.get('memory', 0.0)) - float(wf_node.get('memory', 0.0))
-                            sn_node['disk'] = float(sn_node.get('disk', 0.0)) - float(wf_node.get('disk', 0.0))
+                            resource_deduction_history.append((sn_idx, u))
+                            placed = True
                             
                             # 记录放置顺序和资源状态
                             if return_placement_order:
+                                sn_node = sn_nodes[sn_idx]
                                 placement_order.append((
                                     u,
                                     sn_idx,
@@ -489,10 +517,14 @@ def _greedy_place_workflow(
                                         'disk': float(sn_node.get('disk', 0.0))
                                     }
                                 ))
-                            placed = True
                             break
                     # 如果当前k跳内没有找到可放置节点，扩展到k+1跳
                     k += 1
+                
+                # 如果无法放置该节点，回滚所有资源扣减
+                if not placed:
+                    _rollback_resource_deductions(sn_nodes, wf_nodes, resource_deduction_history)
+                    return {}, []
         
         # 更新队列：按度降序；若度相同，则按资源需求降序
         queue = sorted(
@@ -500,6 +532,12 @@ def _greedy_place_workflow(
             key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
             reverse=True
         )
+    
+    # 检查是否所有节点都已放置
+    if len(placed_vn) < N1:
+        # 部分节点未放置，回滚所有资源扣减
+        _rollback_resource_deductions(sn_nodes, wf_nodes, resource_deduction_history)
+        return {}, []
     
     if return_placement_order:
         return mapping, placement_order
@@ -571,9 +609,14 @@ def generate_pretrain_dataset(
         )
         # 使用归一化
         test_workflow_graph = _topology_to_pyg_data(base_workflow_topo, is_workflow=True, sn_max_capacity=sn_max_capacity)
-        test_substrate_graph = _topology_to_pyg_data(base_sn_topo, is_workflow=False, sn_max_capacity=sn_max_capacity)
+        test_substrate_graph = _topology_to_pyg_data(
+            base_sn_topo,
+            is_workflow=False,
+            sn_max_capacity=sn_max_capacity
+        )
         N1_test = test_workflow_graph.x.size(0)
         N2_test = test_substrate_graph.x.size(0)
+        # 直接使用原始noderank，无需重排
         test_y = torch.tensor(
             np.tile(base_sn_noderank.reshape(1, N2_test), (N1_test, 1)),
             dtype=torch.float
@@ -623,9 +666,13 @@ def generate_pretrain_dataset(
                 
                 # x: 当前的 workflow 与 SN 图（放置前状态，使用归一化）
                 workflow_graph = _topology_to_pyg_data(base_workflow_topo, is_workflow=True, sn_max_capacity=sn_max_capacity)
-                substrate_graph = _topology_to_pyg_data(sn_topo, is_workflow=False, sn_max_capacity=sn_max_capacity)
+                substrate_graph = _topology_to_pyg_data(
+                    sn_topo,
+                    is_workflow=False,
+                    sn_max_capacity=sn_max_capacity
+                )
                 
-                # y: 将 SN 的 noderank 重复 N1 行
+                # y: 将 SN 的 noderank 重复 N1 行（直接使用原始noderank，无需重排）
                 N1 = workflow_graph.x.size(0)
                 N2 = substrate_graph.x.size(0)
                 y = torch.tensor(
@@ -783,9 +830,9 @@ def main():
     parser.add_argument('--test_output', type=str,
                        default='/home/zrz/SimuVNE/pretrain_data/test_sample.pt',
                        help='测试样本输出文件路径（单条）')
-    parser.add_argument('--workflows_per_episode', type=int, default=10,
+    parser.add_argument('--workflows_per_episode', type=int, default=4,
                        help='每个 episode 放置的 workflow 数量')
-    parser.add_argument('--num_episodes', type=int, default=50,
+    parser.add_argument('--num_episodes', type=int, default=500,
                        help='Episode 数量（重复次数）')
     parser.add_argument('--test_mode', action='store_true',
                        help='启用测试模式，打印放置前标签和放置动作')

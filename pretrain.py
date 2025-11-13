@@ -69,7 +69,7 @@ class PretrainTrainer:
             kl = kl_row.mean()
             # MSE 元素级平均
             mse = torch.mean((output - label) ** 2)
-            # return kl + mse*25
+            # return kl + mse*100
             # return kl
             return mse
         self.criterion = kl_mse_loss
@@ -347,16 +347,16 @@ def main():
     parser.add_argument('--output_dir', type=str,
                        default='/home/zrz/SimuVNE/pretrain_outputs',
                        help='输出目录')
-    parser.add_argument('--batch_size', type=int, default=10,
+    parser.add_argument('--batch_size', type=int, default=50,
                        help='批大小')
-    parser.add_argument('--num_epochs', type=int, default=15,
+    parser.add_argument('--num_epochs', type=int, default=5,
                        help='训练轮数')
-    parser.add_argument('--learning_rate', type=float, default=0.00004,
+    parser.add_argument('--learning_rate', type=float, default=0.0005,
                        help='学习率')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                        help='权重衰减')
     parser.add_argument('--test_dataset', type=str,
-                       default='/home/zrz/SimuVNE/pretrain_data/test_sample.pt',
+                       default='/home/zrz/SimuVNE/pretrain_data/pretrain_dataset.pt',
                        help='测试样本文件路径（单条）')
     parser.add_argument('--input_dim', type=int, default=6,
                        help='输入特征维度')
@@ -435,20 +435,153 @@ def main():
     print("\n" + "="*60)
     print("加载测试样本并进行前向传播...")
     print("="*60)
-    test_samples, _ = load_pretrain_dataset(config['test_dataset_path'])
+    test_samples, test_info = load_pretrain_dataset(config['test_dataset_path'])
     if len(test_samples) == 0:
         print("测试样本为空，跳过测试。")
         return
+    
+    # 打印测试数据集信息
+    print(f"\n测试数据集信息:")
+    if test_info:
+        print(f"  数据类型: {test_info.get('type', 'N/A')}")
+        print(f"  样本数: {len(test_samples)}")
+        if 'sn_max_capacity' in test_info:
+            print(f"  归一化参数 (SN最大容量):")
+            cap = test_info['sn_max_capacity']
+            print(f"    CPU: {cap.get('cpu_max', 'N/A')}")
+            print(f"    Memory: {cap.get('mem_max', 'N/A')}")
+            print(f"    Disk: {cap.get('disk_max', 'N/A')}")
+            print(f"    Bandwidth: {cap.get('bw_max', 'N/A')}")
+            print(f"    Comm Bandwidth: {cap.get('comm_bw_max', 'N/A')}")
+    
     test_sample = test_samples[0]
     workflow_graph = test_sample['workflow_graph'].to(config['device'])
     substrate_graph = test_sample['substrate_graph'].to(config['device'])
     label = test_sample['label'].to(config['device'])
+    
+    # 打印图结构信息
+    print(f"\n图结构信息:")
+    print(f"  Workflow 图:")
+    print(f"    节点数: {workflow_graph.x.size(0)}")
+    print(f"    边数: {workflow_graph.edge_index.size(1)}")
+    print(f"    节点特征维度: {workflow_graph.x.size(1)}")
+    print(f"    节点特征形状: {workflow_graph.x.shape}")
+    print(f"  Substrate 图:")
+    print(f"    节点数: {substrate_graph.x.size(0)}")
+    print(f"    边数: {substrate_graph.edge_index.size(1)}")
+    print(f"    节点特征维度: {substrate_graph.x.size(1)}")
+    print(f"    节点特征形状: {substrate_graph.x.shape}")
+    print(f"  标签:")
+    print(f"    形状: {label.shape}")
+    print(f"    总和: {label.sum().item():.6f}")
+    
+    # 打印节点特征详情（前3个节点）
+    print(f"\nWorkflow 节点特征 (前3个节点):")
+    print(f"  特征顺序: [cpu, memory, disk, bandwidth, comm_bandwidth, 0.0]")
+    for i in range(min(3, workflow_graph.x.size(0))):
+        feat = workflow_graph.x[i].cpu().numpy()
+        print(f"  节点 {i}: {feat}")
+    
+    print(f"\nSubstrate 节点特征 (前5个节点):")
+    print(f"  特征顺序: [cpu, memory, disk, bandwidth, comm_bandwidth, 0.0]")
+    for i in range(min(5, substrate_graph.x.size(0))):
+        feat = substrate_graph.x[i].cpu().numpy()
+        print(f"  节点 {i}: {feat}")
+    
+    # 打印标签详情（前3行）
+    print(f"\n标签矩阵 (前3行，每行是一个 VN 节点对所有 SN 节点的分配概率):")
+    label_np = label.cpu().numpy()
+    for i in range(min(3, label.size(0))):
+        print(f"  VN节点 {i}: {label_np[i]}")
+    
+    # 打印标签的统计信息
+    print(f"\n标签统计信息:")
+    print(f"  最小值: {label.min().item():.6f}")
+    print(f"  最大值: {label.max().item():.6f}")
+    print(f"  均值: {label.mean().item():.6f}")
+    print(f"  每行总和 (应该相同): {label.sum(dim=1).cpu().numpy()}")
+    
+    # 找出概率最高的前5个 SN 节点
+    print(f"\n每个 VN 节点的 Top-5 SN 节点 (按分配概率降序):")
+    for i in range(min(3, label.size(0))):
+        top_k = min(5, label.size(1))
+        top_values, top_indices = torch.topk(label[i], k=top_k)
+        print(f"  VN节点 {i}:")
+        for rank, (idx, val) in enumerate(zip(top_indices.cpu().numpy(), top_values.cpu().numpy()), 1):
+            print(f"    Top {rank}: SN节点 {idx}, 概率={val:.6f}")
 
+    # 前向传播
+    print(f"\n" + "="*60)
+    print("执行前向传播...")
+    print("="*60)
     model.eval()
     with torch.no_grad():
         output = model(workflow_graph, substrate_graph)
-    print("输出 (pred):\n", output.detach().cpu())
-    print("标签 (y):\n", label.detach().cpu())
+    
+    # 打印模型输出
+    print(f"\n模型输出信息:")
+    print(f"  输出形状: {output.shape}")
+    print(f"  输出总和: {output.sum().item():.6f}")
+    print(f"  输出最小值: {output.min().item():.6f}")
+    print(f"  输出最大值: {output.max().item():.6f}")
+    print(f"  输出均值: {output.mean().item():.6f}")
+    
+    # 打印预测结果（前3行）
+    print(f"\n模型输出 (pred) - 前3行:")
+    output_np = output.detach().cpu().numpy()
+    for i in range(min(3, output.size(0))):
+        print(f"  VN节点 {i}: {output_np[i]}")
+    
+    # 打印标签（前3行）
+    print(f"\n标签 (label) - 前3行:")
+    for i in range(min(3, label.size(0))):
+        print(f"  VN节点 {i}: {label_np[i]}")
+    
+    # 计算损失
+    print(f"\n" + "="*60)
+    print("计算测试损失...")
+    print("="*60)
+    
+    # 使用训练时的损失函数
+    def kl_mse_loss(output, label):
+        eps = 1e-8
+        p = torch.clamp(output, min=eps)
+        q = torch.clamp(label, min=eps)
+        kl_row = torch.sum(q * (torch.log(q) - torch.log(p)), dim=1)
+        kl = kl_row.mean()
+        mse = torch.mean((output - label) ** 2)
+        return mse  # 当前使用 MSE
+    
+    test_loss = kl_mse_loss(output, label)
+    print(f"  测试损失 (MSE): {test_loss.item():.6f}")
+    
+    # 对比预测与标签的差异
+    print(f"\n预测与标签的差异分析:")
+    diff = torch.abs(output - label)
+    print(f"  平均绝对误差 (MAE): {diff.mean().item():.6f}")
+    print(f"  最大绝对误差: {diff.max().item():.6f}")
+    print(f"  最小绝对误差: {diff.min().item():.6f}")
+    
+    # 每个 VN 节点的预测 Top-5 与标签 Top-5 的对比
+    print(f"\n每个 VN 节点的预测 Top-5 SN 节点:")
+    for i in range(min(3, output.size(0))):
+        top_k = min(5, output.size(1))
+        pred_top_values, pred_top_indices = torch.topk(output[i], k=top_k)
+        label_top_values, label_top_indices = torch.topk(label[i], k=top_k)
+        
+        print(f"\n  VN节点 {i}:")
+        print(f"    预测 Top-5:")
+        for rank, (idx, val) in enumerate(zip(pred_top_indices.cpu().numpy(), pred_top_values.cpu().numpy()), 1):
+            print(f"      Top {rank}: SN节点 {idx}, 概率={val:.6f}")
+        print(f"    标签 Top-5:")
+        for rank, (idx, val) in enumerate(zip(label_top_indices.cpu().numpy(), label_top_values.cpu().numpy()), 1):
+            print(f"      Top {rank}: SN节点 {idx}, 概率={val:.6f}")
+        
+        # 计算 Top-5 的重叠度
+        pred_set = set(pred_top_indices.cpu().numpy())
+        label_set = set(label_top_indices.cpu().numpy())
+        overlap = len(pred_set & label_set)
+        print(f"    Top-5 重叠数: {overlap}/5")
 
 
 if __name__ == '__main__':

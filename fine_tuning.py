@@ -1197,7 +1197,7 @@ if __name__ == '__main__':
         sn_topology_path=sn_path,
         workflow_types=workflow_types,
         #policy_ckpt=None,  # 旧代码：使用随机初始化
-        policy_ckpt='/home/zrz/SimuVNE/pretrain_outputs/checkpoint_best.pt',  # 使用预训练最优模型
+        policy_ckpt='/home/zrz/SimuVNE/pretrain_outputs/checkpoint_last.pt',  # 使用预训练最优模型
         device='cpu',
         arrival_rate=1,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
         mean_lifetime=10.0,
