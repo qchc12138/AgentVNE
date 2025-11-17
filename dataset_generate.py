@@ -830,7 +830,7 @@ def main():
     parser.add_argument('--test_output', type=str,
                        default='/home/zrz/SimuVNE/pretrain_data/test_sample.pt',
                        help='测试样本输出文件路径（单条）')
-    parser.add_argument('--workflows_per_episode', type=int, default=4,
+    parser.add_argument('--workflows_per_episode', type=int, default=1,
                        help='每个 episode 放置的 workflow 数量')
     parser.add_argument('--num_episodes', type=int, default=500,
                        help='Episode 数量（重复次数）')
