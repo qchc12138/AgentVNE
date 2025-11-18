@@ -347,11 +347,11 @@ def main():
     parser.add_argument('--output_dir', type=str,
                        default='/home/zrz/SimuVNE/pretrain_outputs',
                        help='输出目录')
-    parser.add_argument('--batch_size', type=int, default=50,
+    parser.add_argument('--batch_size', type=int, default=100,
                        help='批大小')
-    parser.add_argument('--num_epochs', type=int, default=5,
+    parser.add_argument('--num_epochs', type=int, default=20,
                        help='训练轮数')
-    parser.add_argument('--learning_rate', type=float, default=0.0005,
+    parser.add_argument('--learning_rate', type=float, default=0.01,
                        help='学习率')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                        help='权重衰减')

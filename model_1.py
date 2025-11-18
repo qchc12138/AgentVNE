@@ -84,15 +84,16 @@ class SimuVNE(nn.Module):
         # Self-Attention层 - 为图Gj单独的注意力层
         self.self_attention_j = SelfAttention(hidden_dim)
         
-        # 新的逐列NTN与encoder（使用PyTorch官方TransformerEncoderLayer）
+        # 新的逐列NTN与encoder（使用PyTorch官方TransformerEncoderLayer，3层）
         self.ntn = ColumnWiseTensorNetwork(hidden_dim, num_nodes_j=num_nodes_j)
-        self.encoder_z = nn.TransformerEncoderLayer(
+        encoder_layer = nn.TransformerEncoderLayer(
             d_model=num_nodes_j,
-            nhead=8,
+            nhead=1,
             dim_feedforward=256,
             dropout=0.1,
             batch_first=False  # 使用 [seq_len, batch_size, d_model] 格式
         )
+        self.encoder_z = nn.TransformerEncoder(encoder_layer, num_layers=3)
         
         self.dropout = nn.Dropout(0.1)
     
