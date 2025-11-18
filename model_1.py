@@ -33,6 +33,8 @@ class SelfAttention(nn.Module):
         return output
 
 
+
+
 class ColumnWiseTensorNetwork(nn.Module):
     """逐列神经张量网络，实现 hj * Wj * Hi^T"""
     def __init__(self, hidden_dim, num_nodes_j):
@@ -82,9 +84,15 @@ class SimuVNE(nn.Module):
         # Self-Attention层 - 为图Gj单独的注意力层
         self.self_attention_j = SelfAttention(hidden_dim)
         
-        # 新的逐列NTN与自注意力
+        # 新的逐列NTN与encoder（使用PyTorch官方TransformerEncoderLayer）
         self.ntn = ColumnWiseTensorNetwork(hidden_dim, num_nodes_j=num_nodes_j)
-        self.self_attention_z = SelfAttention(num_nodes_j)
+        self.encoder_z = nn.TransformerEncoderLayer(
+            d_model=num_nodes_j,
+            nhead=8,
+            dim_feedforward=256,
+            dropout=0.1,
+            batch_first=False  # 使用 [seq_len, batch_size, d_model] 格式
+        )
         
         self.dropout = nn.Dropout(0.1)
     
@@ -145,8 +153,12 @@ class SimuVNE(nn.Module):
         Z = self.ntn(Hi, Hj)  # [N2, N1]
         Z = Z.transpose(0, 1)  # [N1, N2]，此处 N2 恒定
         
-        # 自注意力和归一化（使用SelfAttention）
-        Z_prime = self.self_attention_z(Z)  # [N1, N2]
+        # 使用PyTorch官方TransformerEncoderLayer编码
+        # TransformerEncoderLayer期望输入格式：[seq_len, batch_size, d_model] (batch_first=False)
+        # Z是[N1, N2]，需要转换为[N1, 1, N2] = [seq_len, batch_size, d_model]
+        Z_input = Z.unsqueeze(1)  # [N1, N2] -> [N1, 1, N2]
+        Z_encoded = self.encoder_z(Z_input)  # [N1, 1, N2]
+        Z_prime = Z_encoded.squeeze(1)  # [N1, 1, N2] -> [N1, N2]
         output = F.softmax(Z_prime, dim=1)
         
         return output
