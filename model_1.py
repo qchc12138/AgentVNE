@@ -78,22 +78,35 @@ class SimuVNE(nn.Module):
         self.gcn1_j = GCNConv(input_dim, hidden_dim)
         self.gcn2_j = GCNConv(hidden_dim, hidden_dim)
         
-        # Self-Attention层 - 为图Gi单独的注意力层
-        self.self_attention_i = SelfAttention(hidden_dim)
+        # Encoder层 - 为图Gi和Gj使用1层Transformer Encoder
+        encoder_layer_i = nn.TransformerEncoderLayer(
+            d_model=hidden_dim,
+            nhead=1,
+            dim_feedforward=256,
+            dropout=0.1,
+            batch_first=False
+        )
+        self.encoder_i = nn.TransformerEncoder(encoder_layer_i, num_layers=1)
         
-        # Self-Attention层 - 为图Gj单独的注意力层
-        self.self_attention_j = SelfAttention(hidden_dim)
+        encoder_layer_j = nn.TransformerEncoderLayer(
+            d_model=hidden_dim,
+            nhead=1,
+            dim_feedforward=256,
+            dropout=0.1,
+            batch_first=False
+        )
+        self.encoder_j = nn.TransformerEncoder(encoder_layer_j, num_layers=1)
         
         # 新的逐列NTN与encoder（使用PyTorch官方TransformerEncoderLayer，3层）
         self.ntn = ColumnWiseTensorNetwork(hidden_dim, num_nodes_j=num_nodes_j)
-        encoder_layer = nn.TransformerEncoderLayer(
+        encoder_layer_z = nn.TransformerEncoderLayer(
             d_model=num_nodes_j,
             nhead=1,
             dim_feedforward=256,
             dropout=0.1,
             batch_first=False  # 使用 [seq_len, batch_size, d_model] 格式
         )
-        self.encoder_z = nn.TransformerEncoder(encoder_layer, num_layers=3)
+        self.encoder_z = nn.TransformerEncoder(encoder_layer_z, num_layers=3)
         
         self.dropout = nn.Dropout(0.1)
     
@@ -129,6 +142,8 @@ class SimuVNE(nn.Module):
         x_i, edge_index_i = data_i.x, data_i.edge_index
         x_j, edge_index_j = data_j.x, data_j.edge_index
         
+        # 要不要先过一个线性层呢？
+        
         # 通过GCN处理图Gi - 使用独立的GCN网络，得到节点嵌入 U_i
         U_i = F.relu(self.gcn1_i(x_i, edge_index_i))
         U_i = self.dropout(U_i)
@@ -146,9 +161,22 @@ class SimuVNE(nn.Module):
         hist_S = self.calculate_histogram(S, bins=self.hist_dim)  # [hist_dim]
         self.last_histogram = hist_S
         
-        # Self-Attention - 使用独立的注意力层
-        Hi = self.self_attention_i(U_i)  # [N1, hidden_dim]
-        Hj = self.self_attention_j(U_j)  # [N2, hidden_dim]
+
+        # # Self-Attention - 使用独立的注意力层
+        # Hi = self.self_attention_i(U_i)  # [N1, hidden_dim]
+        # Hj = self.self_attention_j(U_j)  # [N2, hidden_dim]
+        
+        
+        # 使用1层Transformer Encoder编码节点特征
+        # U_i: [N1, hidden_dim] -> [N1, 1, hidden_dim] -> encoder -> [N1, hidden_dim]
+        U_i_input = U_i.unsqueeze(1)  # [N1, hidden_dim] -> [N1, 1, hidden_dim]
+        Hi_encoded = self.encoder_i(U_i_input)  # [N1, 1, hidden_dim]
+        Hi = Hi_encoded.squeeze(1)  # [N1, 1, hidden_dim] -> [N1, hidden_dim]
+        
+        # U_j: [N2, hidden_dim] -> [N2, 1, hidden_dim] -> encoder -> [N2, hidden_dim]
+        U_j_input = U_j.unsqueeze(1)  # [N2, hidden_dim] -> [N2, 1, hidden_dim]
+        Hj_encoded = self.encoder_j(U_j_input)  # [N2, 1, hidden_dim]
+        Hj = Hj_encoded.squeeze(1)  # [N2, 1, hidden_dim] -> [N2, hidden_dim]
         
         # 逐列NTN计算 Z (N2, N1)
         Z = self.ntn(Hi, Hj)  # [N2, N1]
@@ -157,10 +185,32 @@ class SimuVNE(nn.Module):
         # 使用PyTorch官方TransformerEncoderLayer编码
         # TransformerEncoderLayer期望输入格式：[seq_len, batch_size, d_model] (batch_first=False)
         # Z是[N1, N2]，需要转换为[N1, 1, N2] = [seq_len, batch_size, d_model]
-        Z_input = Z.unsqueeze(1)  # [N1, N2] -> [N1, 1, N2]
-        Z_encoded = self.encoder_z(Z_input)  # [N1, 1, N2]
-        Z_prime = Z_encoded.squeeze(1)  # [N1, 1, N2] -> [N1, N2]
-        output = F.softmax(Z_prime, dim=1)
+        
+        # Z_input = Z.unsqueeze(1)  # [N1, N2] -> [N1, 1, N2]
+        # Z_encoded = self.encoder_z(Z_input)  # [N1, 1, N2]
+        # Z_prime = Z_encoded.squeeze(1)  # [N1, 1, N2] -> [N1, N2]
+        # t = 1
+        # output = F.softmax(Z_prime / t, dim=1)
+        
+        
+        # # 将结果映射到0-1，然后按行归一化
+        # Z_normalized = torch.sigmoid(Z)  # [N1, N2]，映射到0-1
+        # output = F.softmax(Z_normalized, dim=1)  # [N1, N2]，按行归一化
+        
+        # 其他归一化方法（注释掉的替代方案）：
+        # 方法1: L1归一化（按行除以行的L1范数，即行的绝对值之和）
+        output = Z / (Z.abs().sum(dim=1, keepdim=True) + 1e-8)
+        
+        # 方法2: L2归一化（按行除以行的L2范数，即行的欧几里得范数）
+        # output = F.normalize(Z_normalized, p=2, dim=1)
+        
+        # 方法3: Min-Max归一化（将每行映射到0-1范围，保持相对比例）
+        # row_min = Z_normalized.min(dim=1, keepdim=True)[0]
+        # row_max = Z_normalized.max(dim=1, keepdim=True)[0]
+        # output = (Z_normalized - row_min) / (row_max - row_min + 1e-8)
+        
+        # 方法4: 简单的除以行和（类似softmax但不用exp，直接归一化）
+        # output = Z_normalized / (Z_normalized.sum(dim=1, keepdim=True) + 1e-8)
         
         return output
 

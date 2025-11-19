@@ -655,6 +655,49 @@ def generate_pretrain_dataset(
             
             # 测试模式：只在指定的 episode 打印详细信息
             is_test_episode = test_mode and (episode_idx == test_episode_idx)
+            # 最后一个 episode：打印详细状态和标签
+            is_last_episode = (episode_idx == num_episodes - 1)
+            
+            # 只在最后一个 episode 打印初始状态
+            if is_last_episode:
+                print(f"\n{'='*80}")
+                print(f"最后一个 Episode {episode_idx + 1}/{num_episodes}")
+                print(f"{'='*80}")
+                
+                # 计算初始 SN 的 noderank 和资源状态
+                initial_sn_noderank = _compute_sn_noderank(
+                    sn_topo['nodes'], 
+                    sn_topo.get('links', []), 
+                    directed=bool(sn_topo.get('directed', False))
+                )
+                
+                # 打印 SN 初始状态
+                print(f"\n【最后一个 Episode {episode_idx + 1} 初始状态】")
+                print(f"SN 节点数: {len(sn_topo['nodes'])}")
+                print(f"SN 边数: {len(sn_topo.get('links', []))}")
+                
+                # 计算总资源
+                total_cpu = sum(float(n.get('cpu', 0.0)) for n in sn_topo['nodes'])
+                total_mem = sum(float(n.get('memory', 0.0)) for n in sn_topo['nodes'])
+                total_disk = sum(float(n.get('disk', 0.0)) for n in sn_topo['nodes'])
+                print(f"SN 总资源: CPU={total_cpu:.2f}, Memory={total_mem:.2f}, Disk={total_disk:.2f}")
+                
+                # 打印前5个节点的 NodeRank 和资源
+                print(f"\nSN NodeRank 前5名（初始状态）:")
+                sn_noderank_sorted = sorted(enumerate(initial_sn_noderank), key=lambda x: x[1], reverse=True)
+                for rank, (sn_idx, rank_val) in enumerate(sn_noderank_sorted[:5], 1):
+                    sn_node = sn_topo['nodes'][sn_idx]
+                    sn_id = sn_node.get('id', sn_idx)
+                    cpu = sn_node.get('cpu', 0.0)
+                    mem = sn_node.get('memory', 0.0)
+                    disk = sn_node.get('disk', 0.0)
+                    print(f"  {rank}. SN节点 {sn_idx} (ID={sn_id}): NodeRank={rank_val:.6f}, "
+                          f"资源 [CPU={cpu:.2f}, Mem={mem:.2f}, Disk={disk:.2f}]")
+            else:
+                # 非最后一个episode也需要计算总资源（用于最后的总结）
+                total_cpu = sum(float(n.get('cpu', 0.0)) for n in sn_topo['nodes'])
+                total_mem = sum(float(n.get('memory', 0.0)) for n in sn_topo['nodes'])
+                total_disk = sum(float(n.get('disk', 0.0)) for n in sn_topo['nodes'])
             
             for wf_idx in range(workflows_per_episode):
                 # 计算当前 SN 的 noderank
@@ -680,8 +723,58 @@ def generate_pretrain_dataset(
                     dtype=torch.float
                 )
                 
-                # 测试模式：打印标签 y
-                y_np = None
+                # 计算当前 SN 资源状态（所有episode都需要，但只在最后一个episode打印）
+                current_total_cpu = sum(float(n.get('cpu', 0.0)) for n in sn_topo['nodes'])
+                current_total_mem = sum(float(n.get('memory', 0.0)) for n in sn_topo['nodes'])
+                current_total_disk = sum(float(n.get('disk', 0.0)) for n in sn_topo['nodes'])
+                
+                # 只在最后一个 episode 打印 workflow 的标签信息
+                if is_last_episode:
+                    print(f"\n  --- Workflow {wf_idx + 1}/{workflows_per_episode} ---")
+                    print(f"  VN 节点数: {N1}, SN 节点数: {N2}")
+                    print(f"  标签 y 形状: {y.shape} (VN节点数 × SN节点数)")
+                    print(f"  当前 SN 剩余资源: CPU={current_total_cpu:.2f}, Memory={current_total_mem:.2f}, Disk={current_total_disk:.2f}")
+                    
+                    # 打印标签矩阵的统计信息
+                    y_np = y.numpy()
+                    print(f"  标签矩阵统计:")
+                    print(f"    最小值: {y_np.min():.6f}, 最大值: {y_np.max():.6f}, 平均值: {y_np.mean():.6f}")
+                    print(f"    每行和: {[f'{row_sum:.6f}' for row_sum in y_np.sum(axis=1)]}")
+                    
+                    # 打印每个 VN 节点对应的最大 NodeRank 值（即最优先的 SN 节点）
+                    print(f"  每个 VN 节点的最大 NodeRank 值（最优先 SN 节点）:")
+                    for vn_idx in range(N1):
+                        max_rank_idx = np.argmax(y_np[vn_idx])
+                        max_rank_val = y_np[vn_idx, max_rank_idx]
+                        sn_node = sn_topo['nodes'][max_rank_idx]
+                        sn_id = sn_node.get('id', max_rank_idx)
+                        sn_cpu = sn_node.get('cpu', 0.0)
+                        sn_mem = sn_node.get('memory', 0.0)
+                        sn_disk = sn_node.get('disk', 0.0)
+                        print(f"    VN节点 {vn_idx} -> SN节点 {max_rank_idx} (ID={sn_id}): "
+                              f"NodeRank={max_rank_val:.6f}, 剩余资源 [CPU={sn_cpu:.2f}, Mem={sn_mem:.2f}, Disk={sn_disk:.2f}]")
+                    
+                    # 打印完整的标签矩阵和所有SN节点状态
+                    print(f"\n  【最后一个Episode - 详细标签矩阵】")
+                    print(f"  完整标签矩阵 y (形状: {y.shape}):")
+                    for vn_idx in range(N1):
+                        print(f"    VN节点 {vn_idx}: {y_np[vn_idx]}")
+                    
+                    print(f"\n  所有SN节点的NodeRank和资源状态（降序）:")
+                    sn_noderank_sorted = sorted(enumerate(sn_noderank), key=lambda x: x[1], reverse=True)
+                    for rank, (sn_idx, rank_val) in enumerate(sn_noderank_sorted, 1):
+                        sn_node = sn_topo['nodes'][sn_idx]
+                        sn_id = sn_node.get('id', sn_idx)
+                        cpu = sn_node.get('cpu', 0.0)
+                        mem = sn_node.get('memory', 0.0)
+                        disk = sn_node.get('disk', 0.0)
+                        print(f"    {rank}. SN节点 {sn_idx} (ID={sn_id}): NodeRank={rank_val:.6f}, "
+                              f"剩余资源 [CPU={cpu:.2f}, Mem={mem:.2f}, Disk={disk:.2f}]")
+                else:
+                    # 非最后一个episode也需要定义y_np（用于后续可能的操作）
+                    y_np = y.numpy()
+                
+                # 测试模式：打印详细标签 y
                 if is_test_episode:
                     print(f"\n{'='*60}")
                     print(f"Episode {episode_idx + 1}, Workflow {wf_idx + 1}")
@@ -713,7 +806,7 @@ def generate_pretrain_dataset(
                 pbar.update(1)
                 
                 # 放置该 workflow 并更新 SN 资源（使用 BFS 策略）
-                if is_test_episode:
+                if is_test_episode or is_last_episode:
                     mapping, placement_order = _greedy_place_workflow(
                         base_workflow_topo,
                         sn_topo,
@@ -735,10 +828,13 @@ def generate_pretrain_dataset(
                     )
                     placement_order = []
                 
-                # 测试模式：打印放置动作（按放置顺序）
-                if is_test_episode and y_np is not None:
-                    print(f"\n【放置动作】（按放置顺序）")
-                    print(f"成功放置 {len(mapping)}/{N1} 个 VN 节点")
+                # 测试模式或最后一个episode：打印放置动作（按放置顺序）
+                if (is_test_episode or is_last_episode) and y_np is not None:
+                    if is_last_episode:
+                        print(f"\n  【最后一个Episode - 详细放置动作】（按放置顺序）")
+                    else:
+                        print(f"\n【放置动作】（按放置顺序）")
+                    print(f"  成功放置 {len(mapping)}/{N1} 个 VN 节点")
                     wf_nodes = base_workflow_topo['nodes']
                     
                     # 按放置顺序打印
@@ -752,15 +848,20 @@ def generate_pretrain_dataset(
                             vn_mem = vn_node.get('memory', 0.0)
                             vn_disk = vn_node.get('disk', 0.0)
                             
-                            print(f"\n  步骤 {place_idx}: 放置 VN节点 {vn_idx} (ID={vn_id})")
-                            print(f"    VN节点需求: CPU={vn_cpu:.2f}, Mem={vn_mem:.2f}, Disk={vn_disk:.2f}")
-                            print(f"    -> SN节点 {sn_idx} (ID={sn_id})")
-                            print(f"    放置后 SN 节点剩余资源: CPU={sn_resources_after['cpu']:.2f}, "
+                            print(f"\n    步骤 {place_idx}: 放置 VN节点 {vn_idx} (ID={vn_id})")
+                            print(f"      VN节点需求: CPU={vn_cpu:.2f}, Mem={vn_mem:.2f}, Disk={vn_disk:.2f}")
+                            print(f"      -> SN节点 {sn_idx} (ID={sn_id})")
+                            print(f"      放置前 SN 节点资源: CPU={sn_resources_after['cpu'] + vn_cpu:.2f}, "
+                                  f"Mem={sn_resources_after['memory'] + vn_mem:.2f}, "
+                                  f"Disk={sn_resources_after['disk'] + vn_disk:.2f}")
+                            print(f"      放置后 SN 节点剩余资源: CPU={sn_resources_after['cpu']:.2f}, "
                                   f"Mem={sn_resources_after['memory']:.2f}, Disk={sn_resources_after['disk']:.2f}")
-                            print(f"    标签 y[{vn_idx}, {sn_idx}] = {y_np[vn_idx, sn_idx]:.6f}")
+                            print(f"      标签 y[{vn_idx}, {sn_idx}] = {y_np[vn_idx, sn_idx]:.6f}")
+                            print(f"      该SN节点在所有SN节点中的NodeRank排名: "
+                                  f"{sorted(enumerate(sn_noderank), key=lambda x: x[1], reverse=True).index((sn_idx, sn_noderank[sn_idx])) + 1}/{N2}")
                     else:
                         # 如果无法获取放置顺序，使用原来的方式
-                        print(f"放置映射 (VN节点索引 -> SN节点索引):")
+                        print(f"  放置映射 (VN节点索引 -> SN节点索引):")
                         for vn_idx in sorted(mapping.keys()):
                             sn_idx = mapping[vn_idx]
                             vn_node = wf_nodes[vn_idx]
@@ -773,15 +874,56 @@ def generate_pretrain_dataset(
                             sn_cpu = sn_node.get('cpu', 0.0)
                             sn_mem = sn_node.get('memory', 0.0)
                             sn_disk = sn_node.get('disk', 0.0)
-                            print(f"  VN节点 {vn_idx} (ID={vn_id}) [需求: CPU={vn_cpu:.2f}, Mem={vn_mem:.2f}, Disk={vn_disk:.2f}]")
-                            print(f"    -> SN节点 {sn_idx} (ID={sn_id}) [剩余: CPU={sn_cpu:.2f}, Mem={sn_mem:.2f}, Disk={sn_disk:.2f}]")
-                            print(f"    -> 标签 y[{vn_idx}, {sn_idx}] = {y_np[vn_idx, sn_idx]:.6f}")
+                            print(f"    VN节点 {vn_idx} (ID={vn_id}) [需求: CPU={vn_cpu:.2f}, Mem={vn_mem:.2f}, Disk={vn_disk:.2f}]")
+                            print(f"      -> SN节点 {sn_idx} (ID={sn_id}) [剩余: CPU={sn_cpu:.2f}, Mem={sn_mem:.2f}, Disk={sn_disk:.2f}]")
+                            print(f"      -> 标签 y[{vn_idx}, {sn_idx}] = {y_np[vn_idx, sn_idx]:.6f}")
+                            print(f"      -> 该SN节点在所有SN节点中的NodeRank排名: "
+                                  f"{sorted(enumerate(sn_noderank), key=lambda x: x[1], reverse=True).index((sn_idx, sn_noderank[sn_idx])) + 1}/{N2}")
                     
                     # 检查未放置的节点
                     unplaced = [i for i in range(N1) if i not in mapping]
                     if unplaced:
-                        print(f"\n未成功放置的 VN 节点: {unplaced}")
-                    print(f"{'='*60}\n")
+                        print(f"\n  未成功放置的 VN 节点: {unplaced}")
+                        print(f"  未放置节点的资源需求:")
+                        for vn_idx in unplaced:
+                            vn_node = wf_nodes[vn_idx]
+                            vn_id = vn_node.get('id', vn_idx)
+                            vn_cpu = vn_node.get('cpu', 0.0)
+                            vn_mem = vn_node.get('memory', 0.0)
+                            vn_disk = vn_node.get('disk', 0.0)
+                            print(f"    VN节点 {vn_idx} (ID={vn_id}): CPU={vn_cpu:.2f}, Mem={vn_mem:.2f}, Disk={vn_disk:.2f}")
+                    print(f"\n")
+                
+                # 只在最后一个 episode 打印放置后的状态更新
+                if is_last_episode:
+                    if len(mapping) > 0:
+                        print(f"  ✓ Workflow {wf_idx + 1} 放置完成: {len(mapping)}/{N1} 个节点成功放置")
+                        # 计算放置后的 SN 资源状态
+                        after_total_cpu = sum(float(n.get('cpu', 0.0)) for n in sn_topo['nodes'])
+                        after_total_mem = sum(float(n.get('memory', 0.0)) for n in sn_topo['nodes'])
+                        after_total_disk = sum(float(n.get('disk', 0.0)) for n in sn_topo['nodes'])
+                        print(f"  放置后 SN 剩余资源: CPU={after_total_cpu:.2f}, Memory={after_total_mem:.2f}, Disk={after_total_disk:.2f}")
+                        print(f"  资源消耗: CPU={current_total_cpu - after_total_cpu:.2f}, "
+                              f"Memory={current_total_mem - after_total_mem:.2f}, "
+                              f"Disk={current_total_disk - after_total_disk:.2f}")
+                    else:
+                        print(f"  ✗ Workflow {wf_idx + 1} 放置失败: 无法放置任何节点")
+            
+            # 只在最后一个 episode 打印结束总结
+            if is_last_episode:
+                final_total_cpu = sum(float(n.get('cpu', 0.0)) for n in sn_topo['nodes'])
+                final_total_mem = sum(float(n.get('memory', 0.0)) for n in sn_topo['nodes'])
+                final_total_disk = sum(float(n.get('disk', 0.0)) for n in sn_topo['nodes'])
+                print(f"\n【最后一个 Episode {episode_idx + 1} 结束总结】")
+                print(f"  初始资源: CPU={total_cpu:.2f}, Memory={total_mem:.2f}, Disk={total_disk:.2f}")
+                print(f"  最终剩余资源: CPU={final_total_cpu:.2f}, Memory={final_total_mem:.2f}, Disk={final_total_disk:.2f}")
+                print(f"  总资源消耗: CPU={total_cpu - final_total_cpu:.2f}, "
+                      f"Memory={total_mem - final_total_mem:.2f}, "
+                      f"Disk={total_disk - final_total_disk:.2f}")
+                print(f"  资源利用率: CPU={(total_cpu - final_total_cpu) / total_cpu * 100:.2f}%, "
+                      f"Memory={(total_mem - final_total_mem) / total_mem * 100:.2f}%, "
+                      f"Disk={(total_disk - final_total_disk) / total_disk * 100:.2f}%")
+                print(f"{'='*80}\n")
     
     # 保存数据集
     print(f"\n保存数据集到 {output_path}...")
@@ -830,9 +972,9 @@ def main():
     parser.add_argument('--test_output', type=str,
                        default='/home/zrz/SimuVNE/pretrain_data/test_sample.pt',
                        help='测试样本输出文件路径（单条）')
-    parser.add_argument('--workflows_per_episode', type=int, default=5,
+    parser.add_argument('--workflows_per_episode', type=int, default=10,
                        help='每个 episode 放置的 workflow 数量')
-    parser.add_argument('--num_episodes', type=int, default=200,
+    parser.add_argument('--num_episodes', type=int, default=500,
                        help='Episode 数量（重复次数）')
     parser.add_argument('--test_mode', action='store_true',
                        help='启用测试模式，打印放置前标签和放置动作')
