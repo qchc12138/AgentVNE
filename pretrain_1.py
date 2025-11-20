@@ -26,7 +26,7 @@ except ImportError:
     print("警告: TensorBoard不可用，将跳过TensorBoard日志记录")
 
 from tqdm import tqdm
-from model_2 import SimuVNE
+from model_1 import SimuVNE
 from torch_geometric.data import Data
 
 

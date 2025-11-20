@@ -193,7 +193,7 @@ class SimuVNE(nn.Module):
         # 将结果映射到0-1，然后按行L1归一化
         Z_normalized = torch.sigmoid(Z_prime)  # [N1, N2]，映射到0-1
         # L1归一化（对于非负值，L1归一化等价于除以行和）
-        output = Z_normalized / (Z_normalized.abs().sum(dim=1, keepdim=True) + 1e-8)  # [N1, N2]，按行L1归一化
+        output = Z_normalized / (Z_normalized.sum(dim=1, keepdim=True) + 1e-8)  # [N1, N2]，按行L1归一化
         
         # 其他归一化方法（注释掉的替代方案）：
         # 方法1: Softmax归一化（按行归一化，输出在[0,1]且每行和为1）

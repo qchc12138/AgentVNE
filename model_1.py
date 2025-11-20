@@ -199,7 +199,7 @@ class SimuVNE(nn.Module):
         
         # 其他归一化方法（注释掉的替代方案）：
         # 方法1: L1归一化（按行除以行的L1范数，即行的绝对值之和）
-        output = Z / (Z.abs().sum(dim=1, keepdim=True) + 1e-8)
+        output = Z.abs() / (Z.abs().sum(dim=1, keepdim=True) + 1e-8)
         
         # 方法2: L2归一化（按行除以行的L2范数，即行的欧几里得范数）
         # output = F.normalize(Z_normalized, p=2, dim=1)
