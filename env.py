@@ -325,6 +325,28 @@ class SimuVNEEnv:
         # 按归一化需求从高到低排序
         vn_demands.sort(key=lambda x: x[0], reverse=True)
         
+        # 在实际扣减前做一次严格校验，防止资源被超额扣减
+        temp_sn_res_check = {
+            n: {
+                'cpu': self.G_sn.nodes[n]['cpu_res'],
+                'mem': self.G_sn.nodes[n]['mem_res'],
+                'disk': self.G_sn.nodes[n]['disk_res'],
+            }
+            for n in self.G_sn.nodes
+        }
+
+        for _, vn_node, sn_node, cpu, mem, disk in vn_demands:
+            res = temp_sn_res_check[sn_node]
+            if cpu > res['cpu'] + 1e-9 or mem > res['mem'] + 1e-9 or disk > res['disk'] + 1e-9:
+                raise ValueError(
+                    f"Resource over-allocation detected before deduction: "
+                    f"SN {sn_node} available CPU={res['cpu']:.4f}, MEM={res['mem']:.4f}, DISK={res['disk']:.4f}; "
+                    f"VN{vn_node} demands CPU={cpu:.4f}, MEM={mem:.4f}, DISK={disk:.4f}"
+                )
+            res['cpu'] -= cpu
+            res['mem'] -= mem
+            res['disk'] -= disk
+
         # 按顺序扣减资源
         for _, vn_node, sn_node, cpu, mem, disk in vn_demands:
             nd = self.G_sn.nodes[sn_node]

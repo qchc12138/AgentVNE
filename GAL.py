@@ -70,6 +70,17 @@ class GreedyAllocator:
         
         # 2. 贪心映射
         mapping = {}
+        temporary_deductions: List[tuple[int, float, float, float]] = []
+
+        def _restore_temporary_deductions():
+            if not temporary_deductions:
+                return
+            for sn_node, cpu, mem, disk in temporary_deductions:
+                nd = self.env.G_sn.nodes[sn_node]
+                nd['cpu_res'] += cpu
+                nd['mem_res'] += mem
+                nd['disk_res'] += disk
+            temporary_deductions.clear()
         
         for vn_info in vn_demands:
             vn_node = vn_info['vn_node']
@@ -102,18 +113,30 @@ class GreedyAllocator:
             
             # 如果没有合适的SN节点，放置失败
             if not sn_candidates:
+                _restore_temporary_deductions()
                 return False, {}, self.env.penalty
             
             # 选择剩余资源最多的SN节点
             sn_candidates.sort(key=lambda x: x['res_strength'], reverse=True)
             best_sn = sn_candidates[0]['sn_node']
             mapping[vn_node] = best_sn
+
+            # 立即在SN节点上扣减资源，确保后续VN节点看到最新剩余量
+            nd = self.env.G_sn.nodes[best_sn]
+            nd['cpu_res'] -= demand_cpu
+            nd['mem_res'] -= demand_mem
+            nd['disk_res'] -= demand_disk
+            temporary_deductions.append((best_sn, demand_cpu, demand_mem, demand_disk))
         
         # 3. 验证映射并计算路径
         vn_paths = self.env._compute_paths_and_bw_demand(vn, mapping)
         if vn_paths is None:
+            _restore_temporary_deductions()
             return False, {}, self.env.penalty
         
+        # 在调用 _apply_mapping 前恢复临时扣减，避免重复扣减
+        _restore_temporary_deductions()
+
         # 4. 应用映射（扣减资源）
         self.env._apply_mapping(vn, mapping, vn_paths)
         
