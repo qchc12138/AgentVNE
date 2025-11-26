@@ -958,19 +958,19 @@ def main():
     
     parser = argparse.ArgumentParser(description='生成预训练数据集')
     parser.add_argument('--sn_topo', type=str, 
-                       default='/home/zrz/SimuVNE/topo/SN_topology.json',
+                       default='/home/yc2/mrt/a/topo/SN_topology.json',
                        help='底层网络拓扑文件路径')
     parser.add_argument('--workflow_topo', type=str,
-                       default='/home/zrz/SimuVNE/workflow_topo/workflow1_topo.json',
+                       default='/home/yc2/mrt/a/workflow_topo/workflow1_topo.json',
                        help='Workflow 拓扑文件路径')
     parser.add_argument('--workflow_noderank', type=str,
-                       default='/home/zrz/SimuVNE/workflow_topo/workflow1_noderank.json',
+                       default='/home/yc2/mrt/a/workflow_topo/workflow1_noderank.json',
                        help='Workflow NodeRank 文件路径')
     parser.add_argument('--output', type=str,
-                       default='/home/zrz/SimuVNE/pretrain_data/pretrain_dataset.pt',
+                       default='/home/yc2/mrt/a/pretrain_data/pretrain_dataset.pt',
                        help='输出数据集文件路径')
     parser.add_argument('--test_output', type=str,
-                       default='/home/zrz/SimuVNE/pretrain_data/test_sample.pt',
+                       default='/home/yc2/mrt/a/pretrain_data/test_sample.pt',
                        help='测试样本输出文件路径（单条）')
     parser.add_argument('--workflows_per_episode', type=int, default=5,
                        help='每个 episode 放置的 workflow 数量')

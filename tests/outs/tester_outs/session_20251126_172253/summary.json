@@ -1,0 +1,88 @@
+{
+  "session_dir": "/home/yc2/mrt/a/tests/outs/tester_outs/session_20251126_172253",
+  "total_rounds": 1,
+  "rounds": [
+    {
+      "round_title": "Tester 参数组 #1",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.2,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 100,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0
+      },
+      "results": [
+        {
+          "strategy": "null",
+          "acceptance_rate": 0.0,
+          "avg_r_t": 0.0,
+          "avg_hops": 0.0,
+          "max_hops": 0.0,
+          "avg_completion_duration": 0.0,
+          "tasks": 21,
+          "accepted": 0,
+          "lag_time": 0.0,
+          "stop_arrival_time": 100.0,
+          "end_time": 100.0
+        },
+        {
+          "strategy": "gal",
+          "acceptance_rate": 100.0,
+          "avg_r_t": -22.52562358276644,
+          "avg_hops": 4.380952380952381,
+          "max_hops": 16.0,
+          "avg_completion_duration": 19.829487059027983,
+          "tasks": 21,
+          "accepted": 21,
+          "lag_time": 37.0,
+          "stop_arrival_time": 100.0,
+          "end_time": 137.0
+        },
+        {
+          "strategy": "gal2",
+          "acceptance_rate": 100.0,
+          "avg_r_t": -22.52562358276644,
+          "avg_hops": 4.380952380952381,
+          "max_hops": 16.0,
+          "avg_completion_duration": 19.829487059027983,
+          "tasks": 21,
+          "accepted": 21,
+          "lag_time": 37.0,
+          "stop_arrival_time": 100.0,
+          "end_time": 137.0
+        },
+        {
+          "strategy": "gal3",
+          "acceptance_rate": 100.0,
+          "avg_r_t": 0.0,
+          "avg_hops": 0.0,
+          "max_hops": 0.0,
+          "avg_completion_duration": 19.829487059027983,
+          "tasks": 21,
+          "accepted": 21,
+          "lag_time": 37.0,
+          "stop_arrival_time": 100.0,
+          "end_time": 137.0
+        },
+        {
+          "strategy": "ft1",
+          "acceptance_rate": 95.23809523809523,
+          "avg_r_t": -1.1073809523809521,
+          "avg_hops": 1.0,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.605154402248118,
+          "tasks": 21,
+          "accepted": 20,
+          "lag_time": 37.0,
+          "stop_arrival_time": 100.0,
+          "end_time": 137.0
+        }
+      ],
+      "timestamp": "2025-11-26T17:22:53.809281"
+    }
+  ],
+  "timestamp": "2025-11-26T17:22:53.809974"
+}

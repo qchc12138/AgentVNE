@@ -360,8 +360,8 @@ def save_results(results: Dict, output_file: str):
 
 if __name__ == '__main__':
     # 计算 workflow1_topo 的 NodeRank
-    topology_file = '/home/zrz/SimuVNE/workflow_topo/workflow1_topo.json'
-    output_file = '/home/zrz/SimuVNE/workflow_topo/workflow1_noderank.json'
+    topology_file = '/home/yc2/mrt/a/workflow_topo/workflow1_topo.json'
+    output_file = '/home/yc2/mrt/a/workflow_topo/workflow1_noderank.json'
     
     results = calculate_noderank(
         topology_file=topology_file,

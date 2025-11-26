@@ -1,5 +1,5 @@
 {
-  "topology_file": "/home/zrz/SimuVNE/topo/SN_topology.json",
+  "topology_file": "/home/yc2/mrt/a/topo/SN_topology.json",
   "parameters": {
     "pJ_u": 0.8,
     "pF_u": 0.2

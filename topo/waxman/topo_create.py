@@ -251,7 +251,7 @@ if __name__ == "__main__":
         plt.tight_layout()
         
         # 保存图像
-        output_path = '/home/zrz/SimuVNE/topo/waxman_topology.png'
+        output_path = '/home/yc2/mrt/a/topo/waxman_topology.png'
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close(fig)
         print(f"拓扑图已保存到: {output_path}")

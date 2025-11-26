@@ -14,11 +14,11 @@
     "lr_gamma": 0.5
   },
   "data": {
-    "data_dir": "/home/zrz/SimuVNE/data",
+    "data_dir": "/home/yc2/mrt/a/data",
     "normalize_features": true
   },
   "logging": {
-    "output_dir": "/home/zrz/SimuVNE/outputs",
+    "output_dir": "/home/yc2/mrt/a/outputs",
     "use_tensorboard": true,
     "log_interval": 5,
     "save_interval": 10

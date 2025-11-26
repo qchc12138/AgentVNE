@@ -305,7 +305,7 @@ def run_gal_benchmark(
     max_arrived_tasks: int = 20,
     max_time_steps: int = 1000,
     num_episodes: int = 10,
-    output_dir: str = '/home/zrz/SimuVNE/gal_outputs'):
+    output_dir: str = '/home/yc2/mrt/a/gal_outputs'):
     """
     运行GAL基准测试
     
@@ -393,9 +393,9 @@ def run_gal_benchmark(
 
 if __name__ == '__main__':
     # 配置
-    sn_path = '/home/zrz/SimuVNE/topo/SN_topology.json'
+    sn_path = '/home/yc2/mrt/a/topo/SN_topology.json'
     workflow_types = {
-        'workflow1': '/home/zrz/SimuVNE/workflow_topo/workflow1_topo.json',
+        'workflow1': '/home/yc2/mrt/a/workflow_topo/workflow1_topo.json',
     }
     
     # 运行GAL基准测试

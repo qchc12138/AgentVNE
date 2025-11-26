@@ -67,7 +67,7 @@ def generate_SN_topology():
     data['multigraph'] = False
     
     # 保存文件
-    output_file = '/home/zrz/SimuVNE/topo/SN_topology.json'
+    output_file = '/home/yc2/mrt/a/topo/SN_topology.json'
     print(f"\n保存底层拓扑到: {output_file}")
     with open(output_file, 'w') as f:
         json.dump(data, f, indent=2)

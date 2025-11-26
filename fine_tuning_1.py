@@ -1006,7 +1006,7 @@ def run_ppo_batch_training(
 def save_training_results(training_stats: List[Dict], 
                           policy: SimuVNE, 
                           value_net: ValueNet,
-                          output_dir: str = '/home/zrz/SimuVNE/finetuning_putput'):
+                          output_dir: str = '/home/yc2/mrt/a/finetuning_putput'):
     """
     保存训练结果、模型参数和可视化图表
     
@@ -1161,9 +1161,9 @@ def save_training_results(training_stats: List[Dict],
 
 if __name__ == '__main__':
     # 示例运行：使用仓库内示例拓扑（时间驱动版本）
-    sn_path = '/home/zrz/SimuVNE/topo/SN_topology.json'
+    sn_path = '/home/yc2/mrt/a/topo/SN_topology.json'
     workflow_types = {
-        'workflow1': '/home/zrz/SimuVNE/workflow_topo/workflow1_topo.json',
+        'workflow1': '/home/yc2/mrt/a/workflow_topo/workflow1_topo.json',
         # 可扩展：'workflow2': '/path/to/workflow2_topo.json', ...
     }
     
@@ -1197,7 +1197,7 @@ if __name__ == '__main__':
         sn_topology_path=sn_path,
         workflow_types=workflow_types,
         #policy_ckpt=None,  # 旧代码：使用随机初始化
-        policy_ckpt='/home/zrz/SimuVNE/pretrain_outputs/checkpoint_last.pt',  # 使用预训练最优模型
+        policy_ckpt='/home/yc2/mrt/a/pretrain_outputs/checkpoint_latest.pt',  # 使用预训练最优模型
         device='cpu',
         arrival_rate=1,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
         mean_lifetime=10.0,
@@ -1219,7 +1219,7 @@ if __name__ == '__main__':
         training_stats=training_stats,
         policy=agent.policy,
         value_net=agent.value_net,
-        output_dir='/home/zrz/SimuVNE/finetuning_putput'
+        output_dir='/home/yc2/mrt/a/finetuning_putput'
     )
 
 

@@ -381,7 +381,7 @@ def calculate_noderank(topology_file: str,
 
 if __name__ == '__main__':
     # 计算 star_topology 的 NodeRank
-    topology_file = '/home/zrz/SimuVNE/topo/SN_topology.json'
+    topology_file = '/home/yc2/mrt/a/topo/SN_topology.json'
     
     results = calculate_noderank(
         topology_file=topology_file,

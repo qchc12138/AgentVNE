@@ -223,7 +223,7 @@ def main():
                 sys.exit(1)
             test_model(args.config, args.checkpoint, **kwargs)
         elif args.mode == 'create_data':
-            data_dir = kwargs.get('data_dir', '/home/zrz/SimuVNE/data')
+            data_dir = kwargs.get('data_dir', '/home/yc2/mrt/a/data')
             create_sample_data(data_dir, args.num_samples)
         
     except KeyboardInterrupt:

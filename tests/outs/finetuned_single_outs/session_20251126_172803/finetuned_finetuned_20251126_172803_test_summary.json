@@ -1,0 +1,9 @@
+{
+  "total_tasks": 21,
+  "accepted": 20,
+  "acceptance_rate": 0.9523809523809523,
+  "avg_r_t": -1.1073809523809521,
+  "avg_hops": 1.0,
+  "max_hops": 4.0,
+  "avg_completion_duration": 20.605154402248118
+}

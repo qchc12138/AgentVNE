@@ -420,9 +420,9 @@ def test_placement_with_model(model_path=None,
     print("=" * 80)
     
     # 配置
-    sn_path = '/home/zrz/SimuVNE/topo/SN_topology.json'
+    sn_path = '/home/yc2/mrt/a/topo/SN_topology.json'
     workflow_types = {
-        'workflow1': '/home/zrz/SimuVNE/workflow_topo/workflow1_topo.json',
+        'workflow1': '/home/yc2/mrt/a/workflow_topo/workflow1_topo.json',
     }
     device = 'cpu'
     
@@ -638,7 +638,7 @@ def test_placement_with_model(model_path=None,
     print(f"{'=' * 80}")
 
 
-def find_latest_finetuning_model(finetuning_dir='/home/zrz/SimuVNE/finetuning_putput'):
+def find_latest_finetuning_model(finetuning_dir='/home/yc2/mrt/a/finetuning_putput'):
     """
     查找最新的fine-tuning模型
     
@@ -662,7 +662,7 @@ def find_latest_finetuning_model(finetuning_dir='/home/zrz/SimuVNE/finetuning_pu
 
 if __name__ == '__main__':
     # 优先使用fine-tuning模型
-    finetuning_dir = '/home/zrz/SimuVNE/finetuning_putput'
+    finetuning_dir = '/home/yc2/mrt/a/finetuning_putput'
     latest_finetuning_model = find_latest_finetuning_model(finetuning_dir)
     
     if latest_finetuning_model:
@@ -680,7 +680,7 @@ if __name__ == '__main__':
         )
     else:
         # 如果找不到fine-tuning模型，尝试使用预训练模型
-        pretrained_model = '/home/zrz/SimuVNE/pretrain_outputs/checkpoint_best.pt'
+        pretrained_model = '/home/yc2/mrt/a/pretrain_outputs/checkpoint_best.pt'
         if os.path.exists(pretrained_model):
             print("\n" + "=" * 80)
             print("【未找到Fine-tuning模型，使用预训练模型】")
