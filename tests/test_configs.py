@@ -5,6 +5,7 @@ from typing import Dict, Iterable, List, Optional
 
 from tests.test_strategy import TestConfig
 
+#region 默认配置
 DEFAULT_SN_TOPOLOGY = "/home/yc2/mrt/a/topo/SN_topology.json"
 DEFAULT_WORKFLOW_TYPES = {
     "workflow1": "/home/yc2/mrt/a/workflow_topo/workflow1_topo.json",
@@ -17,8 +18,10 @@ DEFAULT_PARAMETER_SETS = [
 SMOKE_PARAMETER_SETS = {
     "small_basic": {"arrival_rate": 0.2, "mean_lifetime": 20.0, "max_time_steps": 100, "seed": 2025},
 }
+#endregion
 
 
+#region 参数结构
 @dataclass
 class ParameterSpec:
     arrival_rate: float
@@ -64,8 +67,10 @@ class ParameterSpec:
         if "penalty" in parts:
             parts["penalty"] = float(parts["penalty"])
         return cls.from_dict(parts)  # type: ignore[arg-type]
+#endregion
 
 
+#region 参数解析
 def parse_workflows(values: Optional[Iterable[str]]) -> Dict[str, str]:
     if not values:
         return dict(DEFAULT_WORKFLOW_TYPES)
@@ -84,8 +89,10 @@ def parse_parameters(values: Optional[Iterable[str]]) -> List[ParameterSpec]:
     if not values:
         return [ParameterSpec.from_dict(item) for item in DEFAULT_PARAMETER_SETS]
     return [ParameterSpec.from_string(item) for item in values]
+#endregion
 
 
+#region 配置构建
 def get_smoke_config(
     *,
     preset: str = "small_basic",
@@ -152,4 +159,5 @@ def build_round_configs(
         )
         for spec in parameter_specs
     ]
+#endregion
 

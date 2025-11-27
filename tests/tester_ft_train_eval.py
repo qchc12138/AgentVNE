@@ -252,7 +252,7 @@ class TrainingEvaluator:
         # 创建 TestPrinter（用于评估结果输出）
         self.printer = TestPrinter(
             enable_logging=enable_logging,
-            enable_plotting=False,  # 禁用单轮次图表，只在 finalize 时生成学习曲线
+            enable_plotting=self.enable_plotting,
             output_dir=self.output_dir,
             session_name=session_name,
             test_scope="ft_train_eval",
@@ -580,17 +580,17 @@ class TrainingEvaluator:
         """完成评估，生成最终报告和图表。"""
         if not self.evaluation_results:
             return
-        
-        # 关闭 printer
+
+        self.printer.print_history_table(
+            title="训练过程纵向对比结果",
+            include_config=True,
+            save_to_file=True,
+            output_filename="training_history_table.txt",
+        )
+
+        # 关闭 printer，触发日志与图表收尾
         self.printer.close()
-        
-        # 生成学习曲线和对比表格
-        if self.enable_plotting:
-            self._plot_learning_curves()
-        
-        # 生成对比表格
-        self._print_comparison_table()
-        
+
         # 保存评估汇总
         summary_path = os.path.join(self.session_dir, "evaluation_summary.json")
         summary_data = {
@@ -608,249 +608,6 @@ class TrainingEvaluator:
         
         print(f"\n评估结果已保存到: {self.session_dir}")
     
-    def _print_comparison_table(self) -> None:
-        """打印纵向对比表格（包含基准模型）。"""
-        # 收集所有评估结果（包括基准模型）
-        all_results = []
-        
-        # 添加初始模型结果
-        if self.initial_model_result:
-            all_results.append(("初始模型", self.initial_model_result))
-        
-        # 添加预训练模型结果
-        if self.pretrained_model_result:
-            all_results.append(("预训练模型", self.pretrained_model_result))
-        
-        # 添加训练轮次结果
-        for result in self.evaluation_results:
-            all_results.append((f"训练轮次 {result['update_number']}", result))
-        
-        if not all_results:
-            return
-        
-        try:
-            from tabulate import tabulate
-        except ImportError:
-            tabulate = None
-        
-        # 提取数据
-        model_names = []
-        acceptance_rates = []
-        avg_r_t = []
-        avg_hops = []
-        tasks = []
-        accepted = []
-        
-        for name, result in all_results:
-            model_eval = result.get("model_evaluation", {})
-            model_names.append(name)
-            acceptance_rates.append(model_eval.get("acceptance_rate", 0.0) * 100.0)
-            avg_r_t.append(model_eval.get("avg_r_t", 0.0))
-            avg_hops.append(model_eval.get("avg_hops", 0.0))
-            tasks.append(model_eval.get("tasks", 0))
-            accepted.append(model_eval.get("accepted", 0))
-        
-        # 构建表格
-        table_data = []
-        for i, model_name in enumerate(model_names):
-            table_data.append([
-                model_name,
-                f"{acceptance_rates[i]:.2f}",
-                f"{avg_r_t[i]:.3f}",
-                f"{avg_hops[i]:.3f}",
-                f"{tasks[i]}",
-                f"{accepted[i]}",
-            ])
-        
-        headers = ["模型", "接受率 (%)", "平均r_t", "平均跳数", "任务数", "接受数"]
-        
-        print(f"\n{'='*80}")
-        print("训练过程纵向对比结果")
-        print(f"{'='*80}")
-        
-        # 打印评估配置
-        config_info = format_config_info(
-            self.eval_config,
-            workflow_keys=self.eval_config.workflow_types.keys(),
-        )
-        print("\n评估参数:")
-        for key, value in config_info.items():
-            print(f"  {key}: {value}")
-        
-        print(f"\n{'='*80}")
-        
-        if tabulate:
-            print(tabulate(
-                table_data,
-                headers=headers,
-                tablefmt="grid",
-                stralign="center",
-                numalign="center",
-            ))
-        else:
-            print("\t".join(headers))
-            for row in table_data:
-                print("\t".join(row))
-        
-        print(f"{'='*80}\n")
-
-    def _plot_learning_curves(self) -> None:
-        """绘制学习曲线图。"""
-        try:
-            import matplotlib
-            matplotlib.use('Agg')
-            import matplotlib.pyplot as plt
-            import warnings
-            warnings.filterwarnings('ignore', category=UserWarning, message='.*Glyph.*missing.*')
-            warnings.filterwarnings('ignore', category=UserWarning, message='.*font.*')
-        except ImportError:
-            print("警告: matplotlib 未安装，跳过图表生成")
-            return
-        
-        if not self.evaluation_results:
-            return
-        
-        # 收集所有评估结果（包括基准模型）
-        all_results = []
-        if self.initial_model_result:
-            all_results.append(("初始模型", self.initial_model_result))
-        if self.pretrained_model_result:
-            all_results.append(("预训练模型", self.pretrained_model_result))
-        for result in self.evaluation_results:
-            all_results.append((f"训练轮次 {result['update_number']}", result))
-        
-        if not all_results:
-            return
-        
-        # 提取数据
-        updates = []
-        model_acceptance = []
-        model_avg_r_t = []
-        model_avg_hops = []
-        
-        for name, result in all_results:
-            model_eval = result.get("model_evaluation", {})
-            # 使用 update_number，如果是基准模型则使用特殊值
-            if result.get("update_number") == 0:
-                if result.get("model_type") == "initial_random":
-                    updates.append(0)  # 初始模型
-                else:
-                    updates.append(0.5)  # 预训练模型（在0和1之间）
-            else:
-                updates.append(result["update_number"])
-            model_acceptance.append(model_eval.get("acceptance_rate", 0.0) * 100.0)
-            model_avg_r_t.append(model_eval.get("avg_r_t", 0.0))
-            model_avg_hops.append(model_eval.get("avg_hops", 0.0))
-        
-        # 创建图表
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle('Training Learning Curves', fontsize=16, fontweight='bold')
-        
-        # 分离基准模型和训练轮次数据
-        baseline_updates = []
-        baseline_acceptance = []
-        baseline_r_t = []
-        baseline_hops = []
-        training_updates = []
-        training_acceptance = []
-        training_r_t = []
-        training_hops = []
-        
-        for i, (name, result) in enumerate(all_results):
-            if result.get("update_number") == 0:  # 基准模型
-                baseline_updates.append(updates[i])
-                baseline_acceptance.append(model_acceptance[i])
-                baseline_r_t.append(model_avg_r_t[i])
-                baseline_hops.append(model_avg_hops[i])
-            else:  # 训练轮次
-                training_updates.append(updates[i])
-                training_acceptance.append(model_acceptance[i])
-                training_r_t.append(model_avg_r_t[i])
-                training_hops.append(model_avg_hops[i])
-        
-        # 子图1: 接受率变化
-        if baseline_updates:
-            axes[0, 0].scatter(baseline_updates, baseline_acceptance, s=200, marker='*', 
-                              color='red', label='Initial Model', zorder=5)
-            axes[0, 0].scatter([u for u in baseline_updates if u > 0], 
-                              [baseline_acceptance[i] for i, u in enumerate(baseline_updates) if u > 0],
-                              s=200, marker='*', color='orange', label='Pretrained Model', zorder=5)
-        if training_updates:
-            axes[0, 0].plot(training_updates, training_acceptance, 'b-o', linewidth=2, markersize=8, label='Finetuned Model')
-        axes[0, 0].set_xlabel('Update Number', fontsize=12)
-        axes[0, 0].set_ylabel('Acceptance Rate (%)', fontsize=12)
-        axes[0, 0].set_title('Acceptance Rate Learning Curve', fontsize=13, fontweight='bold')
-        axes[0, 0].set_ylim([0, 105])
-        axes[0, 0].grid(True, alpha=0.3)
-        axes[0, 0].legend()
-        
-        # 子图2: 平均r_t变化
-        if baseline_updates:
-            axes[0, 1].scatter(baseline_updates, baseline_r_t, s=200, marker='*', 
-                              color='red', label='Initial Model', zorder=5)
-            axes[0, 1].scatter([u for u in baseline_updates if u > 0], 
-                              [baseline_r_t[i] for i, u in enumerate(baseline_updates) if u > 0],
-                              s=200, marker='*', color='orange', label='Pretrained Model', zorder=5)
-        if training_updates:
-            axes[0, 1].plot(training_updates, training_r_t, 'g-s', linewidth=2, markersize=8, label='Finetuned Model')
-        axes[0, 1].set_xlabel('Update Number', fontsize=12)
-        axes[0, 1].set_ylabel('Average r_t', fontsize=12)
-        axes[0, 1].set_title('Average Return Learning Curve', fontsize=13, fontweight='bold')
-        axes[0, 1].grid(True, alpha=0.3)
-        axes[0, 1].legend()
-        
-        # 子图3: 平均跳数变化
-        if baseline_updates:
-            axes[1, 0].scatter(baseline_updates, baseline_hops, s=200, marker='*', 
-                              color='red', label='Initial Model', zorder=5)
-            axes[1, 0].scatter([u for u in baseline_updates if u > 0], 
-                              [baseline_hops[i] for i, u in enumerate(baseline_updates) if u > 0],
-                              s=200, marker='*', color='orange', label='Pretrained Model', zorder=5)
-        if training_updates:
-            axes[1, 0].plot(training_updates, training_hops, 'r-^', linewidth=2, markersize=8, label='Finetuned Model')
-        axes[1, 0].set_xlabel('Update Number', fontsize=12)
-        axes[1, 0].set_ylabel('Average Hops', fontsize=12)
-        axes[1, 0].set_title('Average Hops Learning Curve', fontsize=13, fontweight='bold')
-        axes[1, 0].grid(True, alpha=0.3)
-        axes[1, 0].legend()
-        
-        # 子图4: 任务数变化
-        baseline_tasks = []
-        baseline_accepted = []
-        training_tasks = []
-        training_accepted = []
-        for name, result in all_results:
-            model_eval = result.get("model_evaluation", {})
-            if result.get("update_number") == 0:  # 基准模型
-                baseline_tasks.append(model_eval.get("tasks", 0))
-                baseline_accepted.append(model_eval.get("accepted", 0))
-            else:  # 训练轮次
-                training_tasks.append(model_eval.get("tasks", 0))
-                training_accepted.append(model_eval.get("accepted", 0))
-        
-        if baseline_updates:
-            axes[1, 1].scatter(baseline_updates, baseline_tasks, s=200, marker='*', 
-                              color='red', label='Initial Total', zorder=5)
-            axes[1, 1].scatter([u for u in baseline_updates if u > 0], 
-                              [baseline_tasks[i] for i, u in enumerate(baseline_updates) if u > 0],
-                              s=200, marker='*', color='orange', label='Pretrained Total', zorder=5)
-        if training_updates:
-            axes[1, 1].plot(training_updates, training_tasks, 'm-^', linewidth=2, markersize=8, label='Total Tasks')
-            axes[1, 1].plot(training_updates, training_accepted, 'c-s', linewidth=2, markersize=8, label='Accepted Tasks')
-        axes[1, 1].set_xlabel('Update Number', fontsize=12)
-        axes[1, 1].set_ylabel('Task Count', fontsize=12)
-        axes[1, 1].set_title('Task Count Learning Curve', fontsize=13, fontweight='bold')
-        axes[1, 1].grid(True, alpha=0.3)
-        axes[1, 1].legend()
-        
-        plt.tight_layout()
-        
-        # 保存图表
-        plot_path = os.path.join(self.session_dir, "learning_curves.png")
-        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        
-        print(f"  ✓ 学习曲线图已保存: {plot_path}")
 #endregion
 
 

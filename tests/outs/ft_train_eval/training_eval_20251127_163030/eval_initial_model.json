@@ -1,0 +1,20 @@
+{
+  "update_idx": -2,
+  "update_number": 0,
+  "timestamp": "2025-11-27T16:30:34.944422",
+  "model_evaluation": {
+    "strategy": "initial",
+    "acceptance_rate": 58.984375,
+    "avg_r_t": -5.041414380321666,
+    "avg_hops": 3.2417218543046356,
+    "max_hops": 9.0,
+    "avg_completion_duration": 20.886097504736274,
+    "tasks": 512,
+    "accepted": 302,
+    "lag_time": 40.0,
+    "stop_arrival_time": 1000.0,
+    "end_time": 1040.0,
+    "max_resource_failure_ratio": 3.9523808192856626
+  },
+  "model_type": "initial_random"
+}

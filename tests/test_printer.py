@@ -429,6 +429,92 @@ class TestPrinter:
 
     #endregion 打印与持久化
 
+    #region 历史汇总
+    def _build_history_table(self) -> Tuple[List[str], List[List[str]]]:
+        """
+        构造跨轮次的历史结果表格数据。
+        """
+
+        if not self._round_logs:
+            return [], []
+
+        headers = ["轮次"] + [title for title, _ in self._columns]
+        rows: List[List[str]] = []
+        for idx, round_data in enumerate(self._round_logs, start=1):
+            title = round_data.get("round_title") or f"Round {idx}"
+            label = f"{idx:02d}. {title}"
+            for row in round_data.get("results", []):
+                cells = [label] + [self._format_cell(row, key) for _, key in self._columns]
+                rows.append(cells)
+        return headers, rows
+
+    @staticmethod
+    def _render_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> str:
+        if tabulate:
+            return tabulate(rows, headers=headers, tablefmt="grid", stralign="center")
+        output_lines = ["\t".join(headers)]
+        output_lines.extend("\t".join(map(str, row)) for row in rows)
+        return "\n".join(output_lines)
+
+    def _write_history_table_file(self, content: str, *, output_filename: str) -> None:
+        if not self._session_dir:
+            return
+        history_path = Path(self._session_dir) / output_filename
+        with open(history_path, "w", encoding="utf-8") as f:
+            f.write(content)
+            if not content.endswith("\n"):
+                f.write("\n")
+
+    def print_history_table(
+        self,
+        *,
+        title: Optional[str] = None,
+        include_config: bool = False,
+        save_to_file: bool = True,
+        output_filename: str = "history_table.txt",
+    ) -> None:
+        """
+        打印并可选写入全局历史结果表格。
+        """
+
+        headers, rows = self._build_history_table()
+        if not rows:
+            print("暂无历史结果可供汇总。")
+            return
+
+        title_text = title or "历史结果汇总"
+        config_snapshot = self._round_logs[0].get("config", {}) if self._round_logs else {}
+
+        print(f"\n{'='*80}")
+        print(title_text)
+        print(f"{'='*80}")
+
+        log_buffer = [f"{'='*80}\n{title_text}\n{'='*80}\n"]
+
+        if include_config and config_snapshot:
+            print("\n配置参数:")
+            log_buffer.append("\n配置参数:\n")
+            for key, value in config_snapshot.items():
+                line = f"  {key}: {value}"
+                print(line)
+                log_buffer.append(line + "\n")
+            print(f"\n{'='*80}")
+            log_buffer.append(f"\n{'='*80}\n")
+
+        table_text = self._render_table(headers, rows)
+        print(table_text)
+        log_buffer.append(table_text + "\n")
+
+        if self._log_file:
+            self._log_file.write("".join(log_buffer))
+            self._log_file.flush()
+
+        if save_to_file:
+            content = "".join(log_buffer)
+            self._write_history_table_file(content, output_filename=output_filename)
+
+    #endregion 历史汇总
+
     #region 绘图
     def _plot_round(self, session_dir: Path, round_idx: int, rows: List[Dict[str, Any]]) -> None:
         if not HAS_MATPLOTLIB or not rows:

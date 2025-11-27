@@ -9,12 +9,12 @@ from pathlib import Path
 
 from torch_geometric.data import Data
 
-# region sys.path 管理
+#region sys.path 管理
 _THIS_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _THIS_DIR.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
-# endregion
+#endregion
 
 from env import SimuVNEEnv
 from baselines.genetic_algorithm.ga_config import (
@@ -46,6 +46,7 @@ __all__ = [
 ]
 
 
+#region GAPlacementStrategy
 class GAPlacementStrategy(PlacementStrategy):
     """遗传算法策略包装器：仅读取主环境，在副本上完成搜索。"""
 
@@ -80,7 +81,7 @@ class GAPlacementStrategy(PlacementStrategy):
         self._config_source: Optional[str] = None
         self._load_params_if_needed()
 
-    # region 初始化辅助
+    #region 初始化辅助
     def _load_params_if_needed(self) -> None:
         candidate: Optional[str] = None
         if self.config_path:
@@ -108,7 +109,7 @@ class GAPlacementStrategy(PlacementStrategy):
         self.mutation_rate = params.mutation_rate
         self.elite_size = params.elite_size
         self.tournament_size = params.tournament_size
-    # endregion
+    #endregion
 
     def prepare(self, env: SimuVNEEnv) -> None:  # noqa: D401, ARG002
         """GA 策略无需额外准备。"""
@@ -166,8 +167,10 @@ class GAPlacementStrategy(PlacementStrategy):
             print(f"[GA] {msg} step={context.step_id}, vn_nodes={vn.x.size(0)}")
 
         return StrategyResult(success=success, mapping=mapping if success else {}, metadata=metadata)
+#endregion
 
 
+#region 工厂与运行封装
 def ga_strategy_factory(
     *,
     config_path: Optional[str] = None,
@@ -253,6 +256,10 @@ def smoke_test_ga_strategy(*, detail_print: bool = False) -> Dict[str, Any]:
     return result
 
 
+#endregion
+
+
+#region CLI 与自检
 if __name__ == "__main__":
     summary = smoke_test_ga_strategy(detail_print=False)["summary"]
     print(
@@ -262,5 +269,4 @@ if __name__ == "__main__":
             rate=summary["acceptance_rate"] * 100.0,
         )
     )
-
-
+#endregion
