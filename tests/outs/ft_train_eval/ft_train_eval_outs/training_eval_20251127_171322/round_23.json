@@ -1,0 +1,32 @@
+{
+  "round_title": "Training Update 21",
+  "config": {
+    "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+    "workflow_types": "workflow1",
+    "arrival_rate": 0.7,
+    "mean_lifetime": 20.0,
+    "max_time_steps": 1000,
+    "device": "cpu",
+    "seed": 2025,
+    "penalty": -150.0,
+    "training_update": 21,
+    "model_name": "update_21"
+  },
+  "results": [
+    {
+      "strategy": "finetuned",
+      "acceptance_rate": 58.984375,
+      "avg_r_t": -1.9906496373383789,
+      "avg_hops": 1.8476821192052981,
+      "max_hops": 4.0,
+      "avg_completion_duration": 20.886097504736274,
+      "tasks": 512,
+      "accepted": 302,
+      "lag_time": 40.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1040.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    }
+  ],
+  "timestamp": "2025-11-27T17:14:56.841820"
+}

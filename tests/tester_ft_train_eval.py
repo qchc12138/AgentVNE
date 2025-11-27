@@ -588,6 +588,9 @@ class TrainingEvaluator:
             output_filename="training_history_table.txt",
         )
 
+        if self.enable_plotting:
+            self._plot_learning_curves()
+
         # 关闭 printer，触发日志与图表收尾
         self.printer.close()
 
@@ -607,6 +610,146 @@ class TrainingEvaluator:
             json.dump(summary_data, f, indent=2, ensure_ascii=False)
         
         print(f"\n评估结果已保存到: {self.session_dir}")
+
+    def _plot_learning_curves(self) -> None:
+        """绘制训练过程的多指标曲线。"""
+        try:
+            import matplotlib
+
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            import warnings
+
+            warnings.filterwarnings("ignore", category=UserWarning, message=".*Glyph.*missing.*")
+            warnings.filterwarnings("ignore", category=UserWarning, message=".*font.*")
+        except ImportError:
+            print("警告: matplotlib 未安装，跳过学习曲线绘制。")
+            return
+
+        if not self.evaluation_results:
+            return
+
+        # 收集所有评估结果（含基准模型）
+        all_results = []
+        if self.initial_model_result:
+            all_results.append(("初始模型", self.initial_model_result))
+        if self.pretrained_model_result:
+            all_results.append(("预训练模型", self.pretrained_model_result))
+        all_results.extend((f"训练轮次 {item['update_number']}", item) for item in self.evaluation_results)
+
+        if not all_results:
+            return
+
+        updates: List[float] = []
+        metric_accept = []
+        metric_rt = []
+        metric_hops = []
+
+        for _, result in all_results:
+            model_eval = result.get("model_evaluation", {}) or {}
+            update_number = result.get("update_number", 0)
+            if update_number == 0:
+                if result.get("model_type") == "initial_random":
+                    updates.append(0.0)
+                else:
+                    updates.append(0.5)
+            else:
+                updates.append(float(update_number))
+            metric_accept.append(model_eval.get("acceptance_rate", 0.0) * 100.0)
+            metric_rt.append(model_eval.get("avg_r_t", 0.0))
+            metric_hops.append(model_eval.get("avg_hops", 0.0))
+
+        baseline_updates: List[float] = []
+        baseline_accept: List[float] = []
+        baseline_rt: List[float] = []
+        baseline_hops: List[float] = []
+        training_updates: List[float] = []
+        training_accept: List[float] = []
+        training_rt: List[float] = []
+        training_hops: List[float] = []
+
+        for idx, (_, result) in enumerate(all_results):
+            if result.get("update_number", 0) == 0:
+                baseline_updates.append(updates[idx])
+                baseline_accept.append(metric_accept[idx])
+                baseline_rt.append(metric_rt[idx])
+                baseline_hops.append(metric_hops[idx])
+            else:
+                training_updates.append(updates[idx])
+                training_accept.append(metric_accept[idx])
+                training_rt.append(metric_rt[idx])
+                training_hops.append(metric_hops[idx])
+
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        fig.suptitle("Training Learning Curves", fontsize=16, fontweight="bold")
+
+        def _scatter_baseline(ax, xs, ys, label):
+            if not xs:
+                return
+            ax.scatter(xs, ys, s=200, marker="*", color="red", label=label, zorder=5)
+
+        # 接受率
+        _scatter_baseline(axes[0, 0], baseline_updates, baseline_accept, "Baseline")
+        if training_updates:
+            axes[0, 0].plot(training_updates, training_accept, "b-o", linewidth=2, markersize=8, label="Finetuned")
+        axes[0, 0].set_xlabel("Update Number")
+        axes[0, 0].set_ylabel("Acceptance Rate (%)")
+        axes[0, 0].set_title("Acceptance Rate")
+        axes[0, 0].grid(True, alpha=0.3)
+        axes[0, 0].legend()
+
+        # 平均 r_t
+        _scatter_baseline(axes[0, 1], baseline_updates, baseline_rt, "Baseline")
+        if training_updates:
+            axes[0, 1].plot(training_updates, training_rt, "g-s", linewidth=2, markersize=8, label="Finetuned")
+        axes[0, 1].set_xlabel("Update Number")
+        axes[0, 1].set_ylabel("Average r_t")
+        axes[0, 1].set_title("Average Return")
+        axes[0, 1].grid(True, alpha=0.3)
+        axes[0, 1].legend()
+
+        # 平均跳数
+        _scatter_baseline(axes[1, 0], baseline_updates, baseline_hops, "Baseline")
+        if training_updates:
+            axes[1, 0].plot(training_updates, training_hops, "r-^", linewidth=2, markersize=8, label="Finetuned")
+        axes[1, 0].set_xlabel("Update Number")
+        axes[1, 0].set_ylabel("Average Hops")
+        axes[1, 0].set_title("Average Hops")
+        axes[1, 0].grid(True, alpha=0.3)
+        axes[1, 0].legend()
+
+        # 任务数趋势
+        total_tasks_baseline = []
+        total_tasks_training = []
+        accepted_baseline = []
+        accepted_training = []
+        for _, result in all_results:
+            model_eval = result.get("model_evaluation", {}) or {}
+            if result.get("update_number", 0) == 0:
+                total_tasks_baseline.append(model_eval.get("tasks", 0))
+                accepted_baseline.append(model_eval.get("accepted", 0))
+            else:
+                total_tasks_training.append(model_eval.get("tasks", 0))
+                accepted_training.append(model_eval.get("accepted", 0))
+
+        if baseline_updates:
+            axes[1, 1].scatter(baseline_updates, total_tasks_baseline, s=200, marker="*", color="red", label="Baseline Total", zorder=5)
+            axes[1, 1].scatter(baseline_updates, accepted_baseline, s=160, marker="P", color="orange", label="Baseline Accepted", zorder=5)
+        if training_updates:
+            axes[1, 1].plot(training_updates, total_tasks_training, "m-^", linewidth=2, markersize=8, label="Total Tasks")
+            axes[1, 1].plot(training_updates, accepted_training, "c-s", linewidth=2, markersize=8, label="Accepted Tasks")
+        axes[1, 1].set_xlabel("Update Number")
+        axes[1, 1].set_ylabel("Task Count")
+        axes[1, 1].set_title("Task Count Trend")
+        axes[1, 1].grid(True, alpha=0.3)
+        axes[1, 1].legend()
+
+        plt.tight_layout()
+        plot_path = os.path.join(self.session_dir, "learning_curves.png")
+        plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+        plt.close()
+
+        print(f"  ✓ 学习曲线图已保存: {plot_path}")
     
 #endregion
 
@@ -642,7 +785,7 @@ def evaluate_training_model(
 #endregion
 
 
-#region CLI 接口和演示
+#region 接口和演示
 def build_arg_parser(
     eval_defaults: Optional[Dict[str, Any]] = None,
     demo_defaults: Optional[Dict[str, Any]] = None,

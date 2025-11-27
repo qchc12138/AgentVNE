@@ -1,0 +1,1032 @@
+{
+  "session_dir": "/home/yc2/mrt/a/tests/outs/ft_train_eval/ft_train_eval_outs/training_eval_20251127_171322",
+  "total_rounds": 32,
+  "rounds": [
+    {
+      "round_title": "Initial Model (Random Initialization)",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "model_name": "initial_random",
+        "model_type": "random_initialization"
+      },
+      "results": [
+        {
+          "strategy": "initial",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -2.208893093661305,
+          "avg_hops": 1.8841059602649006,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856618
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:26.162660"
+    },
+    {
+      "round_title": "Pretrained Model (Before Fine-tuning)",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "model_name": "pretrained",
+        "model_type": "pretrained",
+        "checkpoint": "checkpoint_latest.pt"
+      },
+      "results": [
+        {
+          "strategy": "pretrained",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:30.286430"
+    },
+    {
+      "round_title": "Training Update 1",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 1,
+        "model_name": "update_1"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:34.702866"
+    },
+    {
+      "round_title": "Training Update 2",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 2,
+        "model_name": "update_2"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:38.806948"
+    },
+    {
+      "round_title": "Training Update 3",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 3,
+        "model_name": "update_3"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:42.914421"
+    },
+    {
+      "round_title": "Training Update 4",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 4,
+        "model_name": "update_4"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:47.040625"
+    },
+    {
+      "round_title": "Training Update 5",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 5,
+        "model_name": "update_5"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:51.137122"
+    },
+    {
+      "round_title": "Training Update 6",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 6,
+        "model_name": "update_6"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:55.214153"
+    },
+    {
+      "round_title": "Training Update 7",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 7,
+        "model_name": "update_7"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:13:59.266398"
+    },
+    {
+      "round_title": "Training Update 8",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 8,
+        "model_name": "update_8"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:03.354734"
+    },
+    {
+      "round_title": "Training Update 9",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 9,
+        "model_name": "update_9"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:07.659717"
+    },
+    {
+      "round_title": "Training Update 10",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 10,
+        "model_name": "update_10"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:11.738407"
+    },
+    {
+      "round_title": "Training Update 11",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 11,
+        "model_name": "update_11"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:15.816832"
+    },
+    {
+      "round_title": "Training Update 12",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 12,
+        "model_name": "update_12"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:19.895688"
+    },
+    {
+      "round_title": "Training Update 13",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 13,
+        "model_name": "update_13"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:23.981098"
+    },
+    {
+      "round_title": "Training Update 14",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 14,
+        "model_name": "update_14"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:28.057305"
+    },
+    {
+      "round_title": "Training Update 15",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 15,
+        "model_name": "update_15"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:32.132650"
+    },
+    {
+      "round_title": "Training Update 16",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 16,
+        "model_name": "update_16"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:36.380397"
+    },
+    {
+      "round_title": "Training Update 17",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 17,
+        "model_name": "update_17"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:40.452126"
+    },
+    {
+      "round_title": "Training Update 18",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 18,
+        "model_name": "update_18"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:44.534532"
+    },
+    {
+      "round_title": "Training Update 19",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 19,
+        "model_name": "update_19"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:48.615016"
+    },
+    {
+      "round_title": "Training Update 20",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 20,
+        "model_name": "update_20"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:52.705970"
+    },
+    {
+      "round_title": "Training Update 21",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 21,
+        "model_name": "update_21"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:14:56.841820"
+    },
+    {
+      "round_title": "Training Update 22",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 22,
+        "model_name": "update_22"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:00.933899"
+    },
+    {
+      "round_title": "Training Update 23",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 23,
+        "model_name": "update_23"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:04.995960"
+    },
+    {
+      "round_title": "Training Update 24",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 24,
+        "model_name": "update_24"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:09.214753"
+    },
+    {
+      "round_title": "Training Update 25",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 25,
+        "model_name": "update_25"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:13.298564"
+    },
+    {
+      "round_title": "Training Update 26",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 26,
+        "model_name": "update_26"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:17.389919"
+    },
+    {
+      "round_title": "Training Update 27",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 27,
+        "model_name": "update_27"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:21.488055"
+    },
+    {
+      "round_title": "Training Update 28",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 28,
+        "model_name": "update_28"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:25.538036"
+    },
+    {
+      "round_title": "Training Update 29",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 29,
+        "model_name": "update_29"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:29.586620"
+    },
+    {
+      "round_title": "Training Update 30",
+      "config": {
+        "sn_topology": "/home/yc2/mrt/a/topo/SN_topology.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.7,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 2025,
+        "penalty": -150.0,
+        "training_update": 30,
+        "model_name": "update_30"
+      },
+      "results": [
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 58.984375,
+          "avg_r_t": -1.9906496373383789,
+          "avg_hops": 1.8476821192052981,
+          "max_hops": 4.0,
+          "avg_completion_duration": 20.886097504736274,
+          "tasks": 512,
+          "accepted": 302,
+          "lag_time": 40.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1040.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-11-27T17:15:33.646248"
+    }
+  ],
+  "timestamp": "2025-11-27T17:15:36.618354"
+}
