@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from env import SimuVNEEnv
+from torch_geometric.data import Data
 
 try:
     from tabulate import tabulate
@@ -25,16 +26,18 @@ except Exception:  # pragma: no cover
     HAS_MATPLOTLIB = False
     plt = None  # type: ignore
 
-__all__ = ["TestPrinter", "DetailedTestLogger"]
+__all__ = ["TestPrinter", "DetailedTestLogger", "ResourceFailureTracker"]
 
 TEST_SCOPE_DIRS = {
     # 单策略小参数测试（各策略独立文件夹）
     "null_single": "null_single_outs",
     "gal_single": "gal_single_outs",
-    "gal2_single": "gal2_single_outs",
-    "gal3_single": "gal3_single_outs",
+    "gal_pn_single": "gal_pn_single_outs",
+    "gal_sn_single": "gal_sn_single_outs",
     "ga_single": "ga_single_outs",
     "finetuned_single": "finetuned_single_outs",
+    "pretrained_single": "pretrained_single_outs",
+    "ft_train_eval": "ft_train_eval_outs",
     # tester 对比实验
     "tester": "tester_outs",
     "comparison": "tester_outs",
@@ -105,6 +108,87 @@ def _denormalize_task_info(task_info: Dict[str, Any], env: SimuVNEEnv) -> Dict[s
     return new_task_info
 
 
+RESOURCE_KEYS: Tuple[str, ...] = ("cpu", "mem", "disk")
+
+
+def _compute_vn_total_demand(vn: Data, env: SimuVNEEnv) -> Dict[str, float]:
+    capacities = env.get_sn_max_capacity()
+    cpu_max = float(capacities.get("cpu_max", 1.0))
+    mem_max = float(capacities.get("mem_max", 1.0))
+    disk_max = float(capacities.get("disk_max", 1.0))
+
+    demand = {key: 0.0 for key in RESOURCE_KEYS}
+    for idx in range(vn.x.size(0)):
+        feats = vn.x[idx]
+        demand["cpu"] += float(feats[0].item()) * cpu_max
+        demand["mem"] += float(feats[1].item()) * mem_max
+        demand["disk"] += float(feats[2].item()) * disk_max
+    return demand
+
+
+def _compute_sn_remaining(env: SimuVNEEnv) -> Dict[str, float]:
+    remaining = {key: 0.0 for key in RESOURCE_KEYS}
+    for node_id in env.G_sn.nodes:
+        node_data = env.G_sn.nodes[node_id]
+        remaining["cpu"] += float(node_data.get("cpu_res", 0.0))
+        remaining["mem"] += float(node_data.get("mem_res", 0.0))
+        remaining["disk"] += float(node_data.get("disk_res", 0.0))
+    return remaining
+
+
+class ResourceFailureTracker:
+    """
+    资源失效率记录器：保存 workflow 放置失败时的需求、剩余与比值。
+    """
+
+    def __init__(self) -> None:
+        self._records: List[Dict[str, Any]] = []
+
+    def record_failure(
+        self,
+        *,
+        env: SimuVNEEnv,
+        vn: Data,
+        task_id: Optional[int] = None,
+        failure_reason: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        demand = _compute_vn_total_demand(vn, env)
+        remaining = _compute_sn_remaining(env)
+
+        ratios: Dict[str, float] = {}
+        max_ratio = 0.0
+        for key in RESOURCE_KEYS:
+            required = demand.get(key, 0.0)
+            if required <= 1e-9:
+                ratios[key] = float("inf")
+            else:
+                ratios[key] = remaining.get(key, 0.0) / required
+            if ratios[key] > max_ratio:
+                max_ratio = ratios[key]
+
+        entry = {
+            "task_id": task_id,
+            "failure_reason": failure_reason,
+            "vn_resource_demand": demand,
+            "sn_remaining_resource": remaining,
+            "failure_ratios": ratios,
+            "max_failure_ratio": float(max_ratio),
+        }
+        self._records.append(entry)
+        return entry
+
+    def build_summary(self) -> Dict[str, Any]:
+        max_ratio = (
+            max((item.get("max_failure_ratio", 0.0) for item in self._records), default=0.0)
+            if self._records
+            else 0.0
+        )
+        return {
+            "records": list(self._records),
+            "max_resource_failure_ratio": float(max_ratio),
+        }
+
+
 #endregion 工具函数
 
 
@@ -124,15 +208,16 @@ class TestPrinter:
     ) -> None:
         self._columns: Sequence[Tuple[str, str]] = (
             ("策略", "strategy"),
-            ("接受率(%)", "acceptance_rate"),
+            ("接受率", "acceptance_rate"),
             ("平均r_t", "avg_r_t"),
-            ("平均跳数", "avg_hops"),
-            ("最大跳数", "max_hops"),
+            ("平均跳", "avg_hops"),
+            ("最大跳", "max_hops"),
             ("平均完成时长", "avg_completion_duration"),
+            ("最大失效率", "max_resource_failure_ratio"),
             ("任务数", "tasks"),
             ("接受数", "accepted"),
-            ("结束时间", "end_time"),
-            ("滞后时间", "lag_time"),
+            ("结束时", "end_time"),
+            ("滞后时", "lag_time"),
         )
 
         self._enable_logging = enable_logging  # 是否启用日志记录
@@ -312,6 +397,36 @@ class TestPrinter:
         if self._enable_plotting:
             self._plot_round(Path(self._session_dir), round_idx, self._rows)
 
+        # 将本轮表格写入日志文件，便于离线查看
+        if self._log_file:
+            self._write_log_table()
+
+    def _write_log_table(self) -> None:
+        """
+        将当前轮次的结果以表格形式写入日志文件。
+
+        与标准输出上的表格保持一致（优先使用 tabulate 的 grid 风格），
+        方便在仅查看日志文件时快速对比各策略。
+        """
+
+        if not self._log_file or not self._rows:
+            return
+
+        table = [[self._format_cell(row, key) for _, key in self._columns] for row in self._rows]
+        headers = [title for title, _ in self._columns]
+
+        self._log_file.write("\n本轮结果表格:\n")
+        if tabulate:
+            self._log_file.write(
+                tabulate(table, headers=headers, tablefmt="grid", stralign="center")
+                + "\n"
+            )
+        else:
+            self._log_file.write("\t".join(headers) + "\n")
+            for line in table:
+                self._log_file.write("\t".join(line) + "\n")
+        self._log_file.flush()
+
     #endregion 打印与持久化
 
     #region 绘图
@@ -321,7 +436,7 @@ class TestPrinter:
 
         try:
             fig, axes = plt.subplots(2, 2, figsize=(12, 9))
-            fig.suptitle(f"{self._table_title} - 策略对比", fontsize=14)
+            fig.suptitle(f"{self._table_title} - Strategy Comparison", fontsize=14)
 
             strategies = [row.get("strategy", "unknown") for row in rows]
 
@@ -329,20 +444,20 @@ class TestPrinter:
                 axes[0, 0],
                 strategies,
                 [row.get("acceptance_rate", 0.0) for row in rows],
-                title="接受率(%)",
+                title="Acceptance Rate (%)",
             )
             self._bar_chart(
                 axes[0, 1],
                 strategies,
                 [row.get("avg_r_t", 0.0) for row in rows],
-                title="平均r_t",
+                title="Average r_t",
                 color="tab:green",
             )
             self._bar_chart(
                 axes[1, 0],
                 strategies,
                 [row.get("avg_hops", 0.0) for row in rows],
-                title="平均跳数",
+                title="Average Hops",
                 color="tab:orange",
             )
             self._stacked_chart(
@@ -356,6 +471,11 @@ class TestPrinter:
             plot_path = session_dir / f"round_{round_idx}_comparison.png"
             plt.savefig(plot_path, dpi=200, bbox_inches="tight")
             plt.close()
+            if self._log_file:
+                self._log_file.write(
+                    f"轮次对比图已保存: {plot_path.name}\n"
+                )
+                self._log_file.flush()
         except Exception as exc:  # pragma: no cover
             print(f"警告：生成轮次图时出错：{exc}")
 
@@ -366,7 +486,7 @@ class TestPrinter:
         try:
             metrics = ("acceptance_rate", "avg_r_t", "avg_hops", "avg_completion_duration")
             fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-            fig.suptitle("多轮次指标趋势", fontsize=16)
+            fig.suptitle("Multi-round Metric Trends", fontsize=16)
 
             rounds = range(1, len(self._round_logs) + 1)
             strategies = sorted(
@@ -398,6 +518,11 @@ class TestPrinter:
             summary_plot = session_dir / "summary_trend.png"
             plt.savefig(summary_plot, dpi=200, bbox_inches="tight")
             plt.close()
+            if self._log_file:
+                self._log_file.write(
+                    f"汇总趋势图已保存: {summary_plot.name}\n"
+                )
+                self._log_file.flush()
         except Exception as exc:  # pragma: no cover
             print(f"警告：生成汇总图时出错：{exc}")
 
@@ -405,14 +530,16 @@ class TestPrinter:
     def _bar_chart(ax, strategies: List[str], values: List[float], *, title: str, color: str = "tab:blue") -> None:
         ax.bar(strategies, values, color=color, alpha=0.8)
         ax.set_title(title)
+        ax.set_xticks(range(len(strategies)))
         ax.set_xticklabels(strategies, rotation=30, ha="right")
         ax.grid(True, axis="y", alpha=0.3)
 
     @staticmethod
     def _stacked_chart(ax, strategies: List[str], *, total: List[int], accepted: List[int]) -> None:
-        ax.bar(strategies, total, label="任务数", color="tab:blue", alpha=0.6)
-        ax.bar(strategies, accepted, label="接受数", color="tab:red", alpha=0.6)
-        ax.set_title("任务数量对比")
+        ax.bar(strategies, total, label="Tasks", color="tab:blue", alpha=0.6)
+        ax.bar(strategies, accepted, label="Accepted", color="tab:red", alpha=0.6)
+        ax.set_title("Task Count Comparison")
+        ax.set_xticks(range(len(strategies)))
         ax.set_xticklabels(strategies, rotation=30, ha="right")
         ax.legend()
         ax.grid(True, axis="y", alpha=0.3)

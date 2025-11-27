@@ -29,7 +29,7 @@ from tests.test_strategy import (
     run_strategy_with_details,
     build_strategy_row,
 )
-from GAL_2 import GreedyAllocator as GAL2Allocator
+from baselines.GAL_2 import GreedyAllocator as GAL2Allocator
 
 __all__ = [
     "GAL2PlacementStrategy",
@@ -39,9 +39,9 @@ __all__ = [
 
 
 class GAL2PlacementStrategy(PlacementStrategy):
-    """GAL_2 策略包装器（在临时环境上模拟，不直接修改主环境）。"""
+    """GAL-PN (Per-Node) 策略包装器：逐节点贪心，每次选择后立即扣减资源。"""
 
-    name: str = "gal2"
+    name: str = "gal_pn"
 
     def prepare(self, env: SimuVNEEnv) -> None:  # noqa: D401, ARG002
         """GAL_2 策略无需额外准备。"""
@@ -57,12 +57,12 @@ class GAL2PlacementStrategy(PlacementStrategy):
         temp_env = copy.deepcopy(env)
         allocator = GAL2Allocator(temp_env)
         success, mapping, _ = allocator.greedy_place(vn)
-        metadata: Dict[str, object] = {"placed_with": "GAL_2"}
+        metadata: Dict[str, object] = {"placed_with": "GAL-PN"}
         if not success:
-            metadata["failure_reason"] = "GAL_2 贪心放置失败"
+            metadata["failure_reason"] = "GAL-PN greedy placement failed"
         if context.verbose:
             msg = "✓" if success else "✗"
-            print(f"[GAL_2] {msg} step={context.step_id}, vn_nodes={vn.x.size(0)}")
+            print(f"[GAL-PN] {msg} step={context.step_id}, vn_nodes={vn.x.size(0)}")
         return StrategyResult(success=success, mapping=mapping if success else {}, metadata=metadata)
 
 
@@ -85,7 +85,7 @@ def run_gal2_strategy_test(
         config=config,
         config_overrides=config_overrides,
         printer=printer,
-        strategy_label="gal2",
+        strategy_label="gal_pn",
     )
 
 
@@ -97,7 +97,7 @@ def smoke_test_gal2_strategy(*, detail_print: bool = False) -> Dict[str, any]:
     printer = TestPrinter(
         enable_logging=True,
         enable_plotting=False,
-        test_scope="gal2_single",
+        test_scope="gal_pn_single",
     )
     try:
         printer.start_round(
@@ -114,7 +114,7 @@ def smoke_test_gal2_strategy(*, detail_print: bool = False) -> Dict[str, any]:
             detail_print=detail_print,
         )
         printer.add_row(
-            build_strategy_row("gal2", result),
+            build_strategy_row("gal_pn", result),
             strategy_info={"strategy_name": "GAL2PlacementStrategy"},
         )
         printer.finalize()

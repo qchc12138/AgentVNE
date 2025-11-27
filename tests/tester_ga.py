@@ -17,13 +17,13 @@ if str(_PROJECT_ROOT) not in sys.path:
 # endregion
 
 from env import SimuVNEEnv
-from genetic_algorithm.ga_config import (
+from baselines.genetic_algorithm.ga_config import (
     DEFAULT_GA_OUTPUT_DIR,
     GAParams,
     find_latest_ga_config,
     load_ga_config,
 )
-from genetic_algorithm.ga_core import GeneticAlgorithm
+from baselines.genetic_algorithm.ga_core import GeneticAlgorithm
 from tests.test_configs import get_smoke_config
 from tests.test_printer import TestPrinter
 from tests.test_strategy import (

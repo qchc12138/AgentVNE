@@ -33,11 +33,12 @@ from tests.test_configs import (
 )
 from tests.tester_ga import GAPlacementStrategy
 from tests.tester_gal import GALPlacementStrategy
-from tests.tester_gal_2 import GAL2PlacementStrategy
-from tests.tester_gal_3 import GAL3PlacementStrategy
+from tests.tester_gal_2 import GAL2PlacementStrategy as GALPNPlacementStrategy
+from tests.tester_gal_3 import GAL3PlacementStrategy as GALSNPlacementStrategy
 from tests.tester_null import NullPlacementStrategy
 from tests.tester_ft1 import get_finetuned_tester_registry
 from tests.tester_ft1 import FT1PlacementStrategy
+from tests.tester_ft_n import FTNPlacementStrategy
 
 
 StrategyFactory = Callable[[], "PlacementStrategy"]
@@ -51,9 +52,10 @@ def resolve_strategies(names: Optional[Iterable[str]]) -> Dict[str, StrategyFact
         "null": lambda: NullPlacementStrategy(),
         "ga": lambda: GAPlacementStrategy(),
         "gal": lambda: GALPlacementStrategy(),
-        "gal2": lambda: GAL2PlacementStrategy(),
-        "gal3": lambda: GAL3PlacementStrategy(),
+        "gal_pn": lambda: GALPNPlacementStrategy(),
+        "gal_sn": lambda: GALSNPlacementStrategy(),
         "ft1": lambda: FT1PlacementStrategy(),
+        "ft_n": lambda: FTNPlacementStrategy(),
     }
     finetuned_registry = get_finetuned_tester_registry()
     full_registry = dict(base_registry)
@@ -148,7 +150,7 @@ class Tester:
         )
         try:
             for idx, config in enumerate(self.round_configs, start=1):
-                table_title = f"Tester 参数组 #{idx}"
+                table_title = f"Tester Param Group #{idx}"
                 printer.start_round(
                     table_title=table_title,
                     config_info=format_config_info(
@@ -288,9 +290,10 @@ def main(argv: Optional[List[str]] = None) -> None:
         "null",
         "ga",
         "gal",
-        "gal2",
-        "gal3",
+        "gal_pn",
+        "gal_sn",
         "ft1",
+        "ft_n",
     ]
     manual_parameters = [
         {
@@ -299,23 +302,25 @@ def main(argv: Optional[List[str]] = None) -> None:
             "max_time_steps": 100,
             "seed": 2025,
         },
-        {
-            "arrival_rate": 0.5,
-            "mean_lifetime": 50,
-            "max_time_steps": 1000,
-            "seed": 2025,
-        },
-        {
-            "arrival_rate": 1.0,
-            "mean_lifetime": 100,
-            "max_time_steps": 1000,
-            "seed": 2025,
-        },
+        #{
+        #    "arrival_rate": 0.5,
+        #    "mean_lifetime": 50,
+        #    "max_time_steps": 1000,
+        #    "seed": 2025,
+        #},
+        #{
+        #    "arrival_rate": 1.0,
+        #    "mean_lifetime": 100,
+        #    "max_time_steps": 1000,
+        #    "seed": 2025,
+        #},
     ]
 
     parser = build_arg_parser()
     if argv is None:
         default_cli: List[str] = []
+        # 默认开启绘图功能，生成对比图和汇总趋势图
+        default_cli.append("--plot")
         for strategy_name in manual_strategies:
             default_cli.extend(["--strategy", strategy_name])
         for param_dict in manual_parameters:

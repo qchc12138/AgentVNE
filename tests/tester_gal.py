@@ -29,7 +29,7 @@ from tests.test_strategy import (
     run_strategy_with_details,
     build_strategy_row,
 )
-from GAL import GreedyAllocator as GALAllocator
+from baselines.GAL import GreedyAllocator as GALAllocator
 
 __all__ = [
     "GALPlacementStrategy",
@@ -60,7 +60,7 @@ class GALPlacementStrategy(PlacementStrategy):
         success, mapping, _ = allocator.greedy_place(vn)
         metadata: Dict[str, object] = {"placed_with": "GAL"}
         if not success:
-            metadata["failure_reason"] = "GAL 贪心放置失败"
+            metadata["failure_reason"] = "GAL greedy placement failed"
         if context.verbose:
             msg = "✓" if success else "✗"
             print(f"[GAL] {msg} step={context.step_id}, vn_nodes={vn.x.size(0)}")

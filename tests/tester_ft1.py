@@ -347,9 +347,8 @@ class FineTunedPlacementStrategy(PlacementStrategy):
             )
         
         # 打印模型加载信息
-        print(f"[FineTuned] 加载模型: {self.model_name_display} ({FINETUNED_MODEL_NAME})")
-        print(f"  策略网络: {os.path.basename(self._policy_file)}")
-        print(f"  价值网络: {os.path.basename(self._value_file)}")
+        
+        print(f"[FineTuned] 加载模型: {self.model_name_display} ({FINETUNED_MODEL_NAME})",f"  策略网络: {os.path.basename(self._policy_file)}",f"  价值网络: {os.path.basename(self._value_file)}")
         
         try:
             policy, cfg = load_policy(self._policy_file, self.device)

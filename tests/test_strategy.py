@@ -32,9 +32,21 @@ if str(_PROJECT_ROOT) not in sys.path:
 from env import SimuVNEEnv, WorkflowGenerator
 
 try:  # 兼容后续还未实现 TestPrinter 的阶段
-    from tests.test_printer import TestPrinter  # type: ignore
+    from tests.test_printer import TestPrinter, ResourceFailureTracker  # type: ignore
 except Exception:  # pragma: no cover - 在初期阶段允许缺失
     TestPrinter = None  # type: ignore
+
+    class ResourceFailureTracker:  # type: ignore
+        def __init__(self) -> None:
+            self._records: List[Dict[str, Any]] = []
+
+        def record_failure(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+            entry: Dict[str, Any] = {}
+            self._records.append(entry)
+            return entry
+
+        def build_summary(self) -> Dict[str, Any]:
+            return {"records": list(self._records), "max_resource_failure_ratio": 0.0}
 
 __all__ = [
     "StrategyContext",
@@ -176,6 +188,7 @@ class SingleTester:
         cfg = self.config
 
         tasks: List[Dict[str, Any]] = []
+        failure_tracker = ResourceFailureTracker()
         time_step = 0
         stop_arrival_time: Optional[float] = None
 
@@ -199,6 +212,7 @@ class SingleTester:
                     tasks=tasks,
                     time_step=time_step,
                     show_details=show_details,
+                    failure_tracker=failure_tracker,
                 )
             time_step += 1
 
@@ -211,7 +225,7 @@ class SingleTester:
 
         end_time = float(env.current_time)
         lag_time = max(0.0, end_time - stop_arrival_time)
-        summary = _compute_task_summary(tasks)
+        summary = _compute_task_summary(tasks, failure_tracker=failure_tracker)
 
         if limit_reached:
             print(
@@ -245,6 +259,7 @@ class SingleTester:
         tasks: List[Dict[str, Any]],
         time_step: int,
         show_details: bool,
+        failure_tracker: Optional["ResourceFailureTracker"] = None,
     ) -> None:
         """生成并调度单个 workflow 任务。"""
 
@@ -326,6 +341,14 @@ class SingleTester:
 
         if not record["success"]:
             record.setdefault("failure_reason", "策略拒绝或资源不足")
+            if failure_tracker is not None:
+                stats = failure_tracker.record_failure(
+                    env=env,
+                    vn=vn,
+                    task_id=task_id,
+                    failure_reason=record.get("failure_reason"),
+                )
+                record["resource_failure_stats"] = stats
             if show_details:
                 print(f"  ✗ 放置失败: {record['failure_reason']}")
 
@@ -338,8 +361,18 @@ class SingleTester:
 
 
 #region 辅助方法
-def _compute_task_summary(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _compute_task_summary(
+    tasks: List[Dict[str, Any]],
+    *,
+    failure_tracker: Optional["ResourceFailureTracker"] = None,
+) -> Dict[str, Any]:
     """对任务记录进行统计。"""
+
+    failure_summary = (
+        failure_tracker.build_summary()
+        if failure_tracker is not None
+        else {"records": [], "max_resource_failure_ratio": 0.0}
+    )
 
     if not tasks:
         return {
@@ -350,6 +383,8 @@ def _compute_task_summary(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
             "avg_hops": 0.0,
             "max_hops": 0.0,
             "avg_completion_duration": 0.0,
+            "resource_failure_records": failure_summary["records"],
+            "max_resource_failure_ratio": failure_summary["max_resource_failure_ratio"],
         }
 
     total = len(tasks)
@@ -370,6 +405,8 @@ def _compute_task_summary(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
         "avg_hops": float(np.mean(hops)) if hops else 0.0,
         "max_hops": float(max(hops)) if hops else 0.0,
         "avg_completion_duration": float(np.mean(completion)) if completion else 0.0,
+        "resource_failure_records": failure_summary["records"],
+        "max_resource_failure_ratio": failure_summary["max_resource_failure_ratio"],
     }
 
 
@@ -389,6 +426,7 @@ def _build_strategy_row(strategy_name: str, result: Dict[str, Any]) -> Dict[str,
         "lag_time": result.get("lag_time", 0.0),
         "stop_arrival_time": result.get("stop_arrival_time", 0.0),
         "end_time": result.get("end_time", 0.0),
+        "max_resource_failure_ratio": summary.get("max_resource_failure_ratio", 0.0),
     }
 
 
@@ -573,6 +611,7 @@ def run_strategy_with_details(
 
     tasks: List[Dict[str, Any]] = []
     task_records: Dict[int, Dict[str, Any]] = {}
+    failure_tracker = ResourceFailureTracker()
     time_step = 0
     time_delta = 1.0
     stop_arrival_time: Optional[float] = None
@@ -677,6 +716,18 @@ def run_strategy_with_details(
                 placement_result["failure_reason"] = failure_reason
                 record["failure_reason"] = failure_reason
 
+            if not record["success"]:
+                stats = failure_tracker.record_failure(
+                    env=env,
+                    vn=vn,
+                    task_id=task_id,
+                    failure_reason=record.get("failure_reason"),
+                )
+                record["resource_failure_stats"] = stats
+                if placement_result is not None:
+                    placement_result.setdefault("failure_reason", record["failure_reason"])
+                    placement_result["resource_failure_stats"] = stats
+
             tasks.append(record)
             task_records[task_id] = record
 
@@ -707,7 +758,7 @@ def run_strategy_with_details(
 
     end_time = float(env.current_time)
     lag_time = max(0.0, end_time - stop_arrival_time)
-    summary = _compute_task_summary(tasks)
+    summary = _compute_task_summary(tasks, failure_tracker=failure_tracker)
     printer.end_step_logging(summary=summary)
 
     return {
