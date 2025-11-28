@@ -1,6 +1,12 @@
 import json
 import numpy as np
 from typing import Dict, List, Tuple
+import sys
+import os
+
+# 添加父目录到路径，以便导入 noderank_calculator
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from noderank_calculator import VNNodeRankCalculator, calculate_vn_noderank
 
 PJ_u = 0.80
 PF_u = 0.20
@@ -363,13 +369,30 @@ if __name__ == '__main__':
     topology_file = '/home/yc2/mrt/a/workflow_topo/workflow1_topo.json'
     output_file = '/home/yc2/mrt/a/workflow_topo/workflow1_noderank.json'
     
-    results = calculate_noderank(
-        topology_file=topology_file,
-        pJ_u=PJ_u,      # 跳转偏置因子
-        pF_u=PF_u,      # 前向偏置因子
-        max_iterations=100,
-        tolerance=1e-6
+    # 方式1：使用类（推荐，可在其他文件中调用）
+    calculator = VNNodeRankCalculator(
+        pJ_u=PJ_u,
+        pF_u=PF_u,
+        verbose=True
     )
+    results = calculator.calculate(topology_file)
+    
+    # 方式2：使用便捷函数
+    # results = calculate_vn_noderank(
+    #     topology_file=topology_file,
+    #     pJ_u=PJ_u,
+    #     pF_u=PF_u,
+    #     verbose=True
+    # )
+    
+    # 方式3：使用原有函数（保持向后兼容）
+    # results = calculate_noderank(
+    #     topology_file=topology_file,
+    #     pJ_u=PJ_u,
+    #     pF_u=PF_u,
+    #     max_iterations=100,
+    #     tolerance=1e-6
+    # )
     
     # 保存结果
     save_results(results, output_file)

@@ -380,15 +380,17 @@ def calculate_noderank(topology_file: str,
 
 
 if __name__ == '__main__':
-    # 计算 star_topology 的 NodeRank
+    # 计算 SN_topology 的 NodeRank
     topology_file = '/home/yc2/mrt/a/topo/SN_topology.json'
     
+    # 使用本文件的 calculate_noderank 函数计算 NodeRank
     results = calculate_noderank(
         topology_file=topology_file,
-        pJ_u=PJ_u,      # 跳转偏置因子
-        pF_u=PF_u,      # 前向偏置因子
+        pJ_u=PJ_u,
+        pF_u=PF_u,
         max_iterations=100,
-        tolerance=1e-6
+        tolerance=1e-6,
+        num_first_transforms=2
     )
     
     # 保存 NodeRank 结果为 JSON 文件

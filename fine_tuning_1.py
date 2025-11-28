@@ -319,23 +319,90 @@ class PPOAgent:
             print(f"      【放置策略开始】VN节点数={N_v}, SN节点数={N_s}")
             print(f"      {'='*60}")
         
+        # 获取SN节点ID列表（用于索引映射）
+        sn_node_list = sorted(env.G_sn.nodes())
+        
+        # 初始化映射和记录
+        mapping: Dict[int, int] = {}  # VN节点索引 -> SN节点ID
+        resource_deduction_history: List[Tuple[int, int]] = []  # (SN节点ID, VN节点索引)
+        constraint_placed_vn: Set[int] = set()  # 已放置的约束节点集合
+        
+        # ========== 步骤1：先处理有 constraint_node 的节点 ==========
+        # 从VN Data对象中获取constraint_node信息
+        constraint_nodes = getattr(vn, 'constraint_nodes', [None] * N_v)
+        if len(constraint_nodes) != N_v:
+            constraint_nodes = [None] * N_v  # 如果没有constraint_nodes属性，初始化为None列表
+        
+        if verbose:
+            print(f"\n      【步骤0】处理约束节点:")
+        
+        for vn_idx in range(N_v):
+            constraint_node_id = constraint_nodes[vn_idx] if vn_idx < len(constraint_nodes) else None
+            if constraint_node_id is not None:
+                # 检查SN节点是否存在
+                if constraint_node_id in env.G_sn.nodes():
+                    if verbose:
+                        print(f"        VN节点{vn_idx} 有约束: constraint_node={constraint_node_id}")
+                    
+                    # 检查资源是否足够
+                    if self._check_and_deduct_resource(env, constraint_node_id, vn_idx, vn, verbose=verbose):
+                        # 资源足够，立即扣减并放置
+                        mapping[vn_idx] = constraint_node_id
+                        constraint_placed_vn.add(vn_idx)
+                        resource_deduction_history.append((constraint_node_id, vn_idx))
+                        if verbose:
+                            sn_node = env.G_sn.nodes[constraint_node_id]
+                            print(f"        ✓ 约束节点放置成功: VN节点{vn_idx} → SN节点{constraint_node_id} (已扣减资源)")
+                            print(f"          SN节点{constraint_node_id}剩余资源: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+                    else:
+                        # 资源不足，无法放置约束节点，回滚并返回空映射
+                        if verbose:
+                            print(f"        ✗ 约束节点放置失败: VN节点{vn_idx} → SN节点{constraint_node_id} 资源不足")
+                        self._rollback_resource_deductions(env, resource_deduction_history, vn, verbose=verbose)
+                        logprob_sum = 0.0
+                        value = self.value_net(vn, sn)
+                        return {}, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
+                else:
+                    # SN节点不存在
+                    if verbose:
+                        print(f"        ✗ 约束节点放置失败: VN节点{vn_idx} → SN节点{constraint_node_id} 不存在")
+                    self._rollback_resource_deductions(env, resource_deduction_history, vn, verbose=verbose)
+                    logprob_sum = 0.0
+                    value = self.value_net(vn, sn)
+                    return {}, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
+        
+        # 如果所有节点都是约束节点且都已放置，直接返回
+        if len(constraint_placed_vn) == N_v:
+            if verbose:
+                print(f"        所有节点都是约束节点且已放置完成")
+            # 计算logprob和value
+            logprob_sum = 0.0
+            sn_id_to_idx = {sn_id: idx for idx, sn_id in enumerate(sn_node_list)}
+            for vn_idx, sn_id in mapping.items():
+                probs = probs_matrix[vn_idx]
+                cat = Categorical(probs=probs)
+                sn_idx = sn_id_to_idx[sn_id]
+                logprob_sum += float(cat.log_prob(torch.tensor(sn_idx, device=self.device)).item())
+            value = self.value_net(vn, sn)
+            return mapping, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
+        
+        # ========== 步骤2：处理非约束节点 ==========
+        
         # 1. 生成优先级列表
         priority_lists = self._generate_priority_lists(probs_matrix)
-        
-        # 5. 获取SN节点ID列表（用于索引映射）
-        sn_node_list = sorted(env.G_sn.nodes())
         
         if verbose:
             print(f"\n      【步骤1】生成优先级列表（通过采样）:")
             for i in range(N_v):
-                priority_sn_ids = [sn_node_list[idx] for idx in priority_lists[i]]
-                priority_probs = [float(probs_matrix[i][idx].item()) for idx in priority_lists[i]]
-                if len(priority_sn_ids) > 10:
-                    print(f"        VN节点{i}: 优先级序列 = {priority_sn_ids[:10]}... (共{len(priority_sn_ids)}个)")
-                    print(f"          对应概率 = {[f'{p:.4f}' for p in priority_probs[:10]]}...")
-                else:
-                    print(f"        VN节点{i}: 优先级序列 = {priority_sn_ids}")
-                    print(f"          对应概率 = {[f'{p:.4f}' for p in priority_probs]}")
+                if i not in constraint_placed_vn:  # 只显示非约束节点
+                    priority_sn_ids = [sn_node_list[idx] for idx in priority_lists[i]]
+                    priority_probs = [float(probs_matrix[i][idx].item()) for idx in priority_lists[i]]
+                    if len(priority_sn_ids) > 10:
+                        print(f"        VN节点{i}: 优先级序列 = {priority_sn_ids[:10]}... (共{len(priority_sn_ids)}个)")
+                        print(f"          对应概率 = {[f'{p:.4f}' for p in priority_probs[:10]]}...")
+                    else:
+                        print(f"        VN节点{i}: 优先级序列 = {priority_sn_ids}")
+                        print(f"          对应概率 = {[f'{p:.4f}' for p in priority_probs]}")
         
         # 2. 获取VN邻居关系
         vn_neighbors = self._get_vn_neighbors(vn)
@@ -352,26 +419,38 @@ class PPOAgent:
         if verbose:
             print(f"\n      【步骤2】VN节点资源需求:")
             for i in range(N_v):
-                feats = vn.x[i]
-                cpu_norm = float(feats[0].item())
-                mem_norm = float(feats[1].item())
-                disk_norm = float(feats[2].item())
-                print(f"        VN节点{i}: 归一化需求 = (CPU:{cpu_norm:.4f}, MEM:{mem_norm:.4f}, DISK:{disk_norm:.4f}), "
-                      f"总和={vn_resource_demands[i]:.4f}, 度={vn_degrees[i]}")
+                if i not in constraint_placed_vn:  # 只显示非约束节点
+                    feats = vn.x[i]
+                    cpu_norm = float(feats[0].item())
+                    mem_norm = float(feats[1].item())
+                    disk_norm = float(feats[2].item())
+                    print(f"        VN节点{i}: 归一化需求 = (CPU:{cpu_norm:.4f}, MEM:{mem_norm:.4f}, DISK:{disk_norm:.4f}), "
+                          f"总和={vn_resource_demands[i]:.4f}, 度={vn_degrees[i]}")
         
-        # 6. 选择第一个VN节点（资源占用最大）
-        first_vn = max(range(N_v), key=lambda i: vn_resource_demands[i])
+        # 5. 选择第一个非约束VN节点（资源占用最大）
+        non_constraint_vn = [i for i in range(N_v) if i not in constraint_placed_vn]
+        if not non_constraint_vn:
+            # 所有节点都是约束节点，已在上面处理
+            logprob_sum = 0.0
+            sn_id_to_idx = {sn_id: idx for idx, sn_id in enumerate(sn_node_list)}
+            for vn_idx, sn_id in mapping.items():
+                probs = probs_matrix[vn_idx]
+                cat = Categorical(probs=probs)
+                sn_idx = sn_id_to_idx[sn_id]
+                logprob_sum += float(cat.log_prob(torch.tensor(sn_idx, device=self.device)).item())
+            value = self.value_net(vn, sn)
+            return mapping, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
         
-        # 7. 放置第一个VN节点（按优先级顺序逐一尝试，成功则立即扣减资源）
-        mapping: Dict[int, int] = {}
-        resource_deduction_history: List[Tuple[int, int]] = []
+        first_vn = max(non_constraint_vn, key=lambda i: vn_resource_demands[i])
+        
+        # 6. 放置第一个非约束VN节点（按优先级顺序逐一尝试，成功则立即扣减资源）
         placed_first = False
         tried_count_first = 0
         for first_sn_idx in priority_lists[first_vn]:
             first_sn_id = sn_node_list[first_sn_idx]
             tried_count_first += 1
             if verbose:
-                print(f"\n      【步骤3】选择第一个VN节点:")
+                print(f"\n      【步骤3】选择第一个非约束VN节点:")
                 print(f"        选择: VN节点{first_vn} (资源需求最大: {vn_resource_demands[first_vn]:.4f})")
                 print(f"        尝试优先级第{tried_count_first}个: SN节点{first_sn_id} (索引{first_sn_idx})")
             if self._check_and_deduct_resource(env, first_sn_id, first_vn, vn, verbose=verbose):
@@ -389,14 +468,16 @@ class PPOAgent:
         
         if not placed_first:
             if verbose:
-                print(f"        ✗ 无法在任一SN节点上放置第一个VN节点，任务失败")
+                print(f"        ✗ 无法在任一SN节点上放置第一个VN节点，回滚约束节点资源扣减")
+            self._rollback_resource_deductions(env, resource_deduction_history, vn, verbose=verbose)
             logprob_sum = 0.0
             value = self.value_net(vn, sn)
             return {}, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
         
-        # 8. BFS扩展放置（实时扣减资源）
-        placed_vn: Set[int] = {first_vn}
-        queue = [first_vn]
+        # 7. BFS扩展放置（约束节点不入队列）
+        placed_vn: Set[int] = constraint_placed_vn.copy()  # 包含已放置的约束节点
+        placed_vn.add(first_vn)
+        queue = [first_vn]  # 队列中不包含约束节点
         bfs_round = 0
         
         if verbose:
@@ -416,7 +497,8 @@ class PPOAgent:
                 if verbose:
                     print(f"\n        处理队列节点: VN节点{vi} (当前在SN节点{vi_sn_id})")
                 
-                unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn]
+                # 找到 vi 的未放置邻居（排除约束节点）
+                unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn and u not in constraint_placed_vn]
                 
                 if verbose:
                     print(f"          未放置的邻居VN节点: {unplaced_neighbors}")
@@ -506,8 +588,9 @@ class PPOAgent:
                         value = self.value_net(vn, sn)
                         return {}, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value
             
+            # 更新队列：按度降序；若度相同，则按资源需求降序（约束节点不入队列）
             queue = sorted(
-                new_placed,
+                [i for i in new_placed if i not in constraint_placed_vn],
                 key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
                 reverse=True
             )
@@ -901,10 +984,24 @@ def run_ppo_batch_training(
     print(f"\n【初始化】创建策略网络和价值网络...")
     policy = SimuVNE()
     if policy_ckpt:
-        ckpt = torch.load(policy_ckpt, map_location='cpu')
-        state_dict = ckpt.get('model_state_dict', ckpt)
-        policy.load_state_dict(state_dict, strict=False)
-        print(f"  ✓ 加载预训练模型: {policy_ckpt}")
+        # 转换为绝对路径
+        if not os.path.isabs(policy_ckpt):
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            policy_ckpt = os.path.join(script_dir, policy_ckpt)
+        
+        # 检查文件是否存在
+        if not os.path.exists(policy_ckpt):
+            print(f"  ⚠️  警告: 预训练模型文件不存在: {policy_ckpt}")
+            print(f"  使用随机初始化的策略网络")
+        else:
+            try:
+                ckpt = torch.load(policy_ckpt, map_location='cpu', weights_only=False)
+                state_dict = ckpt.get('model_state_dict', ckpt)
+                policy.load_state_dict(state_dict, strict=False)
+                print(f"  ✓ 加载预训练模型: {policy_ckpt}")
+            except Exception as e:
+                print(f"  ⚠️  警告: 加载预训练模型失败: {e}")
+                print(f"  使用随机初始化的策略网络")
     else:
         print(f"  ✓ 使用随机初始化的策略网络")
     value_net = ValueNet()
@@ -1006,7 +1103,7 @@ def run_ppo_batch_training(
 def save_training_results(training_stats: List[Dict], 
                           policy: SimuVNE, 
                           value_net: ValueNet,
-                          output_dir: str = '/home/yc2/mrt/a/finetuning_putput'):
+                          output_dir: str = None):
     """
     保存训练结果、模型参数和可视化图表
     
@@ -1014,8 +1111,18 @@ def save_training_results(training_stats: List[Dict],
         training_stats: 训练统计信息列表
         policy: 策略网络
         value_net: 价值网络
-        output_dir: 输出目录
+        output_dir: 输出目录（如果为None，使用相对于脚本目录的默认路径）
     """
+    # 如果没有指定输出目录，使用默认的相对路径
+    if output_dir is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(script_dir, 'finetuning_putput')
+    
+    # 转换为绝对路径
+    if not os.path.isabs(output_dir):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(script_dir, output_dir)
+    
     # 创建输出目录（带时间戳）
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = os.path.join(output_dir, f"run_{timestamp}")
@@ -1160,11 +1267,15 @@ def save_training_results(training_stats: List[Dict],
 
 
 if __name__ == '__main__':
+    # 获取脚本所在目录，用于构建相对路径的默认值
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
     # 示例运行：使用仓库内示例拓扑（时间驱动版本）
-    sn_path = '/home/yc2/mrt/a/topo/SN_topology.json'
+    # 使用相对于脚本目录的路径
+    sn_path = os.path.join(script_dir, 'topo', 'SN_topology.json')
     workflow_types = {
-        'workflow1': '/home/yc2/mrt/a/workflow_topo/workflow1_topo.json',
-        # 可扩展：'workflow2': '/path/to/workflow2_topo.json', ...
+        'workflow1': os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
+        # 可扩展：'workflow2': os.path.join(script_dir, 'workflow_topo', 'workflow2_topo.json'), ...
     }
     
     # ========== 方式1：单episode更新（每个episode结束后立即更新）==========
@@ -1193,11 +1304,14 @@ if __name__ == '__main__':
     print("方式2: 批量更新（收集4个episode后统一更新）")
     print("="*60)
     
+    # 预训练模型路径（可选，如果文件不存在则使用随机初始化）
+    policy_ckpt_path = os.path.join(script_dir, 'pretrain_outputs', 'checkpoint_latest.pt')
+    
     training_stats, agent = run_ppo_batch_training(
         sn_topology_path=sn_path,
         workflow_types=workflow_types,
-        #policy_ckpt=None,  # 旧代码：使用随机初始化
-        policy_ckpt='/home/yc2/mrt/a/pretrain_outputs/checkpoint_latest.pt',  # 使用预训练最优模型
+        #policy_ckpt=None,  # 使用随机初始化
+        policy_ckpt=policy_ckpt_path if os.path.exists(policy_ckpt_path) else None,  # 如果文件存在则使用预训练模型
         device='cpu',
         arrival_rate=1,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
         mean_lifetime=10.0,
@@ -1219,7 +1333,7 @@ if __name__ == '__main__':
         training_stats=training_stats,
         policy=agent.policy,
         value_net=agent.value_net,
-        output_dir='/home/yc2/mrt/a/finetuning_putput'
+        output_dir=None  # 使用默认的相对路径
     )
 
 

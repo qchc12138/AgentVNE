@@ -62,6 +62,7 @@ class WorkflowGenerator:
         nodes = js['nodes']
         node_id_map = {int(n['id']): idx for idx, n in enumerate(nodes)}
         x_list: List[List[float]] = []
+        constraint_nodes: List[Optional[int]] = []  # 存储每个VN节点的constraint_node信息
         
         # 使用SN容量归一化VN需求
         for n in nodes:
@@ -73,6 +74,12 @@ class WorkflowGenerator:
                 float(n.get('comm_bandwidth', 1.0)) / (self.sn_capacity['comm_bw_max'] + 1e-8),
                 0.0,
             ])
+            # 保存constraint_node信息（如果存在）
+            constraint_node_id = n.get('constraint_node')
+            if constraint_node_id is not None:
+                constraint_nodes.append(int(constraint_node_id))
+            else:
+                constraint_nodes.append(None)
         x = torch.tensor(x_list, dtype=torch.float)
         edges = js['links']
         src, dst = [], []
@@ -84,7 +91,11 @@ class WorkflowGenerator:
             if not directed:
                 src.append(v); dst.append(u)
         edge_index = torch.tensor([src, dst], dtype=torch.long) if src else torch.zeros((2, 0), dtype=torch.long)
-        return Data(x=x, edge_index=edge_index)
+        
+        # 创建Data对象，并添加constraint_nodes属性
+        data = Data(x=x, edge_index=edge_index)
+        data.constraint_nodes = constraint_nodes  # 存储每个VN节点对应的constraint_node SN节点ID
+        return data
 
 
 class PlacementResult:
