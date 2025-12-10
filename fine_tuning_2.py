@@ -23,6 +23,22 @@ from env import SimuVNEEnv, WorkflowGenerator
 
 import random
 import numpy as np
+import sys
+
+class Tee:
+    """同时输出到控制台和文件"""
+    def __init__(self, *files):
+        self.files = files
+    
+    def write(self, obj):
+        for f in self.files:
+            f.write(obj)
+            f.flush()
+    
+    def flush(self):
+        for f in self.files:
+            f.flush()
+
 def set_seed(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -830,6 +846,7 @@ def run_ppo_batch_training(
     sn_topology_path: str,
     workflow_types: Dict[str, str],
     policy_ckpt: str = None,
+    value_ckpt: str = None,
     device: str = 'cpu',
     arrival_rate: float = 0.05,
     mean_lifetime: float = 10.0,
@@ -845,7 +862,8 @@ def run_ppo_batch_training(
     Args:
         sn_topology_path: SN拓扑文件路径
         workflow_types: workflow类型字典
-        policy_ckpt: 预训练模型路径（可选）
+        policy_ckpt: 预训练策略网络路径（可选）
+        value_ckpt: 预训练价值网络路径（可选）
         device: 设备
         arrival_rate: 泊松到达率
         mean_lifetime: 平均生存时间
@@ -883,7 +901,31 @@ def run_ppo_batch_training(
                 print(f"  使用随机初始化的策略网络")
     else:
         print(f"  ✓ 使用随机初始化的策略网络")
+    
+    # 初始化价值网络
     value_net = ValueNet()
+    if value_ckpt:
+        # 转换为绝对路径
+        if not os.path.isabs(value_ckpt):
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            value_ckpt = os.path.join(script_dir, value_ckpt)
+        
+        # 检查文件是否存在
+        if not os.path.exists(value_ckpt):
+            print(f"  ⚠️  警告: 预训练价值网络文件不存在: {value_ckpt}")
+            print(f"  使用随机初始化的价值网络")
+        else:
+            try:
+                ckpt = torch.load(value_ckpt, map_location='cpu', weights_only=False)
+                state_dict = ckpt.get('model_state_dict', ckpt)
+                value_net.load_state_dict(state_dict, strict=False)
+                print(f"  ✓ 加载预训练价值网络: {value_ckpt}")
+            except Exception as e:
+                print(f"  ⚠️  警告: 加载预训练价值网络失败: {e}")
+                print(f"  使用随机初始化的价值网络")
+    else:
+        print(f"  ✓ 使用随机初始化的价值网络")
+    
     agent = PPOAgent(policy, value_net, device=device)
     print(f"  ✓ PPO Agent创建完成 (设备: {device})")
     
@@ -913,7 +955,8 @@ def run_ppo_batch_training(
                 max_arrived_tasks=max_arrived_tasks,
                 max_time_steps=max_time_steps,
                 update_after_episode=False,  # 不立即更新
-                episode_seed=42 + update_idx * num_episodes_per_update + ep_idx,
+                episode_seed=42,  # 固定种子，使所有episode的任务到达轨迹和生存时间相同
+                # episode_seed=42 + update_idx * num_episodes_per_update + ep_idx,
                 verbose=verbose
             )
             
@@ -980,7 +1023,8 @@ def run_ppo_batch_training(
 def save_training_results(training_stats: List[Dict], 
                           policy: SimuVNE, 
                           value_net: ValueNet,
-                          output_dir: str = None):
+                          output_dir: str = None,
+                          run_dir: str = None):
     """
     保存训练结果、模型参数和可视化图表
     
@@ -988,22 +1032,31 @@ def save_training_results(training_stats: List[Dict],
         training_stats: 训练统计信息列表
         policy: 策略网络
         value_net: 价值网络
-        output_dir: 输出目录（如果为None，使用相对于脚本目录的默认路径）
+        output_dir: 输出基础目录（如果为None，使用相对于脚本目录的默认路径）
+        run_dir: 运行目录（如果指定，直接使用该目录；否则在output_dir下创建新的run_xxxxxx目录）
     """
-    # 如果没有指定输出目录，使用默认的相对路径
-    if output_dir is None:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_dir = os.path.join(script_dir, 'finetuning_putput')
-    
-    # 转换为绝对路径
-    if not os.path.isabs(output_dir):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_dir = os.path.join(script_dir, output_dir)
-    
-    # 创建输出目录（带时间戳）
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = os.path.join(output_dir, f"run_{timestamp}")
-    os.makedirs(run_dir, exist_ok=True)
+    # 如果指定了run_dir，直接使用
+    if run_dir is not None:
+        os.makedirs(run_dir, exist_ok=True)
+        # 从run_dir提取output_dir（用于保存latest模型）
+        output_dir = os.path.dirname(run_dir)
+        # 从run_dir提取timestamp（用于保存统计信息）
+        timestamp = os.path.basename(run_dir).replace('run_', '')
+    else:
+        # 如果没有指定输出目录，使用默认的相对路径
+        if output_dir is None:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            output_dir = os.path.join(script_dir, 'finetuning_putput')
+        
+        # 转换为绝对路径
+        if not os.path.isabs(output_dir):
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            output_dir = os.path.join(script_dir, output_dir)
+        
+        # 创建输出目录（带时间戳）
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_dir = os.path.join(output_dir, f"run_{timestamp}")
+        os.makedirs(run_dir, exist_ok=True)
     
     print(f"\n{'='*60}")
     print(f"保存训练结果到: {run_dir}")
@@ -1165,77 +1218,144 @@ def save_training_results(training_stats: List[Dict],
     return run_dir
 
 
+def get_model_paths(script_dir: str, use_finetuning_model: bool = False) -> Tuple[Optional[str], Optional[str]]:
+    """
+    根据 use_finetuning_model 参数获取模型路径
+    
+    Args:
+        script_dir: 脚本所在目录
+        use_finetuning_model: 设置为 True 使用微调后的最新模型，False 使用预训练模型（默认）
+        
+    Returns:
+        policy_ckpt_path: 策略网络路径
+        value_ckpt_path: 价值网络路径
+    """
+    if use_finetuning_model:
+        # 使用 finetuning_putput 目录下的最新模型（微调后的模型）
+        finetuning_policy_path = os.path.join(script_dir, 'finetuning_putput', 'policy_network_latest.pth')
+        finetuning_value_path = os.path.join(script_dir, 'finetuning_putput', 'value_network_latest.pth')
+        if os.path.exists(finetuning_policy_path):
+            policy_ckpt_path = finetuning_policy_path
+            value_ckpt_path = finetuning_value_path if os.path.exists(finetuning_value_path) else None
+            print(f"  ✓ 使用微调后的最新模型: {policy_ckpt_path}")
+            return policy_ckpt_path, value_ckpt_path
+        else:
+            print(f"  ⚠️  微调模型不存在，使用随机初始化")
+            return None, None
+    else:
+        # 使用 pretrain_outputs 目录下的预训练模型
+        pretrain_policy_path = os.path.join(script_dir, 'pretrain_outputs', 'checkpoint_latest.pt')
+        if os.path.exists(pretrain_policy_path):
+            policy_ckpt_path = pretrain_policy_path
+            value_ckpt_path = None  # pretrain_outputs目录下没有单独的价值网络
+            print(f"  ✓ 使用预训练模型: {policy_ckpt_path}")
+            return policy_ckpt_path, value_ckpt_path
+        else:
+            print(f"  ⚠️  预训练模型不存在，使用随机初始化")
+            return None, None
+
+
 if __name__ == '__main__':
     # 获取脚本所在目录，用于构建相对路径的默认值
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # 示例运行：使用仓库内示例拓扑（时间驱动版本）
-    # 使用相对于脚本目录的路径
-    sn_path = os.path.join(script_dir, 'topo', 'SN_topology_2.json')
-    workflow_types = {
-        'workflow1': os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
-        # 可扩展：'workflow2': os.path.join(script_dir, 'workflow_topo', 'workflow2_topo.json'), ...
-    }
+    # 创建运行目录和日志文件（保存所有打印输出）
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_base_dir = os.path.join(script_dir, 'finetuning_putput')
+    os.makedirs(output_base_dir, exist_ok=True)
+    run_dir = os.path.join(output_base_dir, f"run_{timestamp}")
+    os.makedirs(run_dir, exist_ok=True)
+    log_file_path = os.path.join(run_dir, 'log.txt')
     
-    # ========== 方式1：单episode更新（每个episode结束后立即更新）==========
-    # print("="*60)
-    # print("方式1: 单episode更新（每个episode结束后立即更新）")
-    # print("="*60)
-    # policy1 = SimuVNE()
-    # value_net1 = ValueNet()
-    # agent1 = PPOAgent(policy1, value_net1, device='cpu')
-    # 
-    # stats1 = run_ppo_episode(
-    #     agent=agent1,
-    #     sn_topology_path=sn_path,
-    #     workflow_types=workflow_types,
-    #     device='cpu',
-    #     arrival_rate=0.05,
-    #     mean_lifetime=10.0,
-    #     max_arrived_tasks=20,
-    #     max_time_steps=1000,
-    #     update_after_episode=True  # 立即更新
-    # )
-    # print('单episode更新统计:', stats1)
+    # 打开日志文件并设置Tee，同时输出到控制台和文件
+    log_file = open(log_file_path, 'w', encoding='utf-8')
+    original_stdout = sys.stdout
+    sys.stdout = Tee(sys.stdout, log_file)
     
-    # ========== 方式2：批量更新（收集多个episode后统一更新）==========
-    # 不打印标题，精简输出
+    print(f"日志文件保存路径: {log_file_path}")
+    print("="*60)
     
-    # 预训练模型路径（可选，如果文件不存在则使用随机初始化）
-    policy_ckpt_path = os.path.join(script_dir, 'pretrain_outputs', 'checkpoint_latest.pt')
+    try:
+        # 示例运行：使用仓库内示例拓扑（时间驱动版本）
+        # 使用相对于脚本目录的路径
+        sn_path = os.path.join(script_dir, 'topo', 'SN_topology_2.json')
+        workflow_types = {
+            'workflow1': os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
+            # 可扩展：'workflow2': os.path.join(script_dir, 'workflow_topo', 'workflow2_topo.json'), ...
+        }
     
-    
-    training_stats, agent = run_ppo_batch_training(
-        sn_topology_path=sn_path,
-        workflow_types=workflow_types,
-        #policy_ckpt=None,  # 使用随机初始化
-        policy_ckpt=policy_ckpt_path if os.path.exists(policy_ckpt_path) else None,  # 如果文件存在则使用预训练模型
-        device='cpu',
-        arrival_rate=1,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
-        mean_lifetime=10.0,
-        max_arrived_tasks=15,
-        max_time_steps=2000,
-        num_episodes_per_update=1,  # 批量大小：收集多少个episode的轨迹数据后再进行一次PPO更新
-                                     # 例如：1表示每个episode结束后立即更新；4表示收集4个episode后统一更新
-        train_iters=3,  # PPO更新迭代次数：每次批量更新时，对策略网络和价值网络进行多少次梯度更新
-                         # 例如：3表示每次批量更新时，策略和价值网络各更新3次
-        num_updates=200,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
-                        # 例如：1表示只执行1次批量更新；30表示执行30次批量更新
-        verbose = False  # 设置为True以打印详细信息，False则只打印PPO训练信息
-    )
-    
-    print("\n批量训练统计:")
-    for stat in training_stats:
-        print(f"  更新 {stat['update_idx']+1}: 平均每个 episode 的最终回报={stat['avg_return']:.2f}, "
-              f"接受率={stat['avg_accepted']/stat['avg_arrived']:.2%}, "
-              f"样本数={stat['total_samples']}")
-    
-    # 保存训练结果、模型参数和可视化图表
-    save_training_results(
-        training_stats=training_stats,
-        policy=agent.policy,
-        value_net=agent.value_net,
-        output_dir=None  # 使用默认的相对路径
-    )
+        # ========== 方式1：单episode更新（每个episode结束后立即更新）==========
+        # print("="*60)
+        # print("方式1: 单episode更新（每个episode结束后立即更新）")
+        # print("="*60)
+        # policy1 = SimuVNE()
+        # value_net1 = ValueNet()
+        # agent1 = PPOAgent(policy1, value_net1, device='cpu')
+        # 
+        # stats1 = run_ppo_episode(
+        #     agent=agent1,
+        #     sn_topology_path=sn_path,
+        #     workflow_types=workflow_types,
+        #     device='cpu',
+        #     arrival_rate=0.05,
+        #     mean_lifetime=10.0,
+        #     max_arrived_tasks=20,
+        #     max_time_steps=1000,
+        #     update_after_episode=True  # 立即更新
+        # )
+        # print('单episode更新统计:', stats1)
+        
+        # ========== 方式2：批量更新（收集多个episode后统一更新）==========
+        # 不打印标题，精简输出
+        
+        # ========== 模型路径选择（通过参数控制）==========
+        # 设置为 True 使用微调后的最新模型，False 使用预训练模型（默认）
+        USE_FINETUNING_MODEL = False
+        
+        # 获取模型路径
+        policy_ckpt_path, value_ckpt_path = get_model_paths(script_dir, USE_FINETUNING_MODEL)
+        
+        training_stats, agent = run_ppo_batch_training(
+            sn_topology_path=sn_path,
+            workflow_types=workflow_types,
+            #policy_ckpt=None,  # 使用随机初始化
+            policy_ckpt=policy_ckpt_path,  # 如果文件存在则使用预训练模型
+            value_ckpt=value_ckpt_path,  # 如果文件存在则使用预训练价值网络
+            device='cpu',
+            arrival_rate=0.4,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
+            mean_lifetime=40.0,
+            max_arrived_tasks=20,
+            max_time_steps=3000,
+            num_episodes_per_update=1,  # 批量大小：收集多少个episode的轨迹数据后再进行一次PPO更新
+                                         # 例如：1表示每个episode结束后立即更新；4表示收集4个episode后统一更新
+            train_iters=3,  # PPO更新迭代次数：每次批量更新时，对策略网络和价值网络进行多少次梯度更新
+                             # 例如：3表示每次批量更新时，策略和价值网络各更新3次
+            num_updates=1,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
+                            # 例如：1表示只执行1次批量更新；30表示执行30次批量更新
+            verbose = True  # 设置为True以打印详细信息，False则只打印PPO训练信息
+        )
+        
+        print("\n批量训练统计:")
+        for stat in training_stats:
+            print(f"  更新 {stat['update_idx']+1}: 平均每个 episode 的最终回报={stat['avg_return']:.2f}, "
+                  f"接受率={stat['avg_accepted']/stat['avg_arrived']:.2%}, "
+                  f"样本数={stat['total_samples']}")
+        
+        # 保存训练结果、模型参数和可视化图表
+        save_training_results(
+            training_stats=training_stats,
+            policy=agent.policy,
+            value_net=agent.value_net,
+            output_dir=None,  # 使用默认的相对路径
+            run_dir=run_dir  # 使用已创建的运行目录
+        )
+        
+        print(f"\n所有日志已保存到: {log_file_path}")
+        
+    finally:
+        # 恢复stdout并关闭日志文件
+        sys.stdout = original_stdout
+        log_file.close()
+        print(f"日志文件已关闭: {log_file_path}")
 
 

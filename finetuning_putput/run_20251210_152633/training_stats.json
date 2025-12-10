@@ -1,0 +1,28 @@
+{
+  "timestamp": "20251210_152633",
+  "num_updates": 1,
+  "training_stats": [
+    {
+      "update_idx": 0,
+      "avg_return": -1090.9920634920636,
+      "avg_accepted": 18.0,
+      "avg_arrived": 20.0,
+      "total_samples": 20,
+      "episode_stats": [
+        {
+          "final_return": -1090.9920634920636,
+          "avg_rt": -15.342075892857142,
+          "arrived": 20,
+          "accepted": 18
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "final_avg_return": -1090.9920634920636,
+    "final_acceptance_rate": 0.9,
+    "best_return": -1090.9920634920636,
+    "best_acceptance_rate": 0.9,
+    "total_samples": 20
+  }
+}
