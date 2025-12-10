@@ -363,9 +363,10 @@ class PPOAgent:
         probs_matrix = self.policy(vn, sn_with_bias)  # [N_v, N_s]
         N_v, N_s = probs_matrix.shape
 
-        # 打印模型输出的概率矩阵
-        print(f"\n【Workflow到达】模型输出的概率矩阵 [VN节点数={N_v}, SN节点数={N_s}]:")
-        print(f"概率矩阵:\n{probs_matrix.detach().cpu().numpy()}")
+        # 打印模型输出的概率矩阵（如果verbose=True）
+        if verbose:
+            print(f"\n【Workflow到达】模型输出的概率矩阵 [VN节点数={N_v}, SN节点数={N_s}]:")
+            print(f"概率矩阵:\n{probs_matrix.detach().cpu().numpy()}")
 
         # 获取SN节点ID列表（用于索引映射）
         sn_node_list = sorted(env.G_sn.nodes())
@@ -388,8 +389,9 @@ class PPOAgent:
                     constraint_placed_vn.add(vn_idx)
                     resource_deduction_history.append((constraint_node_id, vn_idx))
                     sn_node = env.G_sn.nodes[constraint_node_id]
-                    print(f"  [放置] VN节点{vn_idx} → SN节点{constraint_node_id} (约束节点)")
-                    print(f"    SN节点{constraint_node_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+                    if verbose:
+                        print(f"  [放置] VN节点{vn_idx} → SN节点{constraint_node_id} (约束节点)")
+                        print(f"    SN节点{constraint_node_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
                 else:
                     self._rollback_resource_deductions(env, resource_deduction_history, vn, verbose=False)
                     value = self.value_net(vn, sn_with_bias)
@@ -402,13 +404,14 @@ class PPOAgent:
         # 生成优先级列表（模型概率采样，无 NodeRank）
         priority_lists = self._generate_priority_lists(probs_matrix)
         
-        # 打印采样得到的优先级列表
-        print(f"\n【采样得到的优先级列表】:")
-        for vn_idx in range(N_v):
-            priority_sn_ids = [sn_node_list[idx] for idx in priority_lists[vn_idx]]
-            priority_probs = [float(probs_matrix[vn_idx][idx].item()) for idx in priority_lists[vn_idx]]
-            print(f"  VN节点{vn_idx}: SN节点优先级序列 = {priority_sn_ids}")
-            print(f"    对应概率值 = {[f'{p:.4f}' for p in priority_probs]}")
+        # 打印采样得到的优先级列表（如果verbose=True）
+        if verbose:
+            print(f"\n【采样得到的优先级列表】:")
+            for vn_idx in range(N_v):
+                priority_sn_ids = [sn_node_list[idx] for idx in priority_lists[vn_idx]]
+                priority_probs = [float(probs_matrix[vn_idx][idx].item()) for idx in priority_lists[vn_idx]]
+                print(f"  VN节点{vn_idx}: SN节点优先级序列 = {priority_sn_ids}")
+                print(f"    对应概率值 = {[f'{p:.4f}' for p in priority_probs]}")
 
         # VN资源需求与度
         vn_neighbors = self._get_vn_neighbors(vn)
@@ -418,8 +421,8 @@ class PPOAgent:
         # 选择首个非约束 VN（资源需求最大）
         non_constraint_vn = [i for i in range(N_v) if i not in constraint_placed_vn]
         if not non_constraint_vn:
-            value = self.value_net(vn, sn)
-            return mapping, torch.tensor(0.0, device=self.device, dtype=torch.float), value
+            value = self.value_net(vn, sn_with_bias)
+            return mapping, torch.tensor(0.0, device=self.device, dtype=torch.float), value, sn_with_bias
         first_vn = max(non_constraint_vn, key=lambda i: vn_resource_demands[i])
 
         placed_first = False
@@ -430,13 +433,14 @@ class PPOAgent:
                 resource_deduction_history.append((first_sn_id, first_vn))
                 placed_first = True
                 sn_node = env.G_sn.nodes[first_sn_id]
-                print(f"  [放置] VN节点{first_vn} → SN节点{first_sn_id} (首个非约束节点)")
-                print(f"    SN节点{first_sn_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+                if verbose:
+                    print(f"  [放置] VN节点{first_vn} → SN节点{first_sn_id} (首个非约束节点)")
+                    print(f"    SN节点{first_sn_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
                 break
         if not placed_first:
             self._rollback_resource_deductions(env, resource_deduction_history, vn, verbose=False)
-            value = self.value_net(vn, sn)
-            return {}, torch.tensor(0.0, device=self.device, dtype=torch.float), value
+            value = self.value_net(vn, sn_with_bias)
+            return {}, torch.tensor(0.0, device=self.device, dtype=torch.float), value, sn_with_bias
 
         placed_vn: Set[int] = constraint_placed_vn.copy()
         placed_vn.add(first_vn)
@@ -455,8 +459,9 @@ class PPOAgent:
                         new_placed.append(u)
                         resource_deduction_history.append((vi_sn_id, u))
                         sn_node = env.G_sn.nodes[vi_sn_id]
-                        print(f"  [放置] VN节点{u} → SN节点{vi_sn_id} (同SN节点)")
-                        print(f"    SN节点{vi_sn_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+                        if verbose:
+                            print(f"  [放置] VN节点{u} → SN节点{vi_sn_id} (同SN节点)")
+                            print(f"    SN节点{vi_sn_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
                         continue
 
                     # k-hop 搜索
@@ -474,8 +479,9 @@ class PPOAgent:
                                 resource_deduction_history.append((sn_id, u))
                                 placed = True
                                 sn_node = env.G_sn.nodes[sn_id]
-                                print(f"  [放置] VN节点{u} → SN节点{sn_id} (k={k}跳邻居)")
-                                print(f"    SN节点{sn_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
+                                if verbose:
+                                    print(f"  [放置] VN节点{u} → SN节点{sn_id} (k={k}跳邻居)")
+                                    print(f"    SN节点{sn_id}资源容量: CPU={sn_node['cpu_res']:.3f}, MEM={sn_node['mem_res']:.3f}, DISK={sn_node['disk_res']:.3f}")
                                 break
                         k += 1
                     if not placed:
@@ -627,7 +633,8 @@ def run_ppo_episode(
     max_arrived_tasks: int = 20,
     max_time_steps: int = 1000,
     update_after_episode: bool = True,
-    episode_seed: int = None):
+    episode_seed: int = None,
+    verbose: bool = False):
     """
     运行一个PPO episode（时间驱动版本）：
     - 按时间单位推进
@@ -702,8 +709,8 @@ def run_ppo_episode(
             
             # 调用策略网络生成放置方案（一次性采样，传入env以使用新的放置策略）
             # 注意：bias会在agent.act()内部临时应用到SN特征上，不会修改sn_state
-            # act()内部会打印概率矩阵、优先级列表和每次放置的映射
-            mapping, logprob, value, sn_with_bias = agent.act(vn, sn_state, env=env, k_hop=1, verbose=False)
+            # act()内部会打印概率矩阵、优先级列表和每次放置的映射（如果verbose=True）
+            mapping, logprob, value, sn_with_bias = agent.act(vn, sn_state, env=env, k_hop=1, verbose=verbose)
             
             # 检查是否成功放置（所有节点都已映射，资源已在act()中扣减）
             if len(mapping) == vn.x.size(0):
@@ -731,11 +738,12 @@ def run_ppo_episode(
                 # 部分节点未放置，资源已在act()中回滚，返回失败
                 success, r_t = False, env.penalty
             
-            # 打印放置结果
-            status = "✓成功" if success else "✗失败"
-            print(f"\n【放置结果】任务 #{task_id}: {status}, r_t={r_t:.3f}")
-            print(f"【存活任务数】当前底层网络中存活的任务总数: {len(env.active_workflows)}")
-            print("="*60)
+            # 打印放置结果（如果verbose=True）
+            if verbose:
+                status = "✓成功" if success else "✗失败"
+                print(f"\n【放置结果】任务 #{task_id}: {status}, r_t={r_t:.3f}")
+                print(f"【存活任务数】当前底层网络中存活的任务总数: {len(env.active_workflows)}")
+                print("="*60)
             
             # 记录轨迹
             env.traj.append({
@@ -778,6 +786,13 @@ def run_ppo_episode(
     # 计算最终回报
     final_R = env.compute_final_return()
     
+    # 计算每个episode的平均r_t（所有时间步的r_t的平均值）
+    # 从env.traj中提取所有时间步的r_t（包括有任务到达和无任务到达的时间步）
+    all_rt_values = [traj_entry['r_t'] for traj_entry in env.traj if traj_entry.get('r_t') is not None]
+    avg_rt_per_episode = 0.0
+    if len(all_rt_values) > 0:
+        avg_rt_per_episode = sum(all_rt_values) / len(all_rt_values)
+    
     # Episode完成（不打印，精简输出）
     
     # PPO 更新（仅对有任务到达的时刻）
@@ -789,6 +804,7 @@ def run_ppo_episode(
     
     result = {
         'final_return': final_R,
+        'avg_rt': avg_rt_per_episode,  # 每个episode的平均r_t
         'arrived': env.arrived_count,
         'accepted': env.accepted_count,
         'traj_len': len(traj_rew),
@@ -821,7 +837,8 @@ def run_ppo_batch_training(
     max_time_steps: int = 1000,
     num_episodes_per_update: int = 4,
     train_iters: int = 5,
-    num_updates: int = 10):
+    num_updates: int = 10,
+    verbose: bool = False):
     """
     批量PPO训练：收集多个episode的数据后再更新
     
@@ -896,11 +913,13 @@ def run_ppo_batch_training(
                 max_arrived_tasks=max_arrived_tasks,
                 max_time_steps=max_time_steps,
                 update_after_episode=False,  # 不立即更新
-                episode_seed=42 + update_idx * num_episodes_per_update + ep_idx
+                episode_seed=42 + update_idx * num_episodes_per_update + ep_idx,
+                verbose=verbose
             )
             
             episode_stats.append({
                 'final_return': result['final_return'],
+                'avg_rt': result['avg_rt'],  # 每个episode的平均r_t
                 'arrived': result['arrived'],
                 'accepted': result['accepted'],
             })
@@ -996,61 +1015,65 @@ def save_training_results(training_stats: List[Dict],
     avg_acceptance_rates = [s['avg_accepted'] / s['avg_arrived'] for s in training_stats]
     total_samples = [s['total_samples'] for s in training_stats]
     
-    # 2. 绘制训练曲线
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle('PPO Training Results', fontsize=16, fontweight='bold')
+    # 提取每个episode的平均r_t（所有时间步的r_t的平均值，用于打印）
+    all_episode_avg_rt = []
+    for s in training_stats:
+        if 'episode_stats' in s:
+            for ep_stat in s['episode_stats']:
+                all_episode_avg_rt.append(ep_stat['avg_rt'])
     
-    # 子图1: 平均每个 episode 的最终回报变化
-    axes[0, 0].plot(updates, avg_returns, 'b-o', linewidth=2, markersize=8)
-    axes[0, 0].set_xlabel('Update Number', fontsize=12)
-    axes[0, 0].set_ylabel('Average Return', fontsize=12)
-    axes[0, 0].set_title('Average Return per Update', fontsize=13, fontweight='bold')
-    axes[0, 0].grid(True, alpha=0.3)
-    axes[0, 0].axhline(y=0, color='r', linestyle='--', alpha=0.5)
+    # 打印每个episode的平均r_t
+    if all_episode_avg_rt:
+        print(f"\n每个episode的平均r_t（所有时间步r_t的均值）:")
+        for idx, avg_rt in enumerate(all_episode_avg_rt, 1):
+            print(f"  Episode {idx}: {avg_rt:.3f}")
+        print(f"  平均: {sum(all_episode_avg_rt) / len(all_episode_avg_rt):.3f}")
     
-    # 子图2: 接受率变化
-    axes[0, 1].plot(updates, avg_acceptance_rates, 'g-s', linewidth=2, markersize=8)
-    axes[0, 1].set_xlabel('Update Number', fontsize=12)
-    axes[0, 1].set_ylabel('Acceptance Rate', fontsize=12)
-    axes[0, 1].set_title('Task Acceptance Rate per Update', fontsize=13, fontweight='bold')
-    axes[0, 1].set_ylim([0, 1.05])
-    axes[0, 1].grid(True, alpha=0.3)
-    axes[0, 1].axhline(y=0.8, color='orange', linestyle='--', alpha=0.5, label='80% Target')
-    axes[0, 1].legend()
+    # 2. 绘制训练曲线（三个独立的图）
     
-    # 子图3: 样本数量
-    axes[1, 0].bar(updates, total_samples, color='purple', alpha=0.7)
-    axes[1, 0].set_xlabel('Update Number', fontsize=12)
-    axes[1, 0].set_ylabel('Total Samples', fontsize=12)
-    axes[1, 0].set_title('Samples Collected per Update', fontsize=13, fontweight='bold')
-    axes[1, 0].grid(True, alpha=0.3, axis='y')
-    
-    # 子图4: 接受率和回报的综合对比
-    ax4_1 = axes[1, 1]
-    ax4_2 = ax4_1.twinx()
-    
-    line1 = ax4_1.plot(updates, avg_acceptance_rates, 'g-s', linewidth=2, markersize=6, label='Acceptance Rate')
-    line2 = ax4_2.plot(updates, avg_returns, 'b-o', linewidth=2, markersize=6, label='Avg Return')
-    
-    ax4_1.set_xlabel('Update Number', fontsize=12)
-    ax4_1.set_ylabel('Acceptance Rate', fontsize=12, color='g')
-    ax4_2.set_ylabel('Average Return', fontsize=12, color='b')
-    ax4_1.set_title('Acceptance Rate vs Return', fontsize=13, fontweight='bold')
-    ax4_1.tick_params(axis='y', labelcolor='g')
-    ax4_2.tick_params(axis='y', labelcolor='b')
-    ax4_1.grid(True, alpha=0.3)
-    
-    # 合并图例
-    lines = line1 + line2
-    labels = [l.get_label() for l in lines]
-    ax4_1.legend(lines, labels, loc='upper left')
-    
+    # 图1: Average total return per episode
+    fig1 = plt.figure(figsize=(10, 6))
+    plt.plot(updates, avg_returns, 'b-o', linewidth=2, markersize=1)
+    plt.xlabel('Update Number', fontsize=12)
+    plt.ylabel('Average Total Return per Episode', fontsize=12)
+    plt.title('Average Total Return per Episode', fontsize=13, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    plt.axhline(y=0, color='r', linestyle='--', alpha=0.5)
     plt.tight_layout()
+    plot_path1 = os.path.join(run_dir, 'training_curves_return.png')
+    plt.savefig(plot_path1, dpi=300, bbox_inches='tight')
+    print(f"✓ 训练曲线图（总回报）已保存: {plot_path1}")
+    plt.close()
     
-    # 保存图片
-    plot_path = os.path.join(run_dir, 'training_curves.png')
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"✓ 训练曲线图已保存: {plot_path}")
+    # 图2: Acceptance rate
+    fig2 = plt.figure(figsize=(10, 6))
+    plt.plot(updates, avg_acceptance_rates, 'g-s', linewidth=2, markersize=1)
+    plt.xlabel('Update Number', fontsize=12)
+    plt.ylabel('Acceptance Rate', fontsize=12)
+    plt.title('Task Acceptance Rate per Update', fontsize=13, fontweight='bold')
+    plt.ylim([0, 1.05])
+    plt.grid(True, alpha=0.3)
+    plt.axhline(y=0.8, color='orange', linestyle='--', alpha=0.5, label='80% Target')
+    plt.legend()
+    plt.tight_layout()
+    plot_path2 = os.path.join(run_dir, 'training_curves_acceptance.png')
+    plt.savefig(plot_path2, dpi=300, bbox_inches='tight')
+    print(f"✓ 训练曲线图（接受率）已保存: {plot_path2}")
+    plt.close()
+    
+    # 图3: Average r_t per episode (mean of all time steps)
+    episode_indices = list(range(1, len(all_episode_avg_rt) + 1))
+    fig3 = plt.figure(figsize=(10, 6))
+    plt.plot(episode_indices, all_episode_avg_rt, 'r-^', linewidth=2, markersize=1)
+    plt.xlabel('Episode Number', fontsize=12)
+    plt.ylabel('Average r_t per Episode', fontsize=12)
+    plt.title('Average r_t per Episode (Mean of All Time Steps)', fontsize=13, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    plt.axhline(y=0, color='r', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plot_path3 = os.path.join(run_dir, 'training_curves_rt.png')
+    plt.savefig(plot_path3, dpi=300, bbox_inches='tight')
+    print(f"✓ 训练曲线图（平均r_t）已保存: {plot_path3}")
     plt.close()
     
     # 3. 保存模型参数
@@ -1070,6 +1093,24 @@ def save_training_results(training_stats: List[Dict],
         'model_state_dict': value_net.state_dict(),
     }, value_path)
     print(f"✓ 价值网络已保存: {value_path}")
+    
+    # 3.5. 额外保存最新模型到 finetuning_putput 目录（不带时间戳）
+    latest_policy_path = os.path.join(output_dir, 'policy_network_latest.pth')
+    torch.save({
+        'model_state_dict': policy.state_dict(),
+        'model_config': {
+            'input_dim': policy.input_dim,
+            'hidden_dim': policy.hidden_dim,
+            'hist_dim': policy.hist_dim,
+        }
+    }, latest_policy_path)
+    print(f"✓ 策略网络（最新）已保存: {latest_policy_path}")
+    
+    latest_value_path = os.path.join(output_dir, 'value_network_latest.pth')
+    torch.save({
+        'model_state_dict': value_net.state_dict(),
+    }, latest_value_path)
+    print(f"✓ 价值网络（最新）已保存: {latest_value_path}")
     
     # 4. 保存训练统计数据（JSON格式）
     stats_path = os.path.join(run_dir, 'training_stats.json')
@@ -1163,6 +1204,7 @@ if __name__ == '__main__':
     # 预训练模型路径（可选，如果文件不存在则使用随机初始化）
     policy_ckpt_path = os.path.join(script_dir, 'pretrain_outputs', 'checkpoint_latest.pt')
     
+    
     training_stats, agent = run_ppo_batch_training(
         sn_topology_path=sn_path,
         workflow_types=workflow_types,
@@ -1177,8 +1219,9 @@ if __name__ == '__main__':
                                      # 例如：1表示每个episode结束后立即更新；4表示收集4个episode后统一更新
         train_iters=3,  # PPO更新迭代次数：每次批量更新时，对策略网络和价值网络进行多少次梯度更新
                          # 例如：3表示每次批量更新时，策略和价值网络各更新3次
-        num_updates=20  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
+        num_updates=200,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
                         # 例如：1表示只执行1次批量更新；30表示执行30次批量更新
+        verbose = False  # 设置为True以打印详细信息，False则只打印PPO训练信息
     )
     
     print("\n批量训练统计:")
