@@ -342,10 +342,10 @@ def main():
     
     parser = argparse.ArgumentParser(description='SimuVNE 预训练脚本')
     parser.add_argument('--dataset', type=str,
-                       default='/home/yc2/mrt/a/pretrain_data/pretrain_dataset.pt',
+                       default='/home/zrz/AgentVNE/AgentVNE/pretrain_data/pretrain_dataset.pt',
                        help='预训练数据集文件路径')
     parser.add_argument('--output_dir', type=str,
-                       default='/home/yc2/mrt/a/pretrain_outputs',
+                       default='/home/zrz/AgentVNE/AgentVNE/pretrain_outputs',
                        help='输出目录')
     parser.add_argument('--batch_size', type=int, default=100,
                        help='批大小')
@@ -356,7 +356,7 @@ def main():
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                        help='权重衰减')
     parser.add_argument('--test_dataset', type=str,
-                       default='/home/yc2/mrt/a/pretrain_data/pretrain_dataset.pt',
+                       default='/home/zrz/AgentVNE/AgentVNE/pretrain_data/test_sample.pt',
                        help='测试样本文件路径（单条）')
     parser.add_argument('--input_dim', type=int, default=6,
                        help='输入特征维度')

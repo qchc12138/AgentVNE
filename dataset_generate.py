@@ -19,53 +19,12 @@ import networkx as nx
 from typing import List, Dict, Tuple, Set, Optional
 from torch_geometric.data import Data
 from tqdm import tqdm
-from topo.calculate_noderank_2 import build_adjacency_info, calculate_forward_probability
 
 
 def _load_json(path: str) -> Dict:
-    """
-    加载 JSON 文件
-    
-    Args:
-        path: JSON 文件路径（支持绝对路径和相对路径）
-    
-    Returns:
-        解析后的字典
-    
-    Raises:
-        FileNotFoundError: 文件不存在时抛出，包含详细错误信息
-        json.JSONDecodeError: JSON 解析错误时抛出
-    """
-    # 转换为绝对路径
-    if not os.path.isabs(path):
-        # 相对路径：相对于脚本所在目录
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        abs_path = os.path.join(script_dir, path)
-    else:
-        abs_path = path
-    
-    # 检查文件是否存在
-    if not os.path.exists(abs_path):
-        raise FileNotFoundError(
-            f"文件不存在: {abs_path}\n"
-            f"原始路径: {path}\n"
-            f"请检查路径是否正确，或使用 --sn_topo/--workflow_topo 等参数指定正确的路径"
-        )
-    
-    # 检查是否为文件
-    if not os.path.isfile(abs_path):
-        raise ValueError(f"路径不是文件: {abs_path}")
-    
-    try:
-        with open(abs_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except json.JSONDecodeError as e:
-        raise json.JSONDecodeError(
-            f"JSON 解析错误: {abs_path}\n"
-            f"错误详情: {str(e)}",
-            e.doc,
-            e.pos
-        )
+    """加载 JSON 文件"""
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 
 def _build_edge_index(links: List[Dict], directed: bool) -> torch.Tensor:
@@ -196,135 +155,56 @@ def _compute_sn_max_capacity(nodes: List[Dict]) -> Dict[str, float]:
     }
 
 
-def _generate_bias_for_constraint_nodes(
-    sn_nodes: List[Dict],
-    sn_max_capacity: Dict[str, float],
-    constraint_sn_node_ids: List[int],
-    bias_factor: float = 0.5
-) -> List[Dict]:
-    """
-    为约束节点生成偏置资源（仅用于计算noderank，不影响实际资源）
-    
-    Args:
-        sn_nodes: SN节点列表
-        sn_max_capacity: SN最大容量字典，用于归一化
-        constraint_sn_node_ids: 需要添加偏置的SN节点ID列表
-        bias_factor: 偏置因子，默认为0.5（归一化资源的0.5倍）
-    
-    Returns:
-        修改后的SN节点列表（深拷贝，仅用于计算noderank）
-    """
-    # 深拷贝节点列表
-    biased_nodes = json.loads(json.dumps(sn_nodes))
-    
-    # 创建SN节点ID到索引的映射
-    sn_id_to_idx = {}
-    for idx, node in enumerate(sn_nodes):
-        sn_id = int(node.get('id', idx))
-        sn_id_to_idx[sn_id] = idx
-    
-    # 为每个约束节点添加偏置
-    for sn_id in constraint_sn_node_ids:
-        if sn_id in sn_id_to_idx:
-            sn_idx = sn_id_to_idx[sn_id]
-            biased_node = biased_nodes[sn_idx]
-            
-            # 计算归一化的偏置值（基于最大容量）
-            cpu_bias = bias_factor * sn_max_capacity['cpu_max']
-            mem_bias = bias_factor * sn_max_capacity['mem_max']
-            disk_bias = bias_factor * sn_max_capacity['disk_max']
-            comm_bw_bias = bias_factor * sn_max_capacity['comm_bw_max']
-            
-            # 添加偏置（仅用于计算noderank）
-            biased_node['cpu'] = float(biased_node.get('cpu', 0.0)) + cpu_bias
-            biased_node['memory'] = float(biased_node.get('memory', 0.0)) + mem_bias
-            biased_node['disk'] = float(biased_node.get('disk', 0.0)) + disk_bias
-            biased_node['comm_bandwidth'] = float(biased_node.get('comm_bandwidth', biased_node.get('bandwidth', 0.0))) + comm_bw_bias
-    
-    return biased_nodes
-
-
-def _compute_sn_noderank(
-    nodes: List[Dict], 
-    links: List[Dict], 
-    directed: bool = False,
-    constraint_sn_node_ids: Optional[List[int]] = None,
-    sn_max_capacity: Optional[Dict[str, float]] = None,
-    bias_factor: float = 0.5
-) -> np.ndarray:
-    """
-    调用 calculate_noderank_2.py 的逻辑，计算底层网络节点的 NodeRank。
+def _compute_sn_noderank(nodes: List[Dict], links: List[Dict], directed: bool = False) -> np.ndarray:
+    """参考 calculate_noderank_2.py 的逻辑，计算底层网络节点的 NodeRank。
     采用 H(u)=cpu*comm_bandwidth，基于无向邻接构造前向概率 pF，做两轮邻居传播后做 3 次幂并归一化。
-    
-    Args:
-        nodes: SN节点列表
-        links: SN链路列表
-        directed: 是否为有向图
-        constraint_sn_node_ids: 需要添加偏置的SN节点ID列表（可选）
-        sn_max_capacity: SN最大容量字典，用于归一化偏置（可选）
-        bias_factor: 偏置因子，默认为0.5
-    
-    Returns:
-        shape=(N2,) 的 numpy 数组，NodeRank值
+    返回 shape=(N2,) 的 numpy 数组。
     """
     n = len(nodes)
     if n == 0:
         return np.zeros((0,), dtype=np.float64)
-    
-    # 如果有约束节点，先添加偏置
-    if constraint_sn_node_ids and sn_max_capacity:
-        nodes_for_noderank = _generate_bias_for_constraint_nodes(
-            nodes, sn_max_capacity, constraint_sn_node_ids, bias_factor
-        )
-        # 有偏置，则返回深拷贝的节点列表，不影响原始资源
-    else:
-        nodes_for_noderank = nodes
-    
-    # 构建出链信息（用于计算资源评估）
-    outgoing_links = {i: [] for i in range(n)}
-    for link in links:
-        source = int(link['source'])
-        target = int(link['target'])
-        bw = float(link.get('bandwidth', 1.0))
-        if source < n and target < n:
-            outgoing_links[source].append({'target': target, 'bandwidth': bw})
-            if not directed:
-                outgoing_links[target].append({'target': source, 'bandwidth': bw})
-    
-    # 步骤1：计算初始资源评估 H(u) = cpu * comm_bandwidth
+
+    # 资源评估 H(u) = cpu * comm_bandwidth
     H = np.zeros(n, dtype=np.float64)
-    for i, node in enumerate(nodes_for_noderank):
+    for i, node in enumerate(nodes):
         cpu = float(node.get('cpu', 0.0))
         comm_bw = float(node.get('comm_bandwidth', node.get('bandwidth', 0.0)))
         H[i] = cpu * comm_bw
-    
-    # 步骤2：计算初始 NodeRank
     H_sum = np.sum(H) if np.sum(H) > 0 else 1.0
-    NR_0 = H / H_sum
-    
-    # 步骤3：构建邻接信息（调用 calculate_noderank_2.py 的实现）
-    adj_info = build_adjacency_info(nodes_for_noderank, links, directed=directed)
-    adjacency = adj_info['adjacency']
-    
-    # 步骤4：计算前向概率矩阵（调用 calculate_noderank_2.py 的实现）
-    pF = calculate_forward_probability(H, adjacency)
-    
-    # 步骤5：迭代计算 NodeRank（使用 calculate_noderank_2.py 的逻辑）
-    PJ_u = 0.80
-    PF_u = 0.20
-    num_first_transforms = 2
-    
+    NR = H / H_sum  # 初始 noderank
+
+    # 构建邻接（无向）
+    adjacency: List[List[int]] = [[] for _ in range(n)]
+    for link in links:
+        u = int(link['source'])
+        v = int(link['target'])
+        if v not in adjacency[u]:
+            adjacency[u].append(v)
+        if u not in adjacency[v]:
+            adjacency[v].append(u)
+
+    # 前向概率 pF (只在邻居间分布)
+    pF = np.zeros((n, n), dtype=np.float64)
+    for u in range(n):
+        nbrs = adjacency[u]
+        if not nbrs:
+            continue
+        denom = np.sum(H[nbrs])
+        if denom <= 0:
+            continue
+        for v in nbrs:
+            pF[u, v] = H[v] / denom
+
     # 进行两次传播并归一化，然后做三次幂再归一化
-    NR_curr = NR_0.copy()
-    for _ in range(num_first_transforms):
-        NR_next = NR_curr + PF_u * (pF @ NR_curr)
+    PF_U = 0.20
+    NR_curr = NR
+    for _ in range(2):
+        NR_next = NR_curr + PF_U * (pF @ NR_curr)
         s = np.sum(NR_next)
         NR_curr = NR_next / (s if s > 0 else 1.0)
-    
     NR_final = NR_curr ** 3
     s2 = np.sum(NR_final)
     NR_final = NR_final / (s2 if s2 > 0 else 1.0)
-    
     return NR_final
 
 
@@ -476,12 +356,10 @@ def _greedy_place_workflow(
     参考 test.py 的 place_with_bfs_strategy 逻辑。
     
     放置规则：
-    1. 首先处理有 constraint_node 的 VN 节点，直接放置到指定的 SN 节点
-    2. 选择资源占用最大的 VN 节点作为第一个（排除已放置的约束节点）
-    3. 基于 VN 图的 BFS 扩展，优先放在同一 SN 节点上
-    4. 如果资源不足，在 k 跳邻居中查找
-    5. 按 NodeRank 排序确定优先级
-    6. constraint_node 不为空的节点始终不入队列
+    1. 选择资源占用最大的 VN 节点作为第一个
+    2. 基于 VN 图的 BFS 扩展，优先放在同一 SN 节点上
+    3. 如果资源不足，在 k 跳邻居中查找
+    4. 按 NodeRank 排序确定优先级
     
     Args:
         workflow_topo: Workflow 拓扑字典
@@ -501,57 +379,6 @@ def _greedy_place_workflow(
     N1 = len(wf_nodes)
     N2 = len(sn_nodes)
     
-    # 获取 SN 节点 ID 到索引的映射
-    sn_id_to_idx = {}
-    for idx, node in enumerate(sn_nodes):
-        sn_id = int(node.get('id', idx))
-        sn_id_to_idx[sn_id] = idx
-    
-    # 初始化映射和记录
-    mapping: Dict[int, int] = {}  # VN节点索引 -> SN节点索引
-    placement_order: List[Tuple[int, int, Dict[str, float]]] = []  # 放置顺序记录
-    resource_deduction_history: List[Tuple[int, int]] = []  # 资源扣减历史记录
-    constraint_placed_vn: Set[int] = set()  # 已放置的约束节点集合
-    
-    # ========== 步骤1：先处理有 constraint_node 的节点 ==========
-    for vn_idx, vn_node in enumerate(wf_nodes):
-        constraint_node_id = vn_node.get('constraint_node')
-        if constraint_node_id is not None:
-            # 找到对应的 SN 节点索引
-            if constraint_node_id in sn_id_to_idx:
-                sn_idx = sn_id_to_idx[constraint_node_id]
-                
-                # 检查资源是否足够
-                if _check_sn_resource_for_placement(sn_nodes, sn_idx, wf_nodes, vn_idx, temp_mapping=None):
-                    # 资源足够，立即扣减并放置
-                    _deduct_resource(sn_nodes, sn_idx, wf_nodes, vn_idx)
-                    mapping[vn_idx] = sn_idx
-                    constraint_placed_vn.add(vn_idx)
-                    resource_deduction_history.append((sn_idx, vn_idx))
-                    
-                    # 记录放置顺序和资源状态
-                    if return_placement_order:
-                        sn_node = sn_nodes[sn_idx]
-                        placement_order.append((
-                            vn_idx,
-                            sn_idx,
-                            {
-                                'cpu': float(sn_node.get('cpu', 0.0)),
-                                'memory': float(sn_node.get('memory', 0.0)),
-                                'disk': float(sn_node.get('disk', 0.0))
-                            }
-                        ))
-                else:
-                    # 资源不足，无法放置约束节点，返回空映射
-                    _rollback_resource_deductions(sn_nodes, wf_nodes, resource_deduction_history)
-                    return {}, []
-    
-    # 如果所有节点都是约束节点且都已放置，直接返回
-    if len(constraint_placed_vn) == N1:
-        return mapping, placement_order
-    
-    # ========== 步骤2：处理非约束节点 ==========
-    
     # 1. 生成优先级列表（基于 NodeRank，按降序排序）
     # 对每个 VN 节点，SN 节点的优先级列表就是按 sn_noderank 降序排序
     sn_order = list(sorted(range(N2), key=lambda j: sn_noderank[j], reverse=True))
@@ -569,14 +396,20 @@ def _greedy_place_workflow(
         node = wf_nodes[i]
         vn_resource_demands[i] = float(node.get('cpu', 0.0)) + float(node.get('memory', 0.0)) + float(node.get('disk', 0.0))
     
-    # 5. 选择第一个非约束 VN 节点（资源占用最大）
-    non_constraint_vn = [i for i in range(N1) if i not in constraint_placed_vn]
-    if not non_constraint_vn:
-        return mapping, placement_order
+    # 5. 获取 SN 节点 ID 到索引的映射
+    sn_id_to_idx = {}
+    for idx, node in enumerate(sn_nodes):
+        sn_id = int(node.get('id', idx))
+        sn_id_to_idx[sn_id] = idx
     
-    first_vn = max(non_constraint_vn, key=lambda i: vn_resource_demands[i])
+    # 6. 选择第一个 VN 节点（资源占用最大）
+    first_vn = max(range(N1), key=lambda i: vn_resource_demands[i])
     
-    # 6. 放置第一个非约束 VN 节点（遍历优先级列表，找到第一个能放置的）
+    # 7. 放置第一个 VN 节点（遍历优先级列表，找到第一个能放置的）
+    mapping: Dict[int, int] = {}  # VN节点索引 -> SN节点索引
+    placement_order: List[Tuple[int, int, Dict[str, float]]] = []  # 放置顺序记录
+    resource_deduction_history: List[Tuple[int, int]] = []  # 资源扣减历史记录
+    
     first_placed = False
     for first_sn_idx in priority_lists[first_vn]:
         if _check_sn_resource_for_placement(sn_nodes, first_sn_idx, wf_nodes, first_vn, temp_mapping=None):
@@ -600,15 +433,13 @@ def _greedy_place_workflow(
                 ))
             break
     
-    # 如果无法放置第一个节点，回滚约束节点的资源扣减并返回空映射
+    # 如果无法放置第一个节点，返回空映射
     if not first_placed:
-        _rollback_resource_deductions(sn_nodes, wf_nodes, resource_deduction_history)
         return {}, []
     
-    # 7. BFS 扩展放置（约束节点不入队列）
-    placed_vn: Set[int] = constraint_placed_vn.copy()  # 包含已放置的约束节点
-    placed_vn.add(first_vn)
-    queue = [first_vn]  # 队列中不包含约束节点
+    # 8. BFS 扩展放置
+    placed_vn: Set[int] = {first_vn}
+    queue = [first_vn]
     
     while queue and len(placed_vn) < N1:
         new_placed: List[int] = []
@@ -617,8 +448,8 @@ def _greedy_place_workflow(
             vi_sn_idx = mapping[vi]
             vi_sn_id = int(sn_nodes[vi_sn_idx].get('id', vi_sn_idx))
             
-            # 找到 vi 的未放置邻居（排除约束节点）
-            unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn and u not in constraint_placed_vn]
+            # 找到 vi 的未放置邻居
+            unplaced_neighbors = [u for u in vn_neighbors[vi] if u not in placed_vn]
             
             # 对每个邻居尝试放置
             for u in unplaced_neighbors:
@@ -695,9 +526,9 @@ def _greedy_place_workflow(
                     _rollback_resource_deductions(sn_nodes, wf_nodes, resource_deduction_history)
                     return {}, []
         
-        # 更新队列：按度降序；若度相同，则按资源需求降序（约束节点不入队列）
+        # 更新队列：按度降序；若度相同，则按资源需求降序
         queue = sorted(
-            [i for i in new_placed if i not in constraint_placed_vn],
+            new_placed,
             key=lambda i: (vn_degrees[i], vn_resource_demands[i]),
             reverse=True
         )
@@ -723,8 +554,7 @@ def generate_pretrain_dataset(
     workflows_per_episode: int = 10,
     num_episodes: int = 50,
     test_mode: bool = False,
-    test_episode_idx: int = 0,
-    bias_factor: float = 0.5
+    test_episode_idx: int = 0
 ) -> None:
     """生成预训练数据集并保存到文件。
     
@@ -737,7 +567,6 @@ def generate_pretrain_dataset(
         num_episodes: episode 数量（重复次数）
         test_mode: 是否启用测试模式（打印标签和放置动作）
         test_episode_idx: 测试模式下的 episode 索引（默认第一个 episode）
-        bias_factor: 约束节点的偏置因子，用于计算NodeRank时增加SN节点的资源（默认 0.5）
     """
     print("=" * 60)
     print("开始生成预训练数据集")
@@ -747,36 +576,8 @@ def generate_pretrain_dataset(
     print(f"Workflow NodeRank: {workflow_noderank_path}")
     print(f"每个 episode 放置 {workflows_per_episode} 个 workflow")
     print(f"共 {num_episodes} 个 episode")
-    print(f"偏置因子: {bias_factor} (约束节点的偏置资源 = 归一化资源 × {bias_factor})")
     print(f"输出文件: {output_path}")
     print("=" * 60)
-    
-    # 验证输入文件是否存在
-    print("\n验证输入文件...")
-    input_files = {
-        '底层网络拓扑': sn_topo_path,
-        'Workflow 拓扑': workflow_topo_path,
-        'Workflow NodeRank': workflow_noderank_path
-    }
-    
-    for file_type, file_path in input_files.items():
-        # 转换为绝对路径
-        if not os.path.isabs(file_path):
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            abs_path = os.path.join(script_dir, file_path)
-        else:
-            abs_path = file_path
-        
-        if not os.path.exists(abs_path):
-            print(f"❌ 错误: {file_type} 文件不存在")
-            print(f"   路径: {abs_path}")
-            print(f"   原始路径: {file_path}")
-            raise FileNotFoundError(
-                f"{file_type} 文件不存在: {abs_path}\n"
-                f"请检查路径是否正确，或使用命令行参数指定正确的路径"
-            )
-        else:
-            print(f"✓ {file_type}: {abs_path}")
     
     # 加载基础数据
     print("\n加载拓扑和 NodeRank 数据...")
@@ -803,43 +604,16 @@ def generate_pretrain_dataset(
     # 生成一条测试样本（未放置任何任务的 SN + workflow_1）
     if test_output_path:
         print("\n生成单条测试样本（初始 SN 与 workflow）...")
-        # 提取约束节点信息
-        constraint_sn_node_ids = []
-        for vn_node in base_workflow_topo['nodes']:
-            constraint_node_id = vn_node.get('constraint_node')
-            if constraint_node_id is not None:
-                constraint_sn_node_ids.append(int(constraint_node_id))
-        
         base_sn_noderank = _compute_sn_noderank(
-            base_sn_topo['nodes'], 
-            base_sn_topo.get('links', []), 
-            directed=bool(base_sn_topo.get('directed', False)),
-            constraint_sn_node_ids=constraint_sn_node_ids if constraint_sn_node_ids else None,
-            sn_max_capacity=sn_max_capacity,
-            bias_factor=bias_factor
+            base_sn_topo['nodes'], base_sn_topo.get('links', []), directed=bool(base_sn_topo.get('directed', False))
         )
-        # 使用归一化，如果有约束节点，使用偏置后的资源特征
+        # 使用归一化
         test_workflow_graph = _topology_to_pyg_data(base_workflow_topo, is_workflow=True, sn_max_capacity=sn_max_capacity)
-        if constraint_sn_node_ids:
-            base_sn_topo_with_bias = json.loads(json.dumps(base_sn_topo))  # 深拷贝
-            biased_sn_nodes = _generate_bias_for_constraint_nodes(
-                base_sn_topo_with_bias['nodes'],
-                sn_max_capacity,
-                constraint_sn_node_ids,
-                bias_factor
-            )
-            base_sn_topo_with_bias['nodes'] = biased_sn_nodes
-            test_substrate_graph = _topology_to_pyg_data(
-                base_sn_topo_with_bias,
-                is_workflow=False,
-                sn_max_capacity=sn_max_capacity
-            )
-        else:
-            test_substrate_graph = _topology_to_pyg_data(
-                base_sn_topo,
-                is_workflow=False,
-                sn_max_capacity=sn_max_capacity
-            )
+        test_substrate_graph = _topology_to_pyg_data(
+            base_sn_topo,
+            is_workflow=False,
+            sn_max_capacity=sn_max_capacity
+        )
         N1_test = test_workflow_graph.x.size(0)
         N2_test = test_substrate_graph.x.size(0)
         # 直接使用原始noderank，无需重排
@@ -890,21 +664,11 @@ def generate_pretrain_dataset(
                 print(f"最后一个 Episode {episode_idx + 1}/{num_episodes}")
                 print(f"{'='*80}")
                 
-                # 提取约束节点信息（用于初始状态显示）
-                constraint_sn_node_ids = []
-                for vn_node in base_workflow_topo['nodes']:
-                    constraint_node_id = vn_node.get('constraint_node')
-                    if constraint_node_id is not None:
-                        constraint_sn_node_ids.append(int(constraint_node_id))
-                
                 # 计算初始 SN 的 noderank 和资源状态
                 initial_sn_noderank = _compute_sn_noderank(
                     sn_topo['nodes'], 
                     sn_topo.get('links', []), 
-                    directed=bool(sn_topo.get('directed', False)),
-                    constraint_sn_node_ids=constraint_sn_node_ids if constraint_sn_node_ids else None,
-                    sn_max_capacity=sn_max_capacity,
-                    bias_factor=bias_factor
+                    directed=bool(sn_topo.get('directed', False))
                 )
                 
                 # 打印 SN 初始状态
@@ -936,46 +700,20 @@ def generate_pretrain_dataset(
                 total_disk = sum(float(n.get('disk', 0.0)) for n in sn_topo['nodes'])
             
             for wf_idx in range(workflows_per_episode):
-                # 提取当前 workflow 的约束节点信息
-                constraint_sn_node_ids = []
-                for vn_node in base_workflow_topo['nodes']:
-                    constraint_node_id = vn_node.get('constraint_node')
-                    if constraint_node_id is not None:
-                        constraint_sn_node_ids.append(int(constraint_node_id))
-                
-                # 计算当前 SN 的 noderank（考虑约束节点的偏置）
+                # 计算当前 SN 的 noderank
                 sn_noderank = _compute_sn_noderank(
                     sn_topo['nodes'], 
                     sn_topo.get('links', []), 
-                    directed=bool(sn_topo.get('directed', False)),
-                    constraint_sn_node_ids=constraint_sn_node_ids if constraint_sn_node_ids else None,
-                    sn_max_capacity=sn_max_capacity,
-                    bias_factor=bias_factor
+                    directed=bool(sn_topo.get('directed', False))
                 )
                 
                 # x: 当前的 workflow 与 SN 图（放置前状态，使用归一化）
-                # 如果有约束节点，需要创建带偏置的SN拓扑用于生成数据集特征
-                if constraint_sn_node_ids:
-                    sn_topo_with_bias = json.loads(json.dumps(sn_topo))  # 深拷贝
-                    biased_sn_nodes = _generate_bias_for_constraint_nodes(
-                        sn_topo_with_bias['nodes'],
-                        sn_max_capacity,
-                        constraint_sn_node_ids,
-                        bias_factor
-                    )
-                    sn_topo_with_bias['nodes'] = biased_sn_nodes
-                    substrate_graph = _topology_to_pyg_data(
-                        sn_topo_with_bias,
-                        is_workflow=False,
-                        sn_max_capacity=sn_max_capacity
-                    )
-                else:
-                    substrate_graph = _topology_to_pyg_data(
-                        sn_topo,
-                        is_workflow=False,
-                        sn_max_capacity=sn_max_capacity
-                    )
                 workflow_graph = _topology_to_pyg_data(base_workflow_topo, is_workflow=True, sn_max_capacity=sn_max_capacity)
+                substrate_graph = _topology_to_pyg_data(
+                    sn_topo,
+                    is_workflow=False,
+                    sn_max_capacity=sn_max_capacity
+                )
                 
                 # y: 将 SN 的 noderank 重复 N1 行（直接使用原始noderank，无需重排）
                 N1 = workflow_graph.x.size(0)
@@ -1218,25 +956,22 @@ def main():
     """主函数"""
     import argparse
     
-    # 获取脚本所在目录，用于构建相对路径的默认值
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    
     parser = argparse.ArgumentParser(description='生成预训练数据集')
     parser.add_argument('--sn_topo', type=str, 
-                       default=os.path.join(script_dir, 'topo', 'SN_topology.json'),
-                       help='底层网络拓扑文件路径（支持绝对路径和相对路径，相对路径相对于脚本目录）')
+                       default='/home/zrz/SimuVNE/topo/SN_topology.json',
+                       help='底层网络拓扑文件路径')
     parser.add_argument('--workflow_topo', type=str,
-                       default=os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
-                       help='Workflow 拓扑文件路径（支持绝对路径和相对路径）')
+                       default='/home/zrz/SimuVNE/workflow_topo/workflow1_topo.json',
+                       help='Workflow 拓扑文件路径')
     parser.add_argument('--workflow_noderank', type=str,
-                       default=os.path.join(script_dir, 'workflow_topo', 'workflow1_noderank.json'),
-                       help='Workflow NodeRank 文件路径（支持绝对路径和相对路径）')
+                       default='/home/zrz/SimuVNE/workflow_topo/workflow1_noderank.json',
+                       help='Workflow NodeRank 文件路径')
     parser.add_argument('--output', type=str,
-                       default=os.path.join(script_dir, 'pretrain_data', 'pretrain_dataset.pt'),
-                       help='输出数据集文件路径（支持绝对路径和相对路径）')
+                       default='/home/zrz/SimuVNE/pretrain_data/pretrain_dataset.pt',
+                       help='输出数据集文件路径')
     parser.add_argument('--test_output', type=str,
-                       default=os.path.join(script_dir, 'pretrain_data', 'test_sample.pt'),
-                       help='测试样本输出文件路径（单条，支持绝对路径和相对路径）')
+                       default='/home/zrz/SimuVNE/pretrain_data/test_sample.pt',
+                       help='测试样本输出文件路径（单条）')
     parser.add_argument('--workflows_per_episode', type=int, default=5,
                        help='每个 episode 放置的 workflow 数量')
     parser.add_argument('--num_episodes', type=int, default=400,
@@ -1245,8 +980,6 @@ def main():
                        help='启用测试模式，打印放置前标签和放置动作')
     parser.add_argument('--test_episode_idx', type=int, default=0,
                        help='测试模式下要打印的 episode 索引（默认 0）')
-    parser.add_argument('--bias_factor', type=float, default=0.25,
-                       help='约束节点的偏置因子，用于计算NodeRank时增加SN节点的资源（默认 0.5，即归一化资源的0.5倍）')
     
     args = parser.parse_args()
     
@@ -1259,8 +992,7 @@ def main():
         workflows_per_episode=args.workflows_per_episode,
         num_episodes=args.num_episodes,
         test_mode=args.test_mode,
-        test_episode_idx=args.test_episode_idx,
-        bias_factor=args.bias_factor
+        test_episode_idx=args.test_episode_idx
     )
 
 
