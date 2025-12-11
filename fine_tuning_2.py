@@ -101,8 +101,14 @@ class PPOAgent:
         self.opt_pi = optim.Adam(self.policy.parameters(), lr=lr_policy)
         self.opt_v = optim.Adam(self.value_net.parameters(), lr=lr_value)
 
-    def _generate_priority_lists(self, probs_matrix: torch.Tensor) -> List[List[int]]:
+    def _generate_priority_lists(self, probs_matrix: torch.Tensor, seed: Optional[int] = None) -> List[List[int]]:
         """从概率矩阵采样生成优先级列表（逐步排除方式）"""
+        # 如果提供了种子，创建Generator用于采样
+        generator = None
+        if seed is not None:
+            generator = torch.Generator(device=self.device)
+            generator.manual_seed(seed)
+        
         N_v, N_s = probs_matrix.shape
         priority_lists = []
         
@@ -118,8 +124,11 @@ class PPOAgent:
                 remaining_probs_normalized = F.softmax(remaining_probs, dim=0)
                 
                 # 从归一化后的概率分布中采样
-                cat = Categorical(probs=remaining_probs_normalized)
-                sampled_idx_in_remaining = cat.sample().item()
+                # 使用torch.multinomial支持generator参数
+                if generator is not None:
+                    sampled_idx_in_remaining = torch.multinomial(remaining_probs_normalized, num_samples=1, generator=generator).item()
+                else:
+                    sampled_idx_in_remaining = torch.multinomial(remaining_probs_normalized, num_samples=1).item()
                 
                 # 获取实际的SN节点索引
                 actual_sn_idx = remaining_indices[sampled_idx_in_remaining]
@@ -359,9 +368,17 @@ class PPOAgent:
         return mapping, torch.tensor(logprob_sum, device=self.device, dtype=torch.float), value, sn
 
     @torch.no_grad()
-    def act(self, vn: Data, sn: Data, env: Optional[SimuVNEEnv] = None, k_hop: int = 1, verbose: bool = False) -> Tuple[Dict[int, int], torch.Tensor, torch.Tensor, Data]:
+    def act(self, vn: Data, sn: Data, env: Optional[SimuVNEEnv] = None, k_hop: int = 1, verbose: bool = False, seed: Optional[int] = None) -> Tuple[Dict[int, int], torch.Tensor, torch.Tensor, Data]:
         """
         放置策略：基于模型概率采样优先级 + BFS/k-hop 资源检查（无 NodeRank）。
+        
+        Args:
+            vn: VN图数据
+            sn: SN图数据
+            env: 环境对象
+            k_hop: k跳搜索参数
+            verbose: 是否打印详细信息
+            seed: 随机数种子（用于采样，None则使用默认随机数）
         """
         # 如果没有提供env，使用原来的随机采样策略（向后兼容）
         if env is None:
@@ -418,7 +435,7 @@ class PPOAgent:
             return mapping, torch.tensor(0.0, device=self.device, dtype=torch.float), value, sn_with_bias
 
         # 生成优先级列表（模型概率采样，无 NodeRank）
-        priority_lists = self._generate_priority_lists(probs_matrix)
+        priority_lists = self._generate_priority_lists(probs_matrix, seed=seed)
         
         # 打印采样得到的优先级列表（如果verbose=True）
         if verbose:
@@ -691,7 +708,7 @@ def run_ppo_episode(
         workflow_types=workflow_types,
         arrival_rate=arrival_rate,
         mean_lifetime=mean_lifetime,
-        seed=episode_seed if episode_seed is not None else 42,
+        seed=42,  # 固定种子，使所有episode的workflow轨迹相同（任务到达时间、类型、生存时间）
         sn_capacity_for_norm=sn_capacity
     )
 
@@ -726,7 +743,8 @@ def run_ppo_episode(
             # 调用策略网络生成放置方案（一次性采样，传入env以使用新的放置策略）
             # 注意：bias会在agent.act()内部临时应用到SN特征上，不会修改sn_state
             # act()内部会打印概率矩阵、优先级列表和每次放置的映射（如果verbose=True）
-            mapping, logprob, value, sn_with_bias = agent.act(vn, sn_state, env=env, k_hop=1, verbose=verbose)
+            # 使用episode_seed作为动作采样随机数种子，使每个episode的采样结果不同（但workflow轨迹相同）
+            mapping, logprob, value, sn_with_bias = agent.act(vn, sn_state, env=env, k_hop=1, verbose=verbose, seed=episode_seed)
             
             # 检查是否成功放置（所有节点都已映射，资源已在act()中扣减）
             if len(mapping) == vn.x.size(0):
@@ -767,6 +785,7 @@ def run_ppo_episode(
                 'task_id': task_id,
                 'success': success,
                 'r_t': r_t,
+                'active_tasks': len(env.active_workflows),  # 记录当前存活任务数量
                 'done': False,
             })
             
@@ -808,6 +827,24 @@ def run_ppo_episode(
     avg_rt_per_episode = 0.0
     if len(all_rt_values) > 0:
         avg_rt_per_episode = sum(all_rt_values) / len(all_rt_values)
+    
+    # 提取每个任务到来时的r_t和存活任务数量（只包括有任务到达的时间步）
+    task_rt_info = []
+    for traj_entry in env.traj:
+        if traj_entry.get('task_id') is not None and traj_entry.get('r_t') is not None:
+            r_t = traj_entry['r_t']
+            active_tasks = traj_entry.get('active_tasks', 0)
+            task_rt_info.append((r_t, active_tasks))
+    
+    # 打印每个任务到来时的r_t列表（格式：r_t : 当前存活任务数量）
+    if len(task_rt_info) > 0:
+        print(f"\n【Episode结束】本episode共处理 {len(task_rt_info)} 个任务")
+        print(f"每个任务到来时的r_t列表（格式：r_t : 当前存活任务数量）:")
+        # 将所有任务的信息打印成一横排
+        rt_str_list = [f"{r_t:.3f} : {active_tasks}" for r_t, active_tasks in task_rt_info]
+        print("  " + " ，  ".join(rt_str_list))
+        avg_rt = sum(rt for rt, _ in task_rt_info) / len(task_rt_info)
+        print(f"r_t均值: {avg_rt:.3f}")
     
     # Episode完成（不打印，精简输出）
     
@@ -955,8 +992,7 @@ def run_ppo_batch_training(
                 max_arrived_tasks=max_arrived_tasks,
                 max_time_steps=max_time_steps,
                 update_after_episode=False,  # 不立即更新
-                episode_seed=42,  # 固定种子，使所有episode的任务到达轨迹和生存时间相同
-                # episode_seed=42 + update_idx * num_episodes_per_update + ep_idx,
+                episode_seed=42 + update_idx * num_episodes_per_update + ep_idx,  # 每个episode使用不同的随机数种子，仅用于动作采样（workflow轨迹保持相同）
                 verbose=verbose
             )
             
@@ -1322,8 +1358,8 @@ if __name__ == '__main__':
             policy_ckpt=policy_ckpt_path,  # 如果文件存在则使用预训练模型
             value_ckpt=value_ckpt_path,  # 如果文件存在则使用预训练价值网络
             device='cpu',
-            arrival_rate=0.4,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
-            mean_lifetime=40.0,
+            arrival_rate=0.2,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
+            mean_lifetime=30.0,
             max_arrived_tasks=20,
             max_time_steps=3000,
             num_episodes_per_update=1,  # 批量大小：收集多少个episode的轨迹数据后再进行一次PPO更新
@@ -1332,7 +1368,7 @@ if __name__ == '__main__':
                              # 例如：3表示每次批量更新时，策略和价值网络各更新3次
             num_updates=1,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
                             # 例如：1表示只执行1次批量更新；30表示执行30次批量更新
-            verbose = True  # 设置为True以打印详细信息，False则只打印PPO训练信息
+            verbose = False  # 设置为True以打印详细信息，False则只打印PPO训练信息
         )
         
         print("\n批量训练统计:")

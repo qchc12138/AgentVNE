@@ -984,7 +984,7 @@ def main():
                        help='测试模式下要打印的 episode 索引（默认 0）')
     parser.add_argument('--bias', type=float, default=0.3,
                        help='bias 参数（约束节点 bias_cpu = bias * max_cpu）')
-    parser.add_argument('--noderank_iterations', type=int, default=3,
+    parser.add_argument('--noderank_iterations', type=int, default=2,
                        help='NodeRank 迭代次数（默认 2）')
     
     args = parser.parse_args()

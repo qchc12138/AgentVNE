@@ -1,0 +1,49 @@
+日志文件保存路径: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/log.txt
+============================================================
+  ✓ 使用预训练模型: /home/zrz/AgentVNE/AgentVNE/pretrain_outputs/checkpoint_latest.pt
+
+【初始化】创建策略网络和价值网络...
+  ✓ 加载预训练模型: /home/zrz/AgentVNE/AgentVNE/pretrain_outputs/checkpoint_latest.pt
+  ✓ 使用随机初始化的价值网络
+  ✓ PPO Agent创建完成 (设备: cpu)
+
+【Episode结束】本episode共处理 20 个任务
+每个任务到来时的r_t列表（格式：r_t : 当前存活任务数量）:
+  -2.000 : 1 ，  -3.500 : 2 ，  -6.333 : 3 ，  -6.333 : 3 ，  -6.333 : 3 ，  -6.333 : 3 ，  -10.000 : 4 ，  -10.000 : 4 ，  -14.000 : 5 ，  -10.000 : 4 ，  -10.000 : 4 ，  -7.667 : 3 ，  -10.000 : 4 ，  -14.000 : 5 ，  -12.000 : 6 ，  -13.429 : 7 ，  -13.429 : 7 ，  -10.167 : 6 ，  -13.429 : 7 ，  -21.125 : 8
+r_t均值: -10.004
+
+  【PPO更新 1/1】合并 1 个episode的数据...
+    总样本数: 20, 总奖励均值: -10.004
+    开始PPO更新 (共3次迭代):
+      [PPO迭代 1/3] 策略损失: 0.1528, 价值损失: 8186.8882
+      [PPO迭代 2/3] 策略损失: 0.1892, 价值损失: 8183.4546
+      [PPO迭代 3/3] 策略损失: 0.0436, 价值损失: 8180.1025
+    PPO更新 1/1 完成!
+  【更新 1/1 结果】平均每个 episode 的最终回报: -944.00, 平均接受率: 100.00% (20.0/20.0)
+
+批量训练统计:
+  更新 1: 平均每个 episode 的最终回报=-944.00, 接受率=100.00%, 样本数=20
+
+============================================================
+保存训练结果到: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815
+============================================================
+
+每个episode的平均r_t（所有时间步r_t的均值）:
+  Episode 1: -8.504
+  平均: -8.504
+✓ 训练曲线图（总回报）已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/training_curves_return.png
+✓ 训练曲线图（接受率）已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/training_curves_acceptance.png
+✓ 训练曲线图（平均r_t）已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/training_curves_rt.png
+✓ 策略网络已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/policy_network.pth
+✓ 价值网络已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/value_network.pth
+✓ 策略网络（最新）已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/policy_network_latest.pth
+✓ 价值网络（最新）已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/value_network_latest.pth
+✓ 训练统计已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/training_stats.json
+✓ 训练摘要已保存: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/training_summary.txt
+
+============================================================
+所有结果已成功保存到: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815
+============================================================
+
+
+所有日志已保存到: /home/zrz/AgentVNE/AgentVNE/finetuning_putput/run_20251210_173815/log.txt

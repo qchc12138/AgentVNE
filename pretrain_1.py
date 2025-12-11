@@ -349,7 +349,7 @@ def main():
                        help='输出目录')
     parser.add_argument('--batch_size', type=int, default=100,
                        help='批大小')
-    parser.add_argument('--num_epochs', type=int, default=10,
+    parser.add_argument('--num_epochs', type=int, default=8,
                        help='训练轮数')
     parser.add_argument('--learning_rate', type=float, default=0.005,
                        help='学习率')
