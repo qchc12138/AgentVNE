@@ -51,11 +51,15 @@ def resolve_strategies(names: Optional[Iterable[str]]) -> Dict[str, StrategyFact
     base_registry: Dict[str, StrategyFactory] = {
         "null": lambda: NullPlacementStrategy(),
         "ga": lambda: GAPlacementStrategy(),
-        "gal": lambda: GALPlacementStrategy(),
-        "gal_pn": lambda: GALPNPlacementStrategy(),
-        "gal_sn": lambda: GALSNPlacementStrategy(),
-        "ft1": lambda: FT1PlacementStrategy(),
-        "ft_n": lambda: FTNPlacementStrategy(),
+        "gal-vne": lambda: GALPlacementStrategy(),  # 原 gal，改名为 GAL-VNE（小写）
+        "gal": lambda: GALPlacementStrategy(),  # 向后兼容别名
+        # "gal_pn": lambda: GALPNPlacementStrategy(),  # 已注释
+        "greedy": lambda: GALSNPlacementStrategy(),  # 原 gal_sn，改名为 greedy
+        "gal_sn": lambda: GALSNPlacementStrategy(),  # 向后兼容别名
+        "ft1": lambda: FT1PlacementStrategy(),  # FineTuned
+        "finetuned": lambda: FT1PlacementStrategy(),  # FineTuned 别名
+        "ft_n": lambda: FTNPlacementStrategy(),  # Pretrain
+        "pretrain": lambda: FTNPlacementStrategy(),  # Pretrain 别名
     }
     finetuned_registry = get_finetuned_tester_registry()
     full_registry = dict(base_registry)
@@ -149,7 +153,18 @@ class Tester:
             test_scope="tester",
         )
         try:
+            total_rounds = len(self.round_configs)
+            total_strategies = len(self.strategy_factories)
+            print(f"\n{'='*80}")
+            print(f"开始测试：共 {total_rounds} 轮，每轮 {total_strategies} 个策略")
+            print(f"{'='*80}\n")
+            
             for idx, config in enumerate(self.round_configs, start=1):
+                print(f"\n[轮次 {idx}/{total_rounds}] 开始测试")
+                print(f"  参数配置: arrival_rate={config.arrival_rate}, "
+                      f"mean_lifetime={config.mean_lifetime}, "
+                      f"max_time_steps={config.max_time_steps}, seed={config.seed}")
+                
                 table_title = f"Tester Param Group #{idx}"
                 printer.start_round(
                     table_title=table_title,
@@ -158,7 +173,10 @@ class Tester:
                         workflow_keys=config.workflow_types.keys(),
                     ),
                 )
-                for label, factory in self.strategy_factories.items():
+                
+                strategy_list = list(self.strategy_factories.items())
+                for strategy_idx, (label, factory) in enumerate(strategy_list, start=1):
+                    print(f"  [{strategy_idx}/{total_strategies}] 正在测试策略: {label}")
                     run_single_strategy_test(
                         strategy_factory=factory,
                         config=config,
@@ -166,7 +184,15 @@ class Tester:
                         printer=printer,
                         strategy_label=label,
                     )
+                    print(f"  [{strategy_idx}/{total_strategies}] ✓ 策略 {label} 测试完成")
+                
+                print(f"\n[轮次 {idx}/{total_rounds}] 所有策略测试完成，生成汇总结果...")
                 printer.finalize()
+                print(f"[轮次 {idx}/{total_rounds}] ✓ 轮次完成\n")
+            
+            print(f"\n{'='*80}")
+            print(f"所有测试完成：共完成 {total_rounds} 轮测试")
+            print(f"{'='*80}\n")
         finally:
             printer.close()
 
@@ -283,51 +309,81 @@ def create_tester_from_args(args: argparse.Namespace) -> Tester:
 def main(argv: Optional[List[str]] = None) -> None:
     """
     默认入口：main 内编码最简策略/参数，便于直接修改后运行。
+    
+    可以直接运行：python3 tester.py
+    默认会测试所有策略并生成对比图表。
+    
     如需 CLI 控制，可传入 argv（命令行执行时自动覆盖）。
     """
 
+    # 默认测试所有策略（不包括 null，因为它是测试用的占位策略）
     manual_strategies = [
-        "null",
-        "ga",
-        "gal",
-        "gal_pn",
-        "gal_sn",
-        "ft1",
-        "ft_n",
+        "ga",           # 遗传算法
+        "gal-vne",      # 贪心分配算法（基于 noderank），原 gal（注意：使用小写）
+        # "gal_pn",     # 贪心分配算法（逐节点），已注释
+        "greedy",       # 贪心分配算法（SN 排序），原 gal_sn
+        "pretrain",     # 预训练模型（别名：ft_n）
+        "finetuned",    # 微调模型（别名：ft1）
     ]
+    
+    # 默认测试参数配置
+    # 可添加多个字典，用于多轮测试（每轮所有策略使用相同参数）
     manual_parameters = [
         {
-            "arrival_rate": 0.2,
-            "mean_lifetime": 20,
-            "max_time_steps": 100,
-            "seed": 2025,
+            "arrival_rate": 0.2,      # 任务到达率（泊松分布）
+            "mean_lifetime": 15,      # 平均生存时间（指数分布）
+            "max_time_steps": 1000,   # 最大时间步数
+            "seed": 42,             # 随机种子（保证不同策略使用相同的任务序列）
         },
-        #{
-        #    "arrival_rate": 0.5,
-        #    "mean_lifetime": 50,
-        #    "max_time_steps": 1000,
-        #    "seed": 2025,
-        #},
-        #{
-        #    "arrival_rate": 1.0,
-        #    "mean_lifetime": 100,
-        #    "max_time_steps": 1000,
-        #    "seed": 2025,
-        #},
+        # 可以取消注释以下配置来添加更多测试轮次
+        {
+           "arrival_rate": 0.2,
+           "mean_lifetime": 20,
+           "max_time_steps": 1000,
+           "seed": 42,  # 不同轮次可以使用不同 seed
+        },
+        {
+           "arrival_rate": 0.2,
+           "mean_lifetime": 25,
+           "max_time_steps": 1000,
+           "seed": 42,  # 不同轮次可以使用不同 seed
+        },
+        {
+           "arrival_rate": 0.2,
+           "mean_lifetime": 30,
+           "max_time_steps": 1000,
+           "seed": 42,  # 不同轮次可以使用不同 seed
+        },
+        {
+           "arrival_rate": 0.2,
+           "mean_lifetime": 35,
+           "max_time_steps": 1000,
+           "seed": 42,
+        },
+        {
+           "arrival_rate": 0.2,
+           "mean_lifetime": 40,
+           "max_time_steps": 1000,
+           "seed": 42,
+        }
     ]
 
     parser = build_arg_parser()
     if argv is None:
+        # 构建默认命令行参数
         default_cli: List[str] = []
         # 默认开启绘图功能，生成对比图和汇总趋势图
         default_cli.append("--plot")
+        # 添加所有策略
         for strategy_name in manual_strategies:
             default_cli.extend(["--strategy", strategy_name])
+        # 添加所有参数配置
         for param_dict in manual_parameters:
             param_str = ",".join(f"{k}={v}" for k, v in param_dict.items())
             default_cli.extend(["--parameter", param_str])
         args = parser.parse_args(default_cli)
     else:
+        # 使用命令行参数（覆盖默认配置）
         args = parser.parse_args(argv)
 
     tester = create_tester_from_args(args)

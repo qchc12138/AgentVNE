@@ -67,7 +67,7 @@ class GreedyAllocator:
     
     def greedy_place(self, vn: Data) -> tuple[bool, Dict[int, int], float]:
         """
-        贪心放置策略（SN节点预排序版本）
+        贪心放置策略（SN节点预排序版本，支持约束节点）
         
         VN节点依次从排序后的SN节点列表中选择（从资源总量高的开始）。
         
@@ -77,24 +77,26 @@ class GreedyAllocator:
         Returns:
             (success, mapping, r_t): 成功标志、节点映射、奖励
         """
-        N_v = vn.x.size(0)
+        # 导入约束节点处理工具
+        from tests.constraint_handler import separate_constraint_nodes, place_constraint_nodes
         
-        # 1. 重置排序缓存（因为资源状态可能已变化），然后获取排序后的SN节点列表（按资源总量从高到低）
+        # 1. 分离约束节点和非约束节点
+        non_constraint_indices, constraint_indices, constraint_mapping = separate_constraint_nodes(vn)
+        
+        # 2. 重置排序缓存（因为资源状态可能已变化），然后获取排序后的SN节点列表（按资源总量从高到低）
         self._reset_sn_sort()
         sn_sorted_list = self._sort_sn_nodes()
         
-        # 2. 依次为每个VN节点选择SN节点
-        mapping = {}
+        # 3. 只对非约束节点依次选择SN节点
+        non_constraint_mapping = {}
         temporary_deductions = []  # 记录临时扣减的资源，用于失败时回滚
         
-        for vn_idx in range(N_v):
+        for vn_idx in non_constraint_indices:
             feats = vn.x[vn_idx]
-            # 归一化需求
             norm_cpu = float(feats[0].item())
             norm_mem = float(feats[1].item())
             norm_disk = float(feats[2].item())
             
-            # 转为绝对需求（用于资源检查）
             abs_cpu = norm_cpu * (self.env._sn_max_capacity['cpu_max'] + 1e-8)
             abs_mem = norm_mem * (self.env._sn_max_capacity['mem_max'] + 1e-8)
             abs_disk = norm_disk * (self.env._sn_max_capacity['disk_max'] + 1e-8)
@@ -112,7 +114,7 @@ class GreedyAllocator:
                     res_mem >= abs_mem - 1e-9 and 
                     res_disk >= abs_disk - 1e-9):
                     # 找到合适的SN节点，进行映射
-                    mapping[vn_idx] = sn_node
+                    non_constraint_mapping[vn_idx] = sn_node
                     
                     # 立即扣减该SN节点的资源（影响后续VN节点的选择）
                     nd['cpu_res'] -= abs_cpu
@@ -135,32 +137,34 @@ class GreedyAllocator:
                     nd['disk_res'] += disk
                 return False, {}, self.env.penalty
         
-        # 3. 验证映射并计算路径
-        vn_paths = self.env._compute_paths_and_bw_demand(vn, mapping)
-        if vn_paths is None:
-            # 回滚所有资源扣减
-            for sn_node, cpu, mem, disk in temporary_deductions:
-                nd = self.env.G_sn.nodes[sn_node]
-                nd['cpu_res'] += cpu
-                nd['mem_res'] += mem
-                nd['disk_res'] += disk
-            return False, {}, self.env.penalty
-        
-        # 4. 先恢复临时扣减的资源，然后使用env的标准方法统一扣减资源（保持一致性）
+        # 4. 恢复临时扣减的资源（因为后续会统一应用映射）
         for sn_node, cpu, mem, disk in temporary_deductions:
             nd = self.env.G_sn.nodes[sn_node]
             nd['cpu_res'] += cpu
             nd['mem_res'] += mem
             nd['disk_res'] += disk
         
-        # 使用env的标准方法统一扣减资源（保持一致性）
-        self.env._apply_mapping(vn, mapping, vn_paths)
+        # 5. 放置约束节点
+        success, full_mapping, failure_reason = place_constraint_nodes(
+            self.env, vn, non_constraint_mapping, constraint_mapping
+        )
         
-        # 5. 重置SN节点排序缓存（因为资源已发生变化）
+        if not success:
+            return False, {}, self.env.penalty
+        
+        # 6. 验证映射并计算路径
+        vn_paths = self.env._compute_paths_and_bw_demand(vn, full_mapping)
+        if vn_paths is None:
+            return False, {}, self.env.penalty
+        
+        # 7. 应用映射（扣减资源）
+        self.env._apply_mapping(vn, full_mapping, vn_paths)
+        
+        # 8. 重置SN节点排序缓存（因为资源已发生变化）
         self._reset_sn_sort()
         
-        # 6. 返回成功
-        return True, mapping, 0.0  # r_t在外部计算
+        # 9. 返回成功
+        return True, full_mapping, 0.0  # r_t在外部计算
 
 
 def run_gal3_episode(

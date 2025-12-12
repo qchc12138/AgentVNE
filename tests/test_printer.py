@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import os
 import warnings
@@ -236,6 +237,7 @@ class TestPrinter:
         self._config_info: Dict[str, Any] = {}  # 配置参数（字典）
         self._rows: List[Dict[str, Any]] = []  # 每轮汇总的结果
         self._round_logs: List[Dict[str, Any]] = []  # 每轮详细日志
+        self._time_step_data: Dict[str, List[Dict[str, float]]] = {}  # 新增：存储每个策略的时间步r_t数据
 
         if enable_logging or self._enable_plotting:
             session_name = session_name or datetime.now().strftime("session_%Y%m%d_%H%M%S")
@@ -260,6 +262,7 @@ class TestPrinter:
         self._table_title = table_title
         self._config_info = dict(config_info)
         self._rows = []
+        self._time_step_data = {}  # 新增：清空时间步数据，为新轮次做准备
 
         if self._log_file:
             self._log_file.write(f"\n{'='*80}\n")
@@ -275,6 +278,13 @@ class TestPrinter:
         """追加策略结果，并写入日志。"""
 
         self._rows.append(dict(row))
+        
+        # 新增：接收并存储时间步r_t数据
+        strategy_name = row.get("strategy", "unknown")
+        # 从 strategy_info 中获取 time_step_r_t 数据（如果存在）
+        if strategy_info and "time_step_r_t" in strategy_info:
+            self._time_step_data[strategy_name] = strategy_info["time_step_r_t"]
+        
         if not self._log_file:
             return
 
@@ -283,7 +293,8 @@ class TestPrinter:
         if strategy_info:
             self._log_file.write("策略信息:\n")
             for key, value in strategy_info.items():
-                self._log_file.write(f"  {key}: {value}\n")
+                if key != "time_step_r_t":  # 不写入时间步数据到日志（数据量大）
+                    self._log_file.write(f"  {key}: {value}\n")
         self._log_file.write("结果:\n")
         for title, key in self._columns:
             self._log_file.write(f"  {title}: {row.get(key, 'N/A')}\n")
@@ -295,9 +306,12 @@ class TestPrinter:
         if not self._table_title:
             return
 
+        print(f"\n    [生成结果] 正在生成汇总表格和图表...")
         self._print_config()
         self._print_table()
         self._store_round()
+        
+        print(f"    [结果保存] 结果已保存到文件")
 
         if self._log_file:
             self._log_file.write(f"\n结束时间: {datetime.now():%Y-%m-%d %H:%M:%S}\n")
@@ -327,8 +341,9 @@ class TestPrinter:
                     indent=2,
                 )
 
-            if self._enable_plotting:
-                self._plot_summary(session)
+            # 注释掉旧的画图函数
+            # if self._enable_plotting:
+            #     self._plot_summary(session)
 
         if self._log_file:
             self._log_file.write("测试完成。\n")
@@ -393,9 +408,19 @@ class TestPrinter:
         round_path = Path(self._session_dir) / f"round_{round_idx}.json"
         with open(round_path, "w", encoding="utf-8") as f:
             json.dump(round_data, f, ensure_ascii=False, indent=2)
+        print(f"      - 数据文件: round_{round_idx}.json")
 
+        # 注释掉旧的画图函数
+        # if self._enable_plotting:
+        #     self._plot_round(Path(self._session_dir), round_idx, self._rows)
+        
+        # 新增：绘制r_t随时间变化图
         if self._enable_plotting:
-            self._plot_round(Path(self._session_dir), round_idx, self._rows)
+            print(f"      - 正在生成图表...")
+            self._plot_rt_over_time(Path(self._session_dir), round_idx)
+
+        # 新增：导出CSV文件
+        self._export_round_to_csv(Path(self._session_dir), round_idx)
 
         # 将本轮表格写入日志文件，便于离线查看
         if self._log_file:
@@ -426,6 +451,44 @@ class TestPrinter:
             for line in table:
                 self._log_file.write("\t".join(line) + "\n")
         self._log_file.flush()
+
+    def _export_round_to_csv(self, session_dir: Path, round_idx: int) -> None:
+        """
+        将当前轮次的结果导出为CSV文件。
+        
+        CSV格式：
+        - 第一列：轮次ID（round_idx）
+        - 后续列：策略、接受率、平均r_t、平均跳等
+        
+        使用与表格相同的格式化逻辑，保持一致性。
+        """
+        if not self._rows:
+            return
+        
+        csv_path = session_dir / f"round_{round_idx}.csv"
+        
+        # 构建CSV表头：第一列是轮次ID，后续列是表格列
+        csv_headers = ["轮次ID"] + [title for title, _ in self._columns]
+        
+        # 构建CSV数据行，使用与表格相同的格式化逻辑
+        csv_rows = []
+        for row in self._rows:
+            csv_row = [str(round_idx)]  # 第一列：轮次ID
+            # 使用 _format_cell 方法保持格式一致
+            for _, key in self._columns:
+                formatted_value = self._format_cell(row, key)
+                csv_row.append(formatted_value)
+            csv_rows.append(csv_row)
+        
+        # 写入CSV文件
+        try:
+            with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:  # utf-8-sig支持Excel打开
+                writer = csv.writer(f)
+                writer.writerow(csv_headers)
+                writer.writerows(csv_rows)
+            print(f"      - CSV文件: round_{round_idx}.csv")
+        except Exception as exc:
+            print(f"警告：导出CSV文件时出错：{exc}")
 
     #endregion 打印与持久化
 
@@ -516,119 +579,179 @@ class TestPrinter:
     #endregion 历史汇总
 
     #region 绘图
-    def _plot_round(self, session_dir: Path, round_idx: int, rows: List[Dict[str, Any]]) -> None:
-        if not HAS_MATPLOTLIB or not rows:
+    # 注释掉旧的画图函数
+    # def _plot_round(self, session_dir: Path, round_idx: int, rows: List[Dict[str, Any]]) -> None:
+    #     if not HAS_MATPLOTLIB or not rows:
+    #         return
+    #     try:
+    #         fig, axes = plt.subplots(2, 2, figsize=(12, 9))
+    #         fig.suptitle(f"{self._table_title} - Strategy Comparison", fontsize=14)
+    #         strategies = [row.get("strategy", "unknown") for row in rows]
+    #         self._bar_chart(axes[0, 0], strategies, [row.get("acceptance_rate", 0.0) for row in rows], title="Acceptance Rate (%)")
+    #         self._bar_chart(axes[0, 1], strategies, [row.get("avg_r_t", 0.0) for row in rows], title="Average r_t", color="tab:green")
+    #         self._bar_chart(axes[1, 0], strategies, [row.get("avg_hops", 0.0) for row in rows], title="Average Hops", color="tab:orange")
+    #         self._stacked_chart(axes[1, 1], strategies, total=[row.get("tasks", 0) for row in rows], accepted=[row.get("accepted", 0) for row in rows])
+    #         plt.tight_layout()
+    #         plot_path = session_dir / f"round_{round_idx}_comparison.png"
+    #         plt.savefig(plot_path, dpi=200, bbox_inches="tight")
+    #         plt.close()
+    #         if self._log_file:
+    #             self._log_file.write(f"轮次对比图已保存: {plot_path.name}\n")
+    #             self._log_file.flush()
+    #     except Exception as exc:
+    #         print(f"警告：生成轮次图时出错：{exc}")
+
+    # def _plot_summary(self, session_dir: Path) -> None:
+    #     if not HAS_MATPLOTLIB or not self._round_logs:
+    #         return
+    #     try:
+    #         metrics = ("acceptance_rate", "avg_r_t", "avg_hops", "avg_completion_duration")
+    #         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    #         fig.suptitle("Multi-round Metric Trends", fontsize=16)
+    #         rounds = range(1, len(self._round_logs) + 1)
+    #         strategies = sorted({row.get("strategy", "unknown") for round_data in self._round_logs for row in round_data["results"]})
+    #         for idx, metric in enumerate(metrics):
+    #             ax = axes[idx // 2][idx % 2]
+    #             for strategy in strategies:
+    #                 values = []
+    #                 for round_data in self._round_logs:
+    #                     for row in round_data["results"]:
+    #                         if row.get("strategy") == strategy:
+    #                             values.append(row.get(metric, 0.0))
+    #                             break
+    #                     else:
+    #                         values.append(0.0)
+    #                 ax.plot(rounds, values, marker="o", label=strategy)
+    #             ax.set_title(metric)
+    #             ax.set_xlabel("Round")
+    #             ax.grid(True, alpha=0.3)
+    #             ax.legend()
+    #         plt.tight_layout()
+    #         summary_plot = session_dir / "summary_trend.png"
+    #         plt.savefig(summary_plot, dpi=200, bbox_inches="tight")
+    #         plt.close()
+    #         if self._log_file:
+    #             self._log_file.write(f"汇总趋势图已保存: {summary_plot.name}\n")
+    #             self._log_file.flush()
+    #     except Exception as exc:
+    #         print(f"警告：生成汇总图时出错：{exc}")
+
+    # @staticmethod
+    # def _bar_chart(ax, strategies: List[str], values: List[float], *, title: str, color: str = "tab:blue") -> None:
+    #     ax.bar(strategies, values, color=color, alpha=0.8)
+    #     ax.set_title(title)
+    #     ax.set_xticks(range(len(strategies)))
+    #     ax.set_xticklabels(strategies, rotation=30, ha="right")
+    #     ax.grid(True, axis="y", alpha=0.3)
+
+    # @staticmethod
+    # def _stacked_chart(ax, strategies: List[str], *, total: List[int], accepted: List[int]) -> None:
+    #     ax.bar(strategies, total, label="Tasks", color="tab:blue", alpha=0.6)
+    #     ax.bar(strategies, accepted, label="Accepted", color="tab:red", alpha=0.6)
+    #     ax.set_title("Task Count Comparison")
+    #     ax.set_xticks(range(len(strategies)))
+    #     ax.set_xticklabels(strategies, rotation=30, ha="right")
+    #     ax.legend()
+    #     ax.grid(True, axis="y", alpha=0.3)
+
+    # 新增：绘制r_t随时间变化图
+    def _plot_rt_over_time(self, session_dir: Path, round_idx: int) -> None:
+        """
+        绘制r_t随时间变化的折线图。
+        
+        Args:
+            session_dir: 会话目录路径
+            round_idx: 轮次编号
+        """
+        if not HAS_MATPLOTLIB or not self._time_step_data:
             return
 
         try:
-            fig, axes = plt.subplots(2, 2, figsize=(12, 9))
-            fig.suptitle(f"{self._table_title} - Strategy Comparison", fontsize=14)
-
-            strategies = [row.get("strategy", "unknown") for row in rows]
-
-            self._bar_chart(
-                axes[0, 0],
-                strategies,
-                [row.get("acceptance_rate", 0.0) for row in rows],
-                title="Acceptance Rate (%)",
-            )
-            self._bar_chart(
-                axes[0, 1],
-                strategies,
-                [row.get("avg_r_t", 0.0) for row in rows],
-                title="Average r_t",
-                color="tab:green",
-            )
-            self._bar_chart(
-                axes[1, 0],
-                strategies,
-                [row.get("avg_hops", 0.0) for row in rows],
-                title="Average Hops",
-                color="tab:orange",
-            )
-            self._stacked_chart(
-                axes[1, 1],
-                strategies,
-                total=[row.get("tasks", 0) for row in rows],
-                accepted=[row.get("accepted", 0) for row in rows],
-            )
-
+            # 确保picture_out目录存在
+            picture_dir = _ensure_dir(session_dir / "picture_out")
+            
+            # 准备数据
+            strategies = sorted(self._time_step_data.keys())
+            if not strategies:
+                return
+            
+            # 创建图表
+            fig, ax = plt.subplots(figsize=(14, 8))
+            ax.set_title(f"{self._table_title} - r_t over Time", fontsize=14)
+            ax.set_xlabel("Time Step", fontsize=12)
+            ax.set_ylabel("|r_t|", fontsize=12)
+            
+            # 绘制每个策略的折线
+            for strategy in strategies:
+                time_step_data = self._time_step_data.get(strategy, [])
+                if not time_step_data:
+                    continue
+                
+                time_steps = [d["time_step"] for d in time_step_data]
+                r_t_values = [abs(d["r_t"]) for d in time_step_data]  # 取绝对值
+                
+                ax.plot(time_steps, r_t_values, marker="o", label=strategy, markersize=2, linewidth=1.5)
+            
+            ax.legend(fontsize=10)
+            ax.grid(True, alpha=0.3)
             plt.tight_layout()
-            plot_path = session_dir / f"round_{round_idx}_comparison.png"
+            
+            # 保存图表
+            plot_path = picture_dir / f"round_{round_idx}_rt_over_time.png"
             plt.savefig(plot_path, dpi=200, bbox_inches="tight")
             plt.close()
+            print(f"        - 图表文件: round_{round_idx}_rt_over_time.png")
+            
             if self._log_file:
                 self._log_file.write(
-                    f"轮次对比图已保存: {plot_path.name}\n"
+                    f"r_t随时间变化图已保存: {plot_path.name}\n"
                 )
                 self._log_file.flush()
+            
+            # 保存原始数据
+            self._save_rt_over_time_data(session_dir, round_idx)
+            
         except Exception as exc:  # pragma: no cover
-            print(f"警告：生成轮次图时出错：{exc}")
+            print(f"警告：生成r_t随时间变化图时出错：{exc}")
+            import traceback
+            traceback.print_exc()
 
-    def _plot_summary(self, session_dir: Path) -> None:
-        if not HAS_MATPLOTLIB or not self._round_logs:
-            return
-
+    def _save_rt_over_time_data(self, session_dir: Path, round_idx: int) -> None:
+        """
+        保存r_t随时间变化的原始数据为JSON文件。
+        
+        Args:
+            session_dir: 会话目录路径
+            round_idx: 轮次编号
+        """
         try:
-            metrics = ("acceptance_rate", "avg_r_t", "avg_hops", "avg_completion_duration")
-            fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-            fig.suptitle("Multi-round Metric Trends", fontsize=16)
-
-            rounds = range(1, len(self._round_logs) + 1)
-            strategies = sorted(
-                {
-                    row.get("strategy", "unknown")
-                    for round_data in self._round_logs
-                    for row in round_data["results"]
-                }
-            )
-
-            for idx, metric in enumerate(metrics):
-                ax = axes[idx // 2][idx % 2]
-                for strategy in strategies:
-                    values = []
-                    for round_data in self._round_logs:
-                        for row in round_data["results"]:
-                            if row.get("strategy") == strategy:
-                                values.append(row.get(metric, 0.0))
-                                break
-                        else:
-                            values.append(0.0)
-                    ax.plot(rounds, values, marker="o", label=strategy)
-                ax.set_title(metric)
-                ax.set_xlabel("Round")
-                ax.grid(True, alpha=0.3)
-                ax.legend()
-
-            plt.tight_layout()
-            summary_plot = session_dir / "summary_trend.png"
-            plt.savefig(summary_plot, dpi=200, bbox_inches="tight")
-            plt.close()
+            picture_dir = _ensure_dir(session_dir / "picture_out")
+            
+            # 准备数据
+            data = {
+                "round_idx": round_idx,
+                "round_title": self._table_title,
+                "max_time_steps": self._config_info.get("max_time_steps", 0),
+                "strategies": {}
+            }
+            
+            for strategy, time_step_data in self._time_step_data.items():
+                data["strategies"][strategy] = time_step_data
+            
+            # 保存为JSON
+            data_path = picture_dir / f"round_{round_idx}_rt_over_time_data.json"
+            with open(data_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            print(f"        - 数据文件: round_{round_idx}_rt_over_time_data.json")
+            
             if self._log_file:
                 self._log_file.write(
-                    f"汇总趋势图已保存: {summary_plot.name}\n"
+                    f"r_t原始数据已保存: {data_path.name}\n"
                 )
                 self._log_file.flush()
+                
         except Exception as exc:  # pragma: no cover
-            print(f"警告：生成汇总图时出错：{exc}")
-
-    @staticmethod
-    def _bar_chart(ax, strategies: List[str], values: List[float], *, title: str, color: str = "tab:blue") -> None:
-        ax.bar(strategies, values, color=color, alpha=0.8)
-        ax.set_title(title)
-        ax.set_xticks(range(len(strategies)))
-        ax.set_xticklabels(strategies, rotation=30, ha="right")
-        ax.grid(True, axis="y", alpha=0.3)
-
-    @staticmethod
-    def _stacked_chart(ax, strategies: List[str], *, total: List[int], accepted: List[int]) -> None:
-        ax.bar(strategies, total, label="Tasks", color="tab:blue", alpha=0.6)
-        ax.bar(strategies, accepted, label="Accepted", color="tab:red", alpha=0.6)
-        ax.set_title("Task Count Comparison")
-        ax.set_xticks(range(len(strategies)))
-        ax.set_xticklabels(strategies, rotation=30, ha="right")
-        ax.legend()
-        ax.grid(True, axis="y", alpha=0.3)
+            print(f"警告：保存r_t原始数据时出错：{exc}")
 
     #endregion 绘图
 

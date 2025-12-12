@@ -32,7 +32,7 @@ class GreedyAllocator:
     
     def greedy_place(self, vn: Data) -> tuple[bool, Dict[int, int], float]:
         """
-        贪心放置策略（逐节点版本）
+        贪心放置策略（逐节点版本，支持约束节点）
         
         每个VN节点独立进行贪心选择，选择后立即扣减资源
         
@@ -42,25 +42,31 @@ class GreedyAllocator:
         Returns:
             (success, mapping, r_t): 成功标志、节点映射、奖励
         """
-        N_v = vn.x.size(0)
+        # 导入约束节点处理工具
+        from tests.constraint_handler import separate_constraint_nodes, place_constraint_nodes
         
-        # 1. 计算VN节点的归一化需求强度（cpu+mem+disk）
+        # 1. 分离约束节点和非约束节点
+        non_constraint_indices, constraint_indices, constraint_mapping = separate_constraint_nodes(vn)
+        
+        # 2. 只对非约束节点执行逐节点贪心放置
+        non_constraint_mapping = {}
+        temporary_deductions = []  # 记录临时扣减的资源，用于失败时回滚
+        
+        # 计算非约束节点的归一化需求强度（cpu+mem+disk）
         vn_demands = []
-        for i in range(N_v):
-            feats = vn.x[i]
-            # 归一化需求
+        for vn_idx in non_constraint_indices:
+            feats = vn.x[vn_idx]
             norm_cpu = float(feats[0].item())
             norm_mem = float(feats[1].item())
             norm_disk = float(feats[2].item())
             norm_demand = norm_cpu + norm_mem + norm_disk
             
-            # 转为绝对需求（用于资源检查）
             abs_cpu = norm_cpu * (self.env._sn_max_capacity['cpu_max'] + 1e-8)
             abs_mem = norm_mem * (self.env._sn_max_capacity['mem_max'] + 1e-8)
             abs_disk = norm_disk * (self.env._sn_max_capacity['disk_max'] + 1e-8)
             
             vn_demands.append({
-                'vn_node': i,
+                'vn_node': vn_idx,
                 'norm_demand': norm_demand,
                 'abs_cpu': abs_cpu,
                 'abs_mem': abs_mem,
@@ -70,10 +76,7 @@ class GreedyAllocator:
         # 按归一化需求从大到小排序
         vn_demands.sort(key=lambda x: x['norm_demand'], reverse=True)
         
-        # 2. 逐节点贪心映射（每次选择后立即扣减资源）
-        mapping = {}
-        temporary_deductions = []  # 记录临时扣减的资源，用于失败时回滚
-        
+        # 逐节点贪心映射（每次选择后立即扣减资源）
         for vn_info in vn_demands:
             vn_node = vn_info['vn_node']
             demand_cpu = vn_info['abs_cpu']
@@ -116,7 +119,7 @@ class GreedyAllocator:
             # 选择剩余资源最多的SN节点
             sn_candidates.sort(key=lambda x: x['res_strength'], reverse=True)
             best_sn = sn_candidates[0]['sn_node']
-            mapping[vn_node] = best_sn
+            non_constraint_mapping[vn_node] = best_sn
             
             # 立即扣减该SN节点的资源（影响后续VN节点的选择）
             nd = self.env.G_sn.nodes[best_sn]
@@ -127,33 +130,31 @@ class GreedyAllocator:
             # 记录扣减信息（用于失败时回滚）
             temporary_deductions.append((best_sn, demand_cpu, demand_mem, demand_disk))
         
-        # 3. 验证映射并计算路径
-        vn_paths = self.env._compute_paths_and_bw_demand(vn, mapping)
-        if vn_paths is None:
-            # 回滚所有资源扣减
-            for sn_node, cpu, mem, disk in temporary_deductions:
-                nd = self.env.G_sn.nodes[sn_node]
-                nd['cpu_res'] += cpu
-                nd['mem_res'] += mem
-                nd['disk_res'] += disk
-            return False, {}, self.env.penalty
-        
-        # 4. 注意：资源已经在循环中扣减了，这里不需要再调用_apply_mapping
-        # 但我们仍需要处理带宽扣减（如果需要的话）
-        # 由于env._apply_mapping会再次扣减节点资源，我们需要先恢复，再统一扣减
-        
-        # 先恢复临时扣减的资源
+        # 3. 恢复临时扣减的资源（因为后续会统一应用映射）
         for sn_node, cpu, mem, disk in temporary_deductions:
             nd = self.env.G_sn.nodes[sn_node]
             nd['cpu_res'] += cpu
             nd['mem_res'] += mem
             nd['disk_res'] += disk
         
-        # 使用env的标准方法统一扣减资源（保持一致性）
-        self.env._apply_mapping(vn, mapping, vn_paths)
+        # 4. 放置约束节点
+        success, full_mapping, failure_reason = place_constraint_nodes(
+            self.env, vn, non_constraint_mapping, constraint_mapping
+        )
         
-        # 5. 返回成功
-        return True, mapping, 0.0  # r_t在外部计算
+        if not success:
+            return False, {}, self.env.penalty
+        
+        # 5. 验证映射并计算路径
+        vn_paths = self.env._compute_paths_and_bw_demand(vn, full_mapping)
+        if vn_paths is None:
+            return False, {}, self.env.penalty
+        
+        # 6. 应用映射（扣减资源）
+        self.env._apply_mapping(vn, full_mapping, vn_paths)
+        
+        # 7. 返回成功
+        return True, full_mapping, 0.0  # r_t在外部计算
 
 
 def run_gal_episode(

@@ -54,6 +54,7 @@ class GeneticAlgorithm:
         sn_node_list: List[int],
         sn_max_capacity: Dict[str, float],
         *,
+        non_constraint_vn_indices: Optional[List[int]] = None,
         population_size: int = 50,
         max_generations: int = 100,
         crossover_rate: float = 0.8,
@@ -71,6 +72,7 @@ class GeneticAlgorithm:
             sn_graph: 底层网络图（NetworkX Graph）
             sn_node_list: SN节点ID列表（有序）
             sn_max_capacity: SN最大容量字典（用于归一化）
+            non_constraint_vn_indices: 非约束节点的VN索引列表（None表示所有节点都是非约束节点）
             population_size: 种群大小
             max_generations: 最大迭代代数
             crossover_rate: 交叉概率
@@ -103,8 +105,15 @@ class GeneticAlgorithm:
         # VN节点数量
         self.num_vn_nodes = int(vn.x.size(0))
         self.num_sn_nodes = len(sn_node_list)
+        
+        # 非约束节点列表（如果为None，所有节点都是非约束节点）
+        if non_constraint_vn_indices is None:
+            self.non_constraint_vn_indices = list(range(self.num_vn_nodes))
+        else:
+            self.non_constraint_vn_indices = non_constraint_vn_indices
+        self.num_non_constraint = len(self.non_constraint_vn_indices)
 
-        # 计算VN节点的资源需求（绝对值）
+        # 计算VN节点的资源需求（绝对值，只计算非约束节点）
         self.vn_demands: List[Tuple[float, float, float]] = []
         for i in range(self.num_vn_nodes):
             feats = vn.x[i]
@@ -115,18 +124,18 @@ class GeneticAlgorithm:
 
     def _generate_random_individual(self, sn_resources: Dict[int, Dict[str, float]]) -> Individual:
         """
-        生成一个随机个体（随机映射）。
+        生成一个随机个体（随机映射，只对非约束节点）。
         
         参数:
             sn_resources: SN节点当前剩余资源字典 {sn_id: {'cpu_res': ..., 'mem_res': ..., 'disk_res': ...}}
         
         返回:
-            随机生成的个体
+            随机生成的个体（只包含非约束节点的映射）
         """
         mapping: Dict[int, int] = {}
         
-        # 对每个VN节点，随机选择一个满足资源约束的SN节点
-        for vn_idx in range(self.num_vn_nodes):
+        # 只对非约束节点，随机选择一个满足资源约束的SN节点
+        for vn_idx in self.non_constraint_vn_indices:
             cpu_need, mem_need, disk_need = self.vn_demands[vn_idx]
             candidates = []
             
@@ -321,7 +330,7 @@ class GeneticAlgorithm:
         self, parent1: Individual, parent2: Individual
     ) -> Tuple[Individual, Individual]:
         """
-        交叉操作：部分映射交换。
+        交叉操作：部分映射交换（只对非约束节点）。
         
         参数:
             parent1, parent2: 两个父代个体
@@ -335,17 +344,21 @@ class GeneticAlgorithm:
                 mapping=parent2.mapping.copy()
             )
         
-        # 随机选择一部分VN节点进行交换
-        crossover_points = random.sample(
-            range(self.num_vn_nodes), k=random.randint(1, self.num_vn_nodes // 2)
-        )
+        # 随机选择一部分非约束VN节点进行交换
+        if self.num_non_constraint > 0:
+            num_crossover = random.randint(1, max(1, self.num_non_constraint // 2))
+            crossover_points = random.sample(self.non_constraint_vn_indices, k=num_crossover)
+        else:
+            crossover_points = []
         
         child1_mapping = parent1.mapping.copy()
         child2_mapping = parent2.mapping.copy()
         
         for vn_idx in crossover_points:
-            child1_mapping[vn_idx] = parent2.mapping[vn_idx]
-            child2_mapping[vn_idx] = parent1.mapping[vn_idx]
+            if vn_idx in parent2.mapping:
+                child1_mapping[vn_idx] = parent2.mapping[vn_idx]
+            if vn_idx in parent1.mapping:
+                child2_mapping[vn_idx] = parent1.mapping[vn_idx]
         
         return Individual(mapping=child1_mapping), Individual(mapping=child2_mapping)
 
@@ -353,7 +366,7 @@ class GeneticAlgorithm:
         self, individual: Individual, sn_resources: Dict[int, Dict[str, float]]
     ) -> Individual:
         """
-        变异操作：随机改变部分映射。
+        变异操作：随机改变部分映射（只对非约束节点）。
         
         参数:
             individual: 待变异的个体
@@ -367,9 +380,12 @@ class GeneticAlgorithm:
         
         mutated_mapping = individual.mapping.copy()
         
-        # 随机选择一部分VN节点进行变异
-        num_mutations = random.randint(1, max(1, self.num_vn_nodes // 5))
-        mutation_points = random.sample(range(self.num_vn_nodes), k=num_mutations)
+        # 随机选择一部分非约束VN节点进行变异
+        if self.num_non_constraint > 0:
+            num_mutations = random.randint(1, max(1, self.num_non_constraint // 5))
+            mutation_points = random.sample(self.non_constraint_vn_indices, k=num_mutations)
+        else:
+            mutation_points = []
         
         for vn_idx in mutation_points:
             cpu_need, mem_need, disk_need = self.vn_demands[vn_idx]

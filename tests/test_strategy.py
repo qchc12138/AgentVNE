@@ -188,22 +188,48 @@ class SingleTester:
         cfg = self.config
 
         tasks: List[Dict[str, Any]] = []
+        time_step_r_t: List[Dict[str, float]] = []  # 新增：时间步r_t数据
         failure_tracker = ResourceFailureTracker()
         time_step = 0
         stop_arrival_time: Optional[float] = None
 
+        # 打印测试开始信息
+        print(f"    [环境初始化] 开始执行测试流程...")
+        print(f"      参数: arrival_rate={cfg.arrival_rate}, "
+              f"mean_lifetime={cfg.mean_lifetime}, "
+              f"max_time_steps={cfg.max_time_steps}")
+        
         if show_details:
             print(
                 f"[SingleTester] start: rate={cfg.arrival_rate}, "
                 f"lifetime={cfg.mean_lifetime}, steps={cfg.max_time_steps}"
             )
 
+        # 阶段1：任务到达阶段
+        print(f"    [阶段1: 任务到达] 开始时间步循环 (0-{cfg.max_time_steps})...")
+        last_progress_print = -1
+        progress_interval = max(1, cfg.max_time_steps // 10)  # 每10%打印一次进度
+        
         while (
             time_step < cfg.max_time_steps
             and not env.is_done()
             and env.arrived_count < self._task_limit
         ):
             env.step_time(1.0)
+            
+            # 新增：每个时间步都记录r_t值
+            current_r_t = float(env._compute_rt())
+            time_step_r_t.append({
+                "time_step": time_step,
+                "r_t": current_r_t,
+            })
+            
+            # 打印进度（每10%）
+            if time_step % progress_interval == 0 or time_step == cfg.max_time_steps - 1:
+                progress = (time_step + 1) / cfg.max_time_steps * 100
+                print(f"      进度: {progress:.0f}% (时间步 {time_step+1}/{cfg.max_time_steps}, "
+                      f"已到达任务: {env.arrived_count}, 当前r_t: {current_r_t:.2f})")
+            
             if wf_gen.check_arrival(1.0) and not env.is_done():
                 wf_type = wf_gen.sample_workflow_type()
                 self._dispatch_single_task(
@@ -218,20 +244,44 @@ class SingleTester:
 
         stop_arrival_time = float(env.current_time)
         limit_reached = env.arrived_count >= self._task_limit
+        
+        print(f"    [阶段1完成] 任务到达阶段结束")
+        print(f"      已到达任务数: {env.arrived_count}, 停止到达时间: {stop_arrival_time:.2f}")
 
+        # 阶段2：等待任务完成阶段
+        if env.active_workflows:
+            print(f"    [阶段2: 等待完成] 等待所有任务完成 (当前活跃任务: {len(env.active_workflows)})...")
+            initial_active = len(env.active_workflows)
+            
         while env.active_workflows:
             env.step_time(1.0)
             time_step += 1
+            # 每100个时间步打印一次进度
+            if len(env.active_workflows) > 0 and time_step % 100 == 0:
+                remaining = len(env.active_workflows)
+                print(f"      剩余活跃任务: {remaining}/{initial_active}")
 
         end_time = float(env.current_time)
         lag_time = max(0.0, end_time - stop_arrival_time)
         summary = _compute_task_summary(tasks, failure_tracker=failure_tracker)
+        
+        if env.active_workflows:
+            print(f"    [阶段2完成] 所有任务已完成")
 
         if limit_reached:
             print(
-                "[SingleTester] ⚠️ 触发内部任务数量上限，"
+                "    ⚠️ 警告: 触发内部任务数量上限，"
                 "请调整 arrival_rate 或 max_time_steps。"
             )
+
+        # 打印测试结果摘要
+        print(f"    [测试完成] 结果摘要:")
+        print(f"      总任务数: {summary['total_tasks']}, "
+              f"接受数: {summary['accepted']}, "
+              f"接受率: {summary['acceptance_rate']*100:.2f}%")
+        print(f"      平均r_t: {summary.get('avg_r_t', 0.0):.3f}, "
+              f"平均跳数: {summary.get('avg_hops', 0.0):.2f}")
+        print(f"      结束时间: {end_time:.2f}, 滞后时间: {lag_time:.2f}")
 
         if show_details:
             print(
@@ -242,6 +292,7 @@ class SingleTester:
 
         return {
             "tasks": tasks,
+            "time_step_r_t": time_step_r_t,  # 新增：返回时间步数据
             "summary": summary,
             "lag_time": lag_time,
             "stop_arrival_time": stop_arrival_time,
@@ -563,7 +614,11 @@ def run_single_strategy_test(
 
     if printer is not None:
         label = strategy_label or getattr(strategy, "name", strategy.__class__.__name__)
-        printer.add_row(_build_strategy_row(label, result))
+        # 新增：传递时间步r_t数据
+        strategy_info = {
+            "time_step_r_t": result.get("time_step_r_t", []),
+        }
+        printer.add_row(_build_strategy_row(label, result), strategy_info=strategy_info)
 
     return result
 

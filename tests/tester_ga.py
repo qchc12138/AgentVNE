@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 
 import os
 import sys
 from pathlib import Path
 
+import torch
 from torch_geometric.data import Data
 
 #region sys.path 管理
@@ -40,10 +41,68 @@ from tests.test_strategy import (
 
 __all__ = [
     "GAPlacementStrategy",
+    "create_non_constraint_subgraph",
     "ga_strategy_factory",
     "run_ga_strategy_test",
     "smoke_test_ga_strategy",
 ]
+
+
+def create_non_constraint_subgraph(vn: Data, non_constraint_indices: List[int]) -> Data:
+    """
+    创建只包含非约束节点的子图。
+    
+    Args:
+        vn: 原始 VN 图
+        non_constraint_indices: 非约束节点的索引列表
+    
+    Returns:
+        新的 Data 对象，只包含非约束节点及其之间的边
+    """
+    if not non_constraint_indices:
+        # 如果没有非约束节点，返回空图
+        return Data(
+            x=torch.zeros((0, vn.x.size(1)), dtype=vn.x.dtype),
+            edge_index=torch.zeros((2, 0), dtype=torch.long),
+        )
+    
+    # 创建索引映射：原始索引 -> 新索引
+    old_to_new = {old_idx: new_idx for new_idx, old_idx in enumerate(sorted(non_constraint_indices))}
+    
+    # 提取非约束节点的特征
+    new_x = vn.x[non_constraint_indices]
+    
+    # 提取非约束节点之间的边
+    edge_index = vn.edge_index
+    new_edges_src = []
+    new_edges_dst = []
+    
+    for i in range(edge_index.size(1)):
+        src = int(edge_index[0, i].item())
+        dst = int(edge_index[1, i].item())
+        
+        # 如果两个节点都是非约束节点，保留这条边
+        if src in old_to_new and dst in old_to_new:
+            new_edges_src.append(old_to_new[src])
+            new_edges_dst.append(old_to_new[dst])
+    
+    # 构建新的边索引
+    if new_edges_src:
+        new_edge_index = torch.tensor([new_edges_src, new_edges_dst], dtype=torch.long)
+    else:
+        new_edge_index = torch.zeros((2, 0), dtype=torch.long)
+    
+    # 创建新的 Data 对象
+    new_vn = Data(x=new_x, edge_index=new_edge_index)
+    
+    # 保留 constraint_nodes 属性（如果需要）
+    if hasattr(vn, 'constraint_nodes'):
+        # 只保留非约束节点的 constraint_nodes（应该都是 None）
+        new_constraint_nodes = [vn.constraint_nodes[i] if i < len(vn.constraint_nodes) else None 
+                               for i in non_constraint_indices]
+        new_vn.constraint_nodes = new_constraint_nodes
+    
+    return new_vn
 
 
 #region GAPlacementStrategy
@@ -122,6 +181,12 @@ class GAPlacementStrategy(PlacementStrategy):
         *,
         context: StrategyContext,
     ) -> StrategyResult:
+        # 导入约束节点处理工具
+        from tests.constraint_handler import separate_constraint_nodes, place_constraint_nodes
+        
+        # 1. 分离约束节点和非约束节点
+        non_constraint_indices, constraint_indices, constraint_mapping = separate_constraint_nodes(vn)
+        
         temp_env = copy.deepcopy(env)
         sn_graph = temp_env.G_sn.to_undirected() if temp_env.G_sn.is_directed() else temp_env.G_sn
         sn_node_list = sorted(temp_env.G_sn.nodes())
@@ -134,11 +199,16 @@ class GAPlacementStrategy(PlacementStrategy):
                 "disk_res": float(node.get("disk_res", 0.0)),
             }
 
+        # 2. 创建只包含非约束节点的子图
+        non_constraint_vn = create_non_constraint_subgraph(vn, non_constraint_indices)
+        
+        # 3. 对非约束节点执行 GA 进化
         ga = GeneticAlgorithm(
-            vn=vn,
+            vn=non_constraint_vn,  # 使用子图
             sn_graph=sn_graph,
             sn_node_list=sn_node_list,
             sn_max_capacity=temp_env.get_sn_max_capacity(),
+            non_constraint_vn_indices=non_constraint_indices,  # 传递原始索引
             population_size=self.population_size,
             max_generations=self.max_generations,
             crossover_rate=self.crossover_rate,
@@ -149,24 +219,50 @@ class GAPlacementStrategy(PlacementStrategy):
             verbose=self.verbose or context.verbose,
         )
 
-        mapping, fitness = ga.evolve(sn_resources)
-        success = len(mapping) == vn.x.size(0)
-        path_length = float(ga.compute_path_length(mapping)) if success else 0.0
+        non_constraint_mapping, fitness = ga.evolve(sn_resources)
+        
+        # 4. 检查非约束节点映射是否完整
+        if len(non_constraint_mapping) != len(non_constraint_indices):
+            metadata: Dict[str, Any] = {
+                "fitness": float(fitness),
+                "config_source": self._config_source,
+                "strategy": self.name,
+                "failure_reason": "GA 进化后非约束节点映射不完整",
+            }
+            return StrategyResult(success=False, mapping={}, metadata=metadata)
+        
+        # 5. 放置约束节点
+        success, full_mapping, failure_reason = place_constraint_nodes(
+            temp_env, vn, non_constraint_mapping, constraint_mapping
+        )
+        
+        if not success:
+            metadata: Dict[str, Any] = {
+                "fitness": float(fitness),
+                "config_source": self._config_source,
+                "strategy": self.name,
+                "failure_reason": failure_reason or "约束节点放置失败",
+            }
+            return StrategyResult(success=False, mapping={}, metadata=metadata)
+        
+        # 6. 计算路径长度（基于完整映射）
+        path_length = float(ga.compute_path_length(full_mapping)) if success else 0.0
 
         metadata: Dict[str, Any] = {
             "fitness": float(fitness),
             "path_length": path_length,
             "config_source": self._config_source,
             "strategy": self.name,
+            "non_constraint_nodes": len(non_constraint_indices),
+            "constraint_nodes": len(constraint_indices),
         }
-        if not success:
-            metadata["failure_reason"] = "GA 进化后映射不完整"
 
         if context.verbose:
             msg = "✓" if success else "✗"
-            print(f"[GA] {msg} step={context.step_id}, vn_nodes={vn.x.size(0)}")
+            print(f"[GA] {msg} step={context.step_id}, vn_nodes={vn.x.size(0)}, "
+                  f"non_constraint={len(non_constraint_indices)}, constraint={len(constraint_indices)}")
 
-        return StrategyResult(success=success, mapping=mapping if success else {}, metadata=metadata)
+        return StrategyResult(success=success, mapping=full_mapping if success else {}, metadata=metadata)
 #endregion
 
 

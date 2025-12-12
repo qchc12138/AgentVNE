@@ -14,25 +14,111 @@ GAL (Greedy Allocation Algorithm) - 对比基准算法
 
 import json
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime
 import os
 
 import torch
+import numpy as np
 from torch_geometric.data import Data
 
 from env import SimuVNEEnv, WorkflowGenerator
+from baselines.noderank_utils import compute_sn_noderank_from_graph
 
 
 class GreedyAllocator:
-    """贪心放置算法"""
+    """贪心放置算法（基于 noderank，每次workflow到达时重新计算）"""
     
     def __init__(self, env: SimuVNEEnv):
         self.env = env
+        # 创建 SN 节点 ID 到索引的映射（必须在noderank计算前创建，确保顺序一致）
+        sn_node_list = sorted(env.G_sn.nodes())
+        self.sn_node_to_idx = {node_id: idx for idx, node_id in enumerate(sn_node_list)}
+    
+    def _compute_noderank_from_residual_resources(self) -> np.ndarray:
+        """
+        基于剩余资源计算SN NodeRank。
+        
+        Returns:
+            noderank: numpy 数组，基于剩余资源计算的NodeRank值
+        """
+        return compute_sn_noderank_from_graph(self.env.G_sn, use_residual_resources=True)
+    
+    def _get_vn_node_demand(self, vn: Data, vn_idx: int) -> Dict[str, float]:
+        """获取VN节点的资源需求"""
+        feats = vn.x[vn_idx]
+        norm_cpu = float(feats[0].item())
+        norm_mem = float(feats[1].item())
+        norm_disk = float(feats[2].item())
+        
+        abs_cpu = norm_cpu * (self.env._sn_max_capacity['cpu_max'] + 1e-8)
+        abs_mem = norm_mem * (self.env._sn_max_capacity['mem_max'] + 1e-8)
+        abs_disk = norm_disk * (self.env._sn_max_capacity['disk_max'] + 1e-8)
+        norm_demand = norm_cpu + norm_mem + norm_disk
+        
+        return {
+            'abs_cpu': abs_cpu,
+            'abs_mem': abs_mem,
+            'abs_disk': abs_disk,
+            'norm_demand': norm_demand,
+        }
+    
+    def _bfs_vn_nodes(self, vn: Data, start_node: int, non_constraint_indices: List[int]) -> List[int]:
+        """
+        从起始节点开始，按广度优先遍历VN图，返回非约束节点的遍历顺序。
+        
+        Args:
+            vn: VN图数据
+            start_node: 起始节点（资源消耗最高的节点）
+            non_constraint_indices: 非约束节点索引列表
+        
+        Returns:
+            按BFS顺序排列的非约束节点索引列表
+        """
+        # 构建VN图的邻接列表
+        vn_adjacency: Dict[int, List[int]] = {i: [] for i in range(vn.x.size(0))}
+        if vn.edge_index.numel() > 0:
+            for i in range(vn.edge_index.size(1)):
+                u = int(vn.edge_index[0, i].item())
+                v = int(vn.edge_index[1, i].item())
+                if v not in vn_adjacency[u]:
+                    vn_adjacency[u].append(v)
+                if u not in vn_adjacency[v]:
+                    vn_adjacency[v].append(u)
+        
+        # BFS遍历
+        visited = set()
+        queue = [start_node]
+        visited.add(start_node)
+        bfs_order = []
+        
+        while queue:
+            current = queue.pop(0)
+            if current in non_constraint_indices:
+                bfs_order.append(current)
+            
+            # 添加未访问的邻居
+            for neighbor in vn_adjacency.get(current, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        
+        # 如果还有未访问的非约束节点（可能是孤立节点），添加到末尾
+        for vn_idx in non_constraint_indices:
+            if vn_idx not in visited:
+                bfs_order.append(vn_idx)
+        
+        return bfs_order
     
     def greedy_place(self, vn: Data) -> tuple[bool, Dict[int, int], float]:
         """
-        贪心放置策略
+        贪心放置策略（基于剩余资源计算noderank，广度优先遍历VN节点）
+        
+        算法流程：
+        1. 每次workflow到达时，基于剩余资源重新计算SN NodeRank
+        2. 找到资源消耗最高的VN节点作为起始节点
+        3. 按广度优先遍历VN图，依次放置VN节点
+        4. 每个VN节点优先放在noderank最高的可用SN节点上
         
         Args:
             vn: VN图数据（特征已归一化）
@@ -40,36 +126,34 @@ class GreedyAllocator:
         Returns:
             (success, mapping, r_t): 成功标志、节点映射、奖励
         """
-        N_v = vn.x.size(0)
+        # 导入约束节点处理工具
+        from tests.constraint_handler import separate_constraint_nodes, place_constraint_nodes
         
-        # 1. 计算VN节点的归一化需求强度（cpu+mem+disk）
-        vn_demands = []
-        for i in range(N_v):
-            feats = vn.x[i]
-            # 归一化需求
-            norm_cpu = float(feats[0].item())
-            norm_mem = float(feats[1].item())
-            norm_disk = float(feats[2].item())
-            norm_demand = norm_cpu + norm_mem + norm_disk
+        # 1. 分离约束节点和非约束节点
+        non_constraint_indices, constraint_indices, constraint_mapping = separate_constraint_nodes(vn)
+        
+        # 2. 基于剩余资源重新计算SN NodeRank（每次workflow到达时）
+        sn_noderank = self._compute_noderank_from_residual_resources()
+        
+        # 3. 找到资源消耗最高的非约束节点作为起始节点
+        if not non_constraint_indices:
+            # 如果没有非约束节点，直接跳到约束节点放置
+            start_node = None
+            vn_placement_order = []
+        else:
+            max_demand_node = None
+            max_demand = -1.0
+            for vn_idx in non_constraint_indices:
+                demand_info = self._get_vn_node_demand(vn, vn_idx)
+                if demand_info['norm_demand'] > max_demand:
+                    max_demand = demand_info['norm_demand']
+                    max_demand_node = vn_idx
             
-            # 转为绝对需求（用于资源检查）
-            abs_cpu = norm_cpu * (self.env._sn_max_capacity['cpu_max'] + 1e-8)
-            abs_mem = norm_mem * (self.env._sn_max_capacity['mem_max'] + 1e-8)
-            abs_disk = norm_disk * (self.env._sn_max_capacity['disk_max'] + 1e-8)
-            
-            vn_demands.append({
-                'vn_node': i,
-                'norm_demand': norm_demand,
-                'abs_cpu': abs_cpu,
-                'abs_mem': abs_mem,
-                'abs_disk': abs_disk,
-            })
+            # 4. 按广度优先遍历VN图，获取非约束节点的放置顺序
+            vn_placement_order = self._bfs_vn_nodes(vn, max_demand_node, non_constraint_indices)
         
-        # 按归一化需求从大到小排序
-        vn_demands.sort(key=lambda x: x['norm_demand'], reverse=True)
-        
-        # 2. 贪心映射
-        mapping = {}
+        # 5. 按BFS顺序贪心放置非约束节点
+        non_constraint_mapping = {}
         temporary_deductions: List[tuple[int, float, float, float]] = []
 
         def _restore_temporary_deductions():
@@ -82,15 +166,20 @@ class GreedyAllocator:
                 nd['disk_res'] += disk
             temporary_deductions.clear()
         
-        for vn_info in vn_demands:
-            vn_node = vn_info['vn_node']
-            demand_cpu = vn_info['abs_cpu']
-            demand_mem = vn_info['abs_mem']
-            demand_disk = vn_info['abs_disk']
+        # 按BFS顺序放置非约束节点
+        for vn_node in vn_placement_order:
+            demand_info = self._get_vn_node_demand(vn, vn_node)
+            demand_cpu = demand_info['abs_cpu']
+            demand_mem = demand_info['abs_mem']
+            demand_disk = demand_info['abs_disk']
             
-            # 计算所有SN节点的剩余资源强度
-            sn_candidates = []
+            # 获取所有满足资源需求的SN节点，按noderank降序排序
+            sn_nodes_with_rank = []
             for sn_node in self.env.G_sn.nodes:
+                sn_idx = self.sn_node_to_idx.get(sn_node)
+                if sn_idx is None or sn_idx >= len(sn_noderank):
+                    continue
+                
                 nd = self.env.G_sn.nodes[sn_node]
                 res_cpu = nd['cpu_res']
                 res_mem = nd['mem_res']
@@ -100,48 +189,50 @@ class GreedyAllocator:
                 if (res_cpu >= demand_cpu - 1e-9 and 
                     res_mem >= demand_mem - 1e-9 and 
                     res_disk >= demand_disk - 1e-9):
-                    # 计算剩余资源强度（归一化）
-                    norm_res_cpu = res_cpu / (self.env._sn_max_capacity['cpu_max'] + 1e-8)
-                    norm_res_mem = res_mem / (self.env._sn_max_capacity['mem_max'] + 1e-8)
-                    norm_res_disk = res_disk / (self.env._sn_max_capacity['disk_max'] + 1e-8)
-                    res_strength = norm_res_cpu + norm_res_mem + norm_res_disk
-                    
-                    sn_candidates.append({
+                    noderank = float(sn_noderank[sn_idx])
+                    sn_nodes_with_rank.append({
                         'sn_node': sn_node,
-                        'res_strength': res_strength,
+                        'noderank': noderank,
                     })
             
             # 如果没有合适的SN节点，放置失败
-            if not sn_candidates:
+            if not sn_nodes_with_rank:
                 _restore_temporary_deductions()
                 return False, {}, self.env.penalty
             
-            # 选择剩余资源最多的SN节点
-            sn_candidates.sort(key=lambda x: x['res_strength'], reverse=True)
-            best_sn = sn_candidates[0]['sn_node']
-            mapping[vn_node] = best_sn
+            # 按 noderank 降序排序，选择最高的
+            sn_nodes_with_rank.sort(key=lambda x: x['noderank'], reverse=True)
+            best_sn = sn_nodes_with_rank[0]['sn_node']
+            non_constraint_mapping[vn_node] = best_sn
 
-            # 立即在SN节点上扣减资源，确保后续VN节点看到最新剩余量
+            # 立即在SN节点上扣减资源
             nd = self.env.G_sn.nodes[best_sn]
             nd['cpu_res'] -= demand_cpu
             nd['mem_res'] -= demand_mem
             nd['disk_res'] -= demand_disk
             temporary_deductions.append((best_sn, demand_cpu, demand_mem, demand_disk))
         
-        # 3. 验证映射并计算路径
-        vn_paths = self.env._compute_paths_and_bw_demand(vn, mapping)
-        if vn_paths is None:
-            _restore_temporary_deductions()
+        # 6. 恢复临时扣减（因为后续会统一应用映射）
+        _restore_temporary_deductions()
+        
+        # 4. 放置约束节点
+        success, full_mapping, failure_reason = place_constraint_nodes(
+            self.env, vn, non_constraint_mapping, constraint_mapping
+        )
+        
+        if not success:
             return False, {}, self.env.penalty
         
-        # 在调用 _apply_mapping 前恢复临时扣减，避免重复扣减
-        _restore_temporary_deductions()
+        # 5. 验证映射并计算路径
+        vn_paths = self.env._compute_paths_and_bw_demand(vn, full_mapping)
+        if vn_paths is None:
+            return False, {}, self.env.penalty
 
-        # 4. 应用映射（扣减资源）
-        self.env._apply_mapping(vn, mapping, vn_paths)
+        # 6. 应用映射（扣减资源）
+        self.env._apply_mapping(vn, full_mapping, vn_paths)
         
-        # 5. 返回成功
-        return True, mapping, 0.0  # r_t在外部计算
+        # 7. 返回成功
+        return True, full_mapping, 0.0  # r_t在外部计算
 
 
 def run_gal_episode(

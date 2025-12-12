@@ -53,7 +53,7 @@ __all__ = [
 ]
 
 #region 常量定义
-DEFAULT_PRETRAIN_OUTPUT_DIR = "/home/yc2/mrt/a/pretrain_outputs"
+DEFAULT_PRETRAIN_OUTPUT_DIR = "/home/zrz/AgentVNE/AgentVNE/pretrain_outputs"
 PRETRAINED_MODEL_NAME = "model_1"
 MODEL_FACTORIES = {
     PRETRAINED_MODEL_NAME: SimuVNEModel1,

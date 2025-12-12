@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 from tests.test_strategy import TestConfig
 
 #region 默认配置
-DEFAULT_SN_TOPOLOGY = "/home/yc2/mrt/a/topo/SN_topology.json"
+# 获取项目根目录（test_configs.py 在 tests/ 目录下，需要向上两级到项目根目录）
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+DEFAULT_SN_TOPOLOGY = str(_PROJECT_ROOT / 'topo' / 'SN_topology_2.json')
 DEFAULT_WORKFLOW_TYPES = {
-    "workflow1": "/home/yc2/mrt/a/workflow_topo/workflow1_topo.json",
+    "workflow1": str(_PROJECT_ROOT / 'workflow_topo' / 'workflow1_topo.json'),
 }
 DEFAULT_PARAMETER_SETS = [
     {"arrival_rate": 0.2, "mean_lifetime": 20.0, "max_time_steps": 100, "seed": 2025},

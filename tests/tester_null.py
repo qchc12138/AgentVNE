@@ -38,9 +38,10 @@ __all__ = [
     "smoke_test_null_strategy",
 ]
 
-DEFAULT_SN_TOPOLOGY = "/home/yc2/mrt/a/topo/SN_topology.json"
+# 获取项目根目录（tester_null.py 在 tests/ 目录下，_PROJECT_ROOT 已在文件开头定义）
+DEFAULT_SN_TOPOLOGY = str(_PROJECT_ROOT / 'topo' / 'SN_topology_2.json')
 DEFAULT_WORKFLOWS = {
-    "workflow1": "/home/yc2/mrt/a/workflow_topo/workflow1_topo.json",
+    "workflow1": str(_PROJECT_ROOT / 'workflow_topo' / 'workflow1_topo.json'),
 }
 
 

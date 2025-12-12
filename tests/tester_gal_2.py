@@ -57,7 +57,10 @@ class GAL2PlacementStrategy(PlacementStrategy):
         temp_env = copy.deepcopy(env)
         allocator = GAL2Allocator(temp_env)
         success, mapping, _ = allocator.greedy_place(vn)
-        metadata: Dict[str, object] = {"placed_with": "GAL-PN"}
+        metadata: Dict[str, object] = {
+            "placed_with": "GAL-PN",
+            "strategy": "GAL-PN (per-node)",
+        }
         if not success:
             metadata["failure_reason"] = "GAL-PN greedy placement failed"
         if context.verbose:

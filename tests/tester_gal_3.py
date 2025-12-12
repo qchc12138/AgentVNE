@@ -57,7 +57,10 @@ class GAL3PlacementStrategy(PlacementStrategy):
         temp_env = copy.deepcopy(env)
         allocator = GAL3Allocator(temp_env)
         success, mapping, _ = allocator.greedy_place(vn)
-        metadata: Dict[str, object] = {"placed_with": "GAL-SN"}
+        metadata: Dict[str, object] = {
+            "placed_with": "GAL-SN",
+            "strategy": "GAL-SN (SN-sorted)",
+        }
         if not success:
             metadata["failure_reason"] = "GAL-SN greedy placement failed"
         if context.verbose:

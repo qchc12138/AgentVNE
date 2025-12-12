@@ -1,0 +1,100 @@
+{
+  "round_title": "Tester Param Group #1",
+  "config": {
+    "sn_topology": "/home/zrz/AgentVNE/AgentVNE/topo/SN_topology_2.json",
+    "workflow_types": "workflow1",
+    "arrival_rate": 0.2,
+    "mean_lifetime": 20.0,
+    "max_time_steps": 1000,
+    "device": "cpu",
+    "seed": 42,
+    "penalty": -150.0
+  },
+  "results": [
+    {
+      "strategy": "ga",
+      "acceptance_rate": 96.64804469273743,
+      "avg_r_t": -11.99906413432425,
+      "avg_hops": 4.664739884393064,
+      "max_hops": 17.0,
+      "avg_completion_duration": 20.658231569185844,
+      "tasks": 179,
+      "accepted": 173,
+      "lag_time": 35.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1035.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    },
+    {
+      "strategy": "gal",
+      "acceptance_rate": 97.20670391061452,
+      "avg_r_t": -33.26338943623427,
+      "avg_hops": 8.695402298850574,
+      "max_hops": 16.0,
+      "avg_completion_duration": 20.767185491976196,
+      "tasks": 179,
+      "accepted": 174,
+      "lag_time": 35.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1035.0,
+      "max_resource_failure_ratio": 2.9523808180356625
+    },
+    {
+      "strategy": "gal_pn",
+      "acceptance_rate": 94.41340782122904,
+      "avg_r_t": -65.35363482671175,
+      "avg_hops": 18.01775147928994,
+      "max_hops": 30.0,
+      "avg_completion_duration": 20.637825125697347,
+      "tasks": 179,
+      "accepted": 169,
+      "lag_time": 35.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1035.0,
+      "max_resource_failure_ratio": 4.952380820535662
+    },
+    {
+      "strategy": "gal_sn",
+      "acceptance_rate": 94.97206703910615,
+      "avg_r_t": -11.119075630252098,
+      "avg_hops": 4.788235294117647,
+      "max_hops": 13.0,
+      "avg_completion_duration": 20.657062678710055,
+      "tasks": 179,
+      "accepted": 170,
+      "lag_time": 35.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1035.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    },
+    {
+      "strategy": "pretrain",
+      "acceptance_rate": 94.97206703910615,
+      "avg_r_t": -5.417983193277311,
+      "avg_hops": 3.3,
+      "max_hops": 7.0,
+      "avg_completion_duration": 20.657062678710055,
+      "tasks": 179,
+      "accepted": 170,
+      "lag_time": 35.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1035.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    },
+    {
+      "strategy": "finetuned",
+      "acceptance_rate": 94.97206703910615,
+      "avg_r_t": -5.272002801120449,
+      "avg_hops": 3.0764705882352943,
+      "max_hops": 7.0,
+      "avg_completion_duration": 20.657062678710055,
+      "tasks": 179,
+      "accepted": 170,
+      "lag_time": 35.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1035.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    }
+  ],
+  "timestamp": "2025-12-11T13:26:43.245742"
+}

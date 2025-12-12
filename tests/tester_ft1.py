@@ -49,7 +49,7 @@ __all__ = [
 ]
 
 #region 常量定义
-DEFAULT_FINETUNE_OUTPUT_DIR = "/home/yc2/mrt/a/finetuning_putput"
+DEFAULT_FINETUNE_OUTPUT_DIR = "/home/zrz/AgentVNE/AgentVNE/finetuning_putput"
 FINETUNED_MODEL_NAME = "model_1"
 MODEL_FACTORIES = {
     FINETUNED_MODEL_NAME: SimuVNEModel1,
@@ -139,7 +139,10 @@ def resolve_checkpoint(
     """
     解析模型检查点路径。
     
-    如果 path 为 None，自动查找最新训练结果目录中的文件。
+    如果 path 为 None，按以下顺序查找：
+    1. 查找 output_dir 下的 *_latest.pth 文件（如 policy_network_latest.pth）
+    2. 查找最新训练结果目录中的文件
+    
     如果 path 是目录，自动拼接 filename。
     如果 path 是文件，直接返回。
     
@@ -158,7 +161,15 @@ def resolve_checkpoint(
             return candidate if os.path.isfile(candidate) else None
         return path if os.path.isfile(path) else None
     
-    # 自动查找最新训练结果
+    # 首先尝试查找 *_latest.pth 文件
+    # 从 filename 提取基础名称（如 "policy_network.pth" -> "policy_network"）
+    base_name = os.path.splitext(filename)[0]  # 去掉扩展名
+    latest_filename = f"{base_name}_latest.pth"
+    latest_file_path = os.path.join(output_dir, latest_filename)
+    if os.path.isfile(latest_file_path):
+        return latest_file_path
+    
+    # 如果未找到 *_latest.pth，尝试查找最新训练结果目录
     latest = find_latest_finetune_run(output_dir)
     if not latest:
         return None
