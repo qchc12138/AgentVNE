@@ -18,12 +18,13 @@ avg_r_t 折线图绘制脚本（从CSV文件读取）
 # ============================================================================
 
 # 输入CSV文件路径（相对于脚本目录，或使用绝对路径）
-INPUT_CSV_FILE = "avg_rt_by_round.csv"
+# INPUT_CSV_FILE = "avg_rt_by_round.csv"
+INPUT_CSV_FILE = "avg_rt_by_round_plot.csv"
 
 # 策略选择（None表示显示所有策略，或指定列表）
 # 注意：策略名称必须与CSV文件中的列名完全一致
 # STRATEGIES = None  # None表示显示所有策略
-STRATEGIES = ["ga", "gal-vne", "greedy", "finetuned"]  # 或指定策略列表
+STRATEGIES = ["ga", "gal-vne", "greedy","finetuned", "pretrain"]  # 或指定策略列表
 
 # 显示选项
 USE_ABS = True           # 是否使用绝对值（True: |r_t|, False: r_t）
@@ -34,7 +35,9 @@ OUTPUT_FILE = None       # None表示自动生成文件名
 # 图表样式
 FIG_SIZE = (16, 10)       # 图表大小（宽, 高）
 DPI = 200                # 分辨率
-MARKER_SIZE = 2          # 标记大小
+MARKER_SIZE = 8           # 数据点大小（圆点标记的大小）
+MARKER_STYLE = "o"        # 数据点样式（"o"=圆点, "s"=方块, "^"=三角等）
+SHOW_MARKER = True        # 是否显示数据点标记
 
 # 线宽设置
 LINEWIDTH = 3         # 默认线宽（所有策略使用相同线宽）
@@ -49,17 +52,18 @@ STRATEGY_LINEWIDTH_MAP = {
 
 # 字体大小设置
 TITLE_FONTSIZE = 36       # 标题字体大小
-LABEL_FONTSIZE = 30       # 坐标轴标签字体大小（xlabel, ylabel）
-LEGEND_FONTSIZE = 26      # 图例字体大小
-TICK_FONTSIZE = 26        # 坐标轴刻度字体大小
+LABEL_FONTSIZE = 34       # 坐标轴标签字体大小（xlabel, ylabel）
+LEGEND_FONTSIZE = 32      # 图例字体大小
+TICK_FONTSIZE = 34        # 坐标轴刻度字体大小
 
 # 策略名称映射（用于图表显示）
 # 键：CSV文件中的策略名称，值：图表中显示的名称
+# 注意：可以使用LaTeX格式实现上标和下标，例如：r'AgentVNE$_{w/o RL}$'
 STRATEGY_NAME_MAP = {
     "ga": "GA",
     "gal-vne": "GAL-VNE",
     "greedy": "Greedy",
-    "pretrain": "AgentVNE_Pretrain",
+    "pretrain": r"AgentVNE$_{w/o RL}$",  # 使用LaTeX格式显示下标
     "finetuned": "AgentVNE",
 }
 
@@ -78,16 +82,16 @@ except ImportError:
     exit(1)
 
 
-def load_csv_data(csv_path: str) -> tuple[List[int], Dict[str, List[float]]]:
+def load_csv_data(csv_path: str) -> tuple[List[float], Dict[str, List[float]]]:
     """
     从CSV文件加载数据
     
     Returns:
-        (round_indices, strategy_data)
-        - round_indices: 轮次编号列表
+        (round_values, strategy_data)
+        - round_values: Round列的浮点值列表（直接使用CSV中的值）
         - strategy_data: {策略名称: [轮次1的avg_r_t, 轮次2的avg_r_t, ...]}
     """
-    round_indices: List[int] = []
+    round_values: List[float] = []
     strategy_data: Dict[str, List[float]] = {}
     
     with open(csv_path, 'r', encoding='utf-8-sig') as f:
@@ -106,8 +110,18 @@ def load_csv_data(csv_path: str) -> tuple[List[int], Dict[str, List[float]]]:
         
         # 读取数据行
         for row in reader:
-            round_num = int(row.get("Round", 0))
-            round_indices.append(round_num)
+            round_str = row.get("Round", "").strip()
+            if not round_str:
+                continue
+            
+            # 将Round列转换为浮点数（直接使用CSV中的值）
+            try:
+                round_value = float(round_str)
+            except (ValueError, TypeError):
+                # 如果无法转换，跳过这一行
+                continue
+            
+            round_values.append(round_value)
             
             for strategy in strategy_columns:
                 value_str = row.get(strategy, "").strip()
@@ -120,7 +134,7 @@ def load_csv_data(csv_path: str) -> tuple[List[int], Dict[str, List[float]]]:
                 else:
                     strategy_data[strategy].append(None)  # 空值
     
-    return round_indices, strategy_data
+    return round_values, strategy_data
 
 
 def get_display_name(strategy: str) -> str:
@@ -129,7 +143,7 @@ def get_display_name(strategy: str) -> str:
 
 
 def plot_avg_rt_by_round(
-    round_indices: List[int],
+    round_values: List[float],
     strategy_data: Dict[str, List[float]],
     strategies: Optional[List[str]],
     output_path: Optional[str],
@@ -161,9 +175,9 @@ def plot_avg_rt_by_round(
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     
     # 设置标题和标签
-    ax.set_title("Average r_t by Round", fontsize=TITLE_FONTSIZE)
-    ax.set_xlabel("Round", fontsize=LABEL_FONTSIZE)
-    ylabel = "|Average r_t|" if use_abs else "Average r_t"
+    # ax.set_title("Average r_t by Round", fontsize=TITLE_FONTSIZE)
+    ax.set_xlabel("Arrival Rate", fontsize=LABEL_FONTSIZE)
+    ylabel = "Workflow Average Hops" if use_abs else "Average r_t"
     ax.set_ylabel(ylabel, fontsize=LABEL_FONTSIZE)
     
     # 设置坐标轴刻度字体大小
@@ -175,11 +189,11 @@ def plot_avg_rt_by_round(
         avg_rt_values = strategy_data.get(strategy, [])
         
         # 过滤掉None值（缺失数据），并应用绝对值（如果启用）
-        valid_indices = []
+        valid_rounds = []
         valid_values = []
-        for i, (round_idx, value) in enumerate(zip(round_indices, avg_rt_values)):
+        for i, (round_val, value) in enumerate(zip(round_values, avg_rt_values)):
             if value is not None:
-                valid_indices.append(round_idx)
+                valid_rounds.append(round_val)
                 # 如果启用绝对值，则取绝对值
                 if use_abs:
                     valid_values.append(abs(value))
@@ -197,10 +211,11 @@ def plot_avg_rt_by_round(
         strategy_linewidth = STRATEGY_LINEWIDTH_MAP.get(strategy.strip(), LINEWIDTH)
         
         # 绘制折线
+        marker_style = MARKER_STYLE if SHOW_MARKER else None
         ax.plot(
-            valid_indices,
+            valid_rounds,
             valid_values,
-            marker="o",
+            marker=marker_style,
             label=display_name,
             markersize=MARKER_SIZE,
             linewidth=strategy_linewidth,
@@ -211,10 +226,14 @@ def plot_avg_rt_by_round(
     ax.grid(True, alpha=0.3)
     
     # 设置x轴范围
-    if round_indices:
-        ax.set_xlim(min(round_indices) - 0.5, max(round_indices) + 0.5)
-        # 设置x轴刻度为整数
-        ax.set_xticks(round_indices)
+    if round_values:
+        # 使用Round列的浮点值作为x轴
+        min_round = min(round_values)
+        max_round = max(round_values)
+        margin = (max_round - min_round) * 0.05 if max_round > min_round else 0.05
+        ax.set_xlim(min_round - margin, max_round + margin)
+        # 设置x轴刻度为Round列的值
+        ax.set_xticks(round_values)
     
     plt.tight_layout()
     
@@ -244,7 +263,7 @@ def main():
     # 加载数据
     print(f"正在加载数据: {input_path}")
     try:
-        round_indices, strategy_data = load_csv_data(str(input_path))
+        round_values, strategy_data = load_csv_data(str(input_path))
     except Exception as e:
         print(f"错误：加载数据失败: {e}")
         return
@@ -264,7 +283,8 @@ def main():
     # 打印配置信息
     print(f"\n配置:")
     print(f"  输入文件: {input_path}")
-    print(f"  总轮次数: {len(round_indices)}")
+    print(f"  总轮次数: {len(round_values)}")
+    print(f"  Round值: {round_values}")
     print(f"  可用策略: {', '.join(available_strategies)}")
     if strategies_to_plot:
         display_names = [get_display_name(s) for s in strategies_to_plot]
@@ -277,7 +297,7 @@ def main():
     
     # 绘制图表
     plot_avg_rt_by_round(
-        round_indices,
+        round_values,
         strategy_data,
         strategies=STRATEGIES,
         output_path=OUTPUT_FILE,

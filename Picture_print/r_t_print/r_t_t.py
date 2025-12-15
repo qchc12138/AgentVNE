@@ -55,9 +55,9 @@ STRATEGY_LINEWIDTH_MAP = {
 
 # 字体大小设置
 TITLE_FONTSIZE = 36       # 标题字体大小
-LABEL_FONTSIZE = 30       # 坐标轴标签字体大小（xlabel, ylabel）
-LEGEND_FONTSIZE = 26      # 图例字体大小
-TICK_FONTSIZE = 26        # 坐标轴刻度字体大小
+LABEL_FONTSIZE = 34       # 坐标轴标签字体大小（xlabel, ylabel）
+LEGEND_FONTSIZE = 32      # 图例字体大小
+TICK_FONTSIZE = 34        # 坐标轴刻度字体大小
 
 # 策略名称映射（用于图表显示）
 # 键：数据文件中的策略名称，值：图表中显示的名称
@@ -150,7 +150,7 @@ def plot_rt_over_time(
     title = f"{round_title}"
     if start_time_step > 0 or end_time_step < data.get("max_time_steps", 1000):
         title = f"Workflow weighted average hops over Time"
-    ax.set_title(title, fontsize=TITLE_FONTSIZE)
+    # ax.set_title(title, fontsize=TITLE_FONTSIZE)
     ax.set_xlabel("Simulation Time Step", fontsize=LABEL_FONTSIZE)
     ylabel = "Workflow Weighted Average Hops"
     ax.set_ylabel(ylabel, fontsize=LABEL_FONTSIZE)

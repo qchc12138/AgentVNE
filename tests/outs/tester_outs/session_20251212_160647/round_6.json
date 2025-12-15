@@ -1,0 +1,86 @@
+{
+  "round_title": "Tester Param Group #6",
+  "config": {
+    "sn_topology": "/home/zrz/AgentVNE/AgentVNE/topo/SN_topology_2.json",
+    "workflow_types": "workflow1",
+    "arrival_rate": 0.5,
+    "mean_lifetime": 15.0,
+    "max_time_steps": 1000,
+    "device": "cpu",
+    "seed": 42,
+    "penalty": -150.0
+  },
+  "results": [
+    {
+      "strategy": "ga",
+      "acceptance_rate": 88.32116788321169,
+      "avg_r_t": -15.567893217893218,
+      "avg_hops": 4.633608815426998,
+      "max_hops": 21.0,
+      "avg_completion_duration": 14.564884564283766,
+      "tasks": 411,
+      "accepted": 363,
+      "lag_time": 12.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1012.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    },
+    {
+      "strategy": "gal-vne",
+      "acceptance_rate": 83.69829683698296,
+      "avg_r_t": -16.04347314507198,
+      "avg_hops": 5.517441860465116,
+      "max_hops": 19.0,
+      "avg_completion_duration": 14.429088699268608,
+      "tasks": 411,
+      "accepted": 344,
+      "lag_time": 12.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1012.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    },
+    {
+      "strategy": "greedy",
+      "acceptance_rate": 83.94160583941606,
+      "avg_r_t": -16.640634920634923,
+      "avg_hops": 5.771014492753623,
+      "max_hops": 16.0,
+      "avg_completion_duration": 14.44524309306276,
+      "tasks": 411,
+      "accepted": 345,
+      "lag_time": 12.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1012.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    },
+    {
+      "strategy": "pretrain",
+      "acceptance_rate": 83.69829683698296,
+      "avg_r_t": -7.660423588039867,
+      "avg_hops": 3.502906976744186,
+      "max_hops": 7.0,
+      "avg_completion_duration": 14.429088699268608,
+      "tasks": 411,
+      "accepted": 344,
+      "lag_time": 12.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1012.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    },
+    {
+      "strategy": "finetuned",
+      "acceptance_rate": 83.69829683698296,
+      "avg_r_t": -7.772563676633445,
+      "avg_hops": 3.5319767441860463,
+      "max_hops": 7.0,
+      "avg_completion_duration": 14.429088699268608,
+      "tasks": 411,
+      "accepted": 344,
+      "lag_time": 12.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1012.0,
+      "max_resource_failure_ratio": 3.9523808192856626
+    }
+  ],
+  "timestamp": "2025-12-12T16:15:26.719756"
+}

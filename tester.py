@@ -329,43 +329,80 @@ def main(argv: Optional[List[str]] = None) -> None:
     # 默认测试参数配置
     # 可添加多个字典，用于多轮测试（每轮所有策略使用相同参数）
     manual_parameters = [
-        {
-            "arrival_rate": 0.2,      # 任务到达率（泊松分布）
-            "mean_lifetime": 15,      # 平均生存时间（指数分布）
-            "max_time_steps": 1000,   # 最大时间步数
-            "seed": 42,             # 随机种子（保证不同策略使用相同的任务序列）
-        },
-        # 可以取消注释以下配置来添加更多测试轮次
-        {
-           "arrival_rate": 0.2,
-           "mean_lifetime": 20,
-           "max_time_steps": 1000,
-           "seed": 42,  # 不同轮次可以使用不同 seed
-        },
-        {
-           "arrival_rate": 0.2,
-           "mean_lifetime": 25,
-           "max_time_steps": 1000,
-           "seed": 42,  # 不同轮次可以使用不同 seed
-        },
+        # {
+        #    "arrival_rate": 0.05,
+        #    "mean_lifetime": 25,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # },
+
         {
            "arrival_rate": 0.2,
            "mean_lifetime": 30,
            "max_time_steps": 1000,
            "seed": 42,  # 不同轮次可以使用不同 seed
         },
+        # {
+        #    "arrival_rate": 0.2,
+        #    "mean_lifetime": 25,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # },
         {
-           "arrival_rate": 0.2,
-           "mean_lifetime": 35,
+           "arrival_rate": 0.3,
+           "mean_lifetime": 30,
            "max_time_steps": 1000,
-           "seed": 42,
+           "seed": 42,  # 不同轮次可以使用不同 seed
         },
+        # {
+        #    "arrival_rate": 0.4,
+        #    "mean_lifetime": 25,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # },
         {
-           "arrival_rate": 0.2,
-           "mean_lifetime": 40,
+           "arrival_rate": 0.4,
+           "mean_lifetime": 30,
            "max_time_steps": 1000,
-           "seed": 42,
+           "seed": 42,  # 不同轮次可以使用不同 seed
         }
+        # {
+        #     "arrival_rate": 0.2,      # 任务到达率（泊松分布）
+        #     "mean_lifetime": 15,      # 平均生存时间（指数分布）
+        #     "max_time_steps": 1000,   # 最大时间步数
+        #     "seed": 42,             # 随机种子（保证不同策略使用相同的任务序列）
+        # },
+        # # 可以取消注释以下配置来添加更多测试轮次
+        # {
+        #    "arrival_rate": 0.2,
+        #    "mean_lifetime": 20,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # },
+        # {
+        #    "arrival_rate": 0.2,
+        #    "mean_lifetime": 25,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # },
+        # {
+        #    "arrival_rate": 0.2,
+        #    "mean_lifetime": 30,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # },
+        # {
+        #    "arrival_rate": 0.2,
+        #    "mean_lifetime": 35,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,
+        # },
+        # {
+        #    "arrival_rate": 0.2,
+        #    "mean_lifetime": 40,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,
+        # }
     ]
 
     parser = build_arg_parser()

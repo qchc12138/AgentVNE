@@ -1,0 +1,86 @@
+{
+  "round_title": "Tester Param Group #1",
+  "config": {
+    "sn_topology": "/home/zrz/AgentVNE/AgentVNE/topo/SN_topology_2.json",
+    "workflow_types": "workflow1",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 25.0,
+    "max_time_steps": 1000,
+    "device": "cpu",
+    "seed": 42,
+    "penalty": -150.0
+  },
+  "results": [
+    {
+      "strategy": "ga",
+      "acceptance_rate": 100.0,
+      "avg_r_t": -9.142097264437691,
+      "avg_hops": 3.872340425531915,
+      "max_hops": 9.0,
+      "avg_completion_duration": 25.781895705537607,
+      "tasks": 94,
+      "accepted": 94,
+      "lag_time": 62.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1062.0,
+      "max_resource_failure_ratio": 0.0
+    },
+    {
+      "strategy": "gal-vne",
+      "acceptance_rate": 100.0,
+      "avg_r_t": -6.502330293819655,
+      "avg_hops": 4.0638297872340425,
+      "max_hops": 16.0,
+      "avg_completion_duration": 25.781895705537607,
+      "tasks": 94,
+      "accepted": 94,
+      "lag_time": 62.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1062.0,
+      "max_resource_failure_ratio": 0.0
+    },
+    {
+      "strategy": "greedy",
+      "acceptance_rate": 100.0,
+      "avg_r_t": -8.180547112462005,
+      "avg_hops": 4.648936170212766,
+      "max_hops": 12.0,
+      "avg_completion_duration": 25.781895705537607,
+      "tasks": 94,
+      "accepted": 94,
+      "lag_time": 62.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1062.0,
+      "max_resource_failure_ratio": 0.0
+    },
+    {
+      "strategy": "pretrain",
+      "acceptance_rate": 100.0,
+      "avg_r_t": -3.6347771023302937,
+      "avg_hops": 2.8297872340425534,
+      "max_hops": 7.0,
+      "avg_completion_duration": 25.781895705537607,
+      "tasks": 94,
+      "accepted": 94,
+      "lag_time": 62.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1062.0,
+      "max_resource_failure_ratio": 0.0
+    },
+    {
+      "strategy": "finetuned",
+      "acceptance_rate": 100.0,
+      "avg_r_t": -3.869883485309017,
+      "avg_hops": 3.0319148936170213,
+      "max_hops": 7.0,
+      "avg_completion_duration": 25.781895705537607,
+      "tasks": 94,
+      "accepted": 94,
+      "lag_time": 62.0,
+      "stop_arrival_time": 1000.0,
+      "end_time": 1062.0,
+      "max_resource_failure_ratio": 0.0
+    }
+  ],
+  "timestamp": "2025-12-12T18:52:22.202713"
+}
