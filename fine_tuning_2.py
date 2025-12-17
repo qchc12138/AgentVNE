@@ -1082,7 +1082,7 @@ def save_training_results(training_stats: List[Dict],
         # 如果没有指定输出目录，使用默认的相对路径
         if output_dir is None:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            output_dir = os.path.join(script_dir, 'finetuning_putput')
+            output_dir = os.path.join(script_dir, 'finetuning_output')
         
         # 转换为绝对路径
         if not os.path.isabs(output_dir):
@@ -1183,7 +1183,7 @@ def save_training_results(training_stats: List[Dict],
     }, value_path)
     print(f"✓ 价值网络已保存: {value_path}")
     
-    # 3.5. 额外保存最新模型到 finetuning_putput 目录（不带时间戳）
+    # 3.5. 额外保存最新模型到 finetuning_output 目录（不带时间戳）
     latest_policy_path = os.path.join(output_dir, 'policy_network_latest.pth')
     torch.save({
         'model_state_dict': policy.state_dict(),
@@ -1267,9 +1267,9 @@ def get_model_paths(script_dir: str, use_finetuning_model: bool = False) -> Tupl
         value_ckpt_path: 价值网络路径
     """
     if use_finetuning_model:
-        # 使用 finetuning_putput 目录下的最新模型（微调后的模型）
-        finetuning_policy_path = os.path.join(script_dir, 'finetuning_putput', 'policy_network_latest.pth')
-        finetuning_value_path = os.path.join(script_dir, 'finetuning_putput', 'value_network_latest.pth')
+        # 使用 finetuning_output 目录下的最新模型（微调后的模型）
+        finetuning_policy_path = os.path.join(script_dir, 'finetuning_output', 'policy_network_latest.pth')
+        finetuning_value_path = os.path.join(script_dir, 'finetuning_output', 'value_network_latest.pth')
         if os.path.exists(finetuning_policy_path):
             policy_ckpt_path = finetuning_policy_path
             value_ckpt_path = finetuning_value_path if os.path.exists(finetuning_value_path) else None
@@ -1297,7 +1297,7 @@ if __name__ == '__main__':
     
     # 创建运行目录和日志文件（保存所有打印输出）
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_base_dir = os.path.join(script_dir, 'finetuning_putput')
+    output_base_dir = os.path.join(script_dir, 'finetuning_output')
     os.makedirs(output_base_dir, exist_ok=True)
     run_dir = os.path.join(output_base_dir, f"run_{timestamp}")
     os.makedirs(run_dir, exist_ok=True)
@@ -1360,13 +1360,13 @@ if __name__ == '__main__':
             device='cpu',
             arrival_rate=0.2,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
             mean_lifetime=30.0,
-            max_arrived_tasks=20,
+            max_arrived_tasks=30,
             max_time_steps=3000,
             num_episodes_per_update=1,  # 批量大小：收集多少个episode的轨迹数据后再进行一次PPO更新
                                          # 例如：1表示每个episode结束后立即更新；4表示收集4个episode后统一更新
             train_iters=3,  # PPO更新迭代次数：每次批量更新时，对策略网络和价值网络进行多少次梯度更新
                              # 例如：3表示每次批量更新时，策略和价值网络各更新3次
-            num_updates=1,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
+            num_updates=20,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
                             # 例如：1表示只执行1次批量更新；30表示执行30次批量更新
             verbose = False  # 设置为True以打印详细信息，False则只打印PPO训练信息
         )

@@ -18,6 +18,8 @@ warnings.filterwarnings(
 )
 
 import argparse
+import csv
+import os
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, List, Optional
 
@@ -143,6 +145,56 @@ class Tester:
         self.enable_plotting = enable_plotting
         self.output_dir = output_dir
         self.session_name = session_name
+        # 记录每个轮次的任务接收情况：round_task_acceptance[round_idx][task_id][strategy] = 1 or 0
+        self.round_task_acceptance: Dict[int, Dict[int, Dict[str, int]]] = {}
+        # 保存 printer 对象，用于获取 session_dir
+        self.printer: Optional["TestPrinter"] = None
+    
+    def _save_task_acceptance_csv(self, round_idx: int) -> None:
+        """保存任务接收情况到CSV文件"""
+        if round_idx not in self.round_task_acceptance:
+            return
+        
+        round_data = self.round_task_acceptance[round_idx]
+        if not round_data:
+            return
+        
+        # 获取所有策略名称（按策略工厂的顺序）
+        strategy_names = list(self.strategy_factories.keys())
+        
+        # 获取所有任务ID并排序
+        task_ids = sorted(round_data.keys())
+        
+        # 确定输出文件路径：使用 printer 的 session_dir
+        if self.printer and self.printer.session_dir:
+            csv_dir = self.printer.session_dir
+        elif self.output_dir:
+            csv_dir = self.output_dir
+        else:
+            csv_dir = "."
+        
+        # 构建文件名
+        csv_filename = f"round_{round_idx}_task_acceptance.csv"
+        csv_path = os.path.join(csv_dir, csv_filename)
+        
+        # 确保目录存在
+        os.makedirs(csv_dir, exist_ok=True)
+        
+        # 写入CSV文件
+        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            # 写入表头
+            writer.writerow(strategy_names)
+            # 写入每行数据（每个任务）
+            for task_id in task_ids:
+                row = []
+                for strategy_name in strategy_names:
+                    # 获取该策略对该任务的接收情况，如果不存在则记为0
+                    acceptance = round_data[task_id].get(strategy_name, 0)
+                    row.append(acceptance)
+                writer.writerow(row)
+        
+        print(f"  ✓ 任务接收情况已保存到: {csv_path}")
 
     def run(self) -> None:
         printer = TestPrinter(
@@ -152,6 +204,7 @@ class Tester:
             session_name=self.session_name,
             test_scope="tester",
         )
+        self.printer = printer  # 保存 printer 对象，用于获取 session_dir
         try:
             total_rounds = len(self.round_configs)
             total_strategies = len(self.strategy_factories)
@@ -174,20 +227,34 @@ class Tester:
                     ),
                 )
                 
+                # 初始化当前轮次的任务接收记录
+                self.round_task_acceptance[idx] = {}
+                
                 strategy_list = list(self.strategy_factories.items())
                 for strategy_idx, (label, factory) in enumerate(strategy_list, start=1):
                     print(f"  [{strategy_idx}/{total_strategies}] 正在测试策略: {label}")
-                    run_single_strategy_test(
+                    result = run_single_strategy_test(
                         strategy_factory=factory,
                         config=config,
                         detail_print=self.detail_print,
                         printer=printer,
                         strategy_label=label,
                     )
+                    # 收集任务接收情况
+                    tasks = result.get("tasks", [])
+                    for task in tasks:
+                        task_id = task.get("task_id")
+                        if task_id is not None:
+                            if task_id not in self.round_task_acceptance[idx]:
+                                self.round_task_acceptance[idx][task_id] = {}
+                            # 被接受记为1，否则记为0
+                            self.round_task_acceptance[idx][task_id][label] = 1 if task.get("success", False) else 0
                     print(f"  [{strategy_idx}/{total_strategies}] ✓ 策略 {label} 测试完成")
                 
                 print(f"\n[轮次 {idx}/{total_rounds}] 所有策略测试完成，生成汇总结果...")
                 printer.finalize()
+                # 保存任务接收情况到CSV文件
+                self._save_task_acceptance_csv(idx)
                 print(f"[轮次 {idx}/{total_rounds}] ✓ 轮次完成\n")
             
             print(f"\n{'='*80}")
@@ -336,22 +403,22 @@ def main(argv: Optional[List[str]] = None) -> None:
         #    "seed": 42,  # 不同轮次可以使用不同 seed
         # },
 
-        {
-           "arrival_rate": 0.2,
-           "mean_lifetime": 30,
-           "max_time_steps": 1000,
-           "seed": 42,  # 不同轮次可以使用不同 seed
-        },
         # {
-        #    "arrival_rate": 0.2,
-        #    "mean_lifetime": 25,
+        #    "arrival_rate": 0.25,
+        #    "mean_lifetime": 20,
         #    "max_time_steps": 1000,
         #    "seed": 42,  # 不同轮次可以使用不同 seed
         # },
+        # # {
+        # #    "arrival_rate": 0.2,
+        # #    "mean_lifetime": 25,
+        # #    "max_time_steps": 1000,
+        # #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # # },
         {
-           "arrival_rate": 0.3,
-           "mean_lifetime": 30,
-           "max_time_steps": 1000,
+           "arrival_rate": 0.25,
+           "mean_lifetime": 40,
+           "max_time_steps": 11000,
            "seed": 42,  # 不同轮次可以使用不同 seed
         },
         # {
@@ -360,12 +427,12 @@ def main(argv: Optional[List[str]] = None) -> None:
         #    "max_time_steps": 1000,
         #    "seed": 42,  # 不同轮次可以使用不同 seed
         # },
-        {
-           "arrival_rate": 0.4,
-           "mean_lifetime": 30,
-           "max_time_steps": 1000,
-           "seed": 42,  # 不同轮次可以使用不同 seed
-        }
+        # {
+        #    "arrival_rate": 0.25,
+        #    "mean_lifetime": 40,
+        #    "max_time_steps": 1000,
+        #    "seed": 42,  # 不同轮次可以使用不同 seed
+        # }
         # {
         #     "arrival_rate": 0.2,      # 任务到达率（泊松分布）
         #     "mean_lifetime": 15,      # 平均生存时间（指数分布）

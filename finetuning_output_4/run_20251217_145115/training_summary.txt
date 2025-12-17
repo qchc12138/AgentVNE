@@ -1,0 +1,39 @@
+============================================================
+PPO Training Summary
+============================================================
+
+Training Time: 20251217_145115
+Total Updates: 20
+Total Samples: 140
+
+------------------------------------------------------------
+Training Progress:
+------------------------------------------------------------
+Update 1: Return=-379.76, Acceptance=100.00%, Samples=7
+Update 2: Return=-345.69, Acceptance=100.00%, Samples=7
+Update 3: Return=-367.19, Acceptance=100.00%, Samples=7
+Update 4: Return=-384.00, Acceptance=100.00%, Samples=7
+Update 5: Return=-661.57, Acceptance=100.00%, Samples=7
+Update 6: Return=-531.00, Acceptance=100.00%, Samples=7
+Update 7: Return=-330.72, Acceptance=100.00%, Samples=7
+Update 8: Return=-457.97, Acceptance=100.00%, Samples=7
+Update 9: Return=-307.69, Acceptance=100.00%, Samples=7
+Update 10: Return=-419.38, Acceptance=100.00%, Samples=7
+Update 11: Return=-678.34, Acceptance=100.00%, Samples=7
+Update 12: Return=-240.10, Acceptance=100.00%, Samples=7
+Update 13: Return=-394.51, Acceptance=100.00%, Samples=7
+Update 14: Return=-535.25, Acceptance=100.00%, Samples=7
+Update 15: Return=-169.47, Acceptance=100.00%, Samples=7
+Update 16: Return=-611.80, Acceptance=100.00%, Samples=7
+Update 17: Return=-595.90, Acceptance=100.00%, Samples=7
+Update 18: Return=-264.40, Acceptance=100.00%, Samples=7
+Update 19: Return=-521.63, Acceptance=100.00%, Samples=7
+Update 20: Return=-303.62, Acceptance=100.00%, Samples=7
+
+------------------------------------------------------------
+Final Results:
+------------------------------------------------------------
+Final Average Return: -303.62
+Final Acceptance Rate: 100.00%
+Best Return: -169.47
+Best Acceptance Rate: 100.00%

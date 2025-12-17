@@ -778,7 +778,7 @@ def save_test_results(test_stats: List[Dict],
         output_dir: 输出基础目录（如果为None，使用相对于脚本目录的默认路径）
         run_dir: 运行目录（如果指定，直接使用该目录；否则在output_dir下创建新的run_xxxxxx目录）
     """
-    # 如果指定了run_dir，直接使用
+    # 如果指定了run_dir，直接使用（推荐方式：每次测试创建独立的带时间戳文件夹）
     if run_dir is not None:
         os.makedirs(run_dir, exist_ok=True)
         # 从run_dir提取output_dir（用于保存latest模型）
@@ -786,7 +786,7 @@ def save_test_results(test_stats: List[Dict],
         # 从run_dir提取timestamp（用于保存统计信息）
         timestamp = os.path.basename(run_dir).replace('run_', '')
     else:
-        # 如果没有指定输出目录，使用默认的相对路径
+        # 如果没有指定run_dir，自动创建带时间戳的文件夹
         if output_dir is None:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             output_dir = os.path.join(script_dir, 'finetuning_test_output')
@@ -800,6 +800,7 @@ def save_test_results(test_stats: List[Dict],
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         run_dir = os.path.join(output_dir, f"run_{timestamp}")
         os.makedirs(run_dir, exist_ok=True)
+        print(f"创建测试输出文件夹: {run_dir}")
     
     print(f"\n{'='*60}")
     print(f"保存测试结果到: {run_dir}")
@@ -893,12 +894,13 @@ if __name__ == '__main__':
     # 获取脚本所在目录，用于构建相对路径的默认值
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # 创建运行目录和日志文件（保存所有打印输出）
+    # 创建带时间戳的运行目录和日志文件（保存所有打印输出）
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_base_dir = os.path.join(script_dir, 'finetuning_test_output')
     os.makedirs(output_base_dir, exist_ok=True)
     run_dir = os.path.join(output_base_dir, f"run_{timestamp}")
     os.makedirs(run_dir, exist_ok=True)
+    print(f"创建测试输出文件夹: {run_dir}")
     log_file_path = os.path.join(run_dir, 'log.txt')
     
     # 打开日志文件并设置Tee，同时输出到控制台和文件

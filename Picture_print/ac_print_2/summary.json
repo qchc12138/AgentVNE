@@ -1,0 +1,265 @@
+{
+  "session_dir": "/home/zrz/AgentVNE/AgentVNE/tests/outs/tester_outs/session_20251216_002050",
+  "total_rounds": 3,
+  "rounds": [
+    {
+      "round_title": "Tester Param Group #1",
+      "config": {
+        "sn_topology": "/home/zrz/AgentVNE/AgentVNE/topo/SN_topology_2.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.25,
+        "mean_lifetime": 20.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 42,
+        "penalty": -150.0
+      },
+      "results": [
+        {
+          "strategy": "ga",
+          "acceptance_rate": 93.80530973451327,
+          "avg_r_t": -12.775404312668464,
+          "avg_hops": 4.35377358490566,
+          "max_hops": 14.0,
+          "avg_completion_duration": 19.6412834066662,
+          "tasks": 226,
+          "accepted": 212,
+          "lag_time": 56.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1056.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "gal-vne",
+          "acceptance_rate": 89.82300884955751,
+          "avg_r_t": -12.966291344123857,
+          "avg_hops": 4.980295566502463,
+          "max_hops": 16.0,
+          "avg_completion_duration": 19.752121758831393,
+          "tasks": 226,
+          "accepted": 203,
+          "lag_time": 56.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1056.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "greedy",
+          "acceptance_rate": 89.82300884955751,
+          "avg_r_t": -13.07719915552428,
+          "avg_hops": 5.137931034482759,
+          "max_hops": 15.0,
+          "avg_completion_duration": 19.752121758831393,
+          "tasks": 226,
+          "accepted": 203,
+          "lag_time": 56.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1056.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "pretrain",
+          "acceptance_rate": 95.57522123893806,
+          "avg_r_t": -9.490454144620811,
+          "avg_hops": 4.314814814814815,
+          "max_hops": 14.0,
+          "avg_completion_duration": 19.454376076634784,
+          "tasks": 226,
+          "accepted": 216,
+          "lag_time": 56.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1056.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 89.82300884955751,
+          "avg_r_t": -6.428559699741966,
+          "avg_hops": 3.3694581280788176,
+          "max_hops": 7.0,
+          "avg_completion_duration": 19.752121758831393,
+          "tasks": 226,
+          "accepted": 203,
+          "lag_time": 56.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1056.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-12-16T00:22:19.115688"
+    },
+    {
+      "round_title": "Tester Param Group #2",
+      "config": {
+        "sn_topology": "/home/zrz/AgentVNE/AgentVNE/topo/SN_topology_2.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.25,
+        "mean_lifetime": 30.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 42,
+        "penalty": -150.0
+      },
+      "results": [
+        {
+          "strategy": "ga",
+          "acceptance_rate": 81.41592920353983,
+          "avg_r_t": -14.624113612836439,
+          "avg_hops": 4.320652173913044,
+          "max_hops": 11.0,
+          "avg_completion_duration": 30.586676396244364,
+          "tasks": 226,
+          "accepted": 184,
+          "lag_time": 94.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1094.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "gal-vne",
+          "acceptance_rate": 75.66371681415929,
+          "avg_r_t": -14.718407128933444,
+          "avg_hops": 5.567251461988304,
+          "max_hops": 17.0,
+          "avg_completion_duration": 31.053937221575882,
+          "tasks": 226,
+          "accepted": 171,
+          "lag_time": 94.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1094.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "greedy",
+          "acceptance_rate": 75.66371681415929,
+          "avg_r_t": -16.894750765803398,
+          "avg_hops": 5.47953216374269,
+          "max_hops": 18.0,
+          "avg_completion_duration": 31.053937221575882,
+          "tasks": 226,
+          "accepted": 171,
+          "lag_time": 94.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1094.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "pretrain",
+          "acceptance_rate": 82.30088495575221,
+          "avg_r_t": -13.534133384536613,
+          "avg_hops": 4.543010752688172,
+          "max_hops": 14.0,
+          "avg_completion_duration": 31.004013000846303,
+          "tasks": 226,
+          "accepted": 186,
+          "lag_time": 94.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1094.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 75.66371681415929,
+          "avg_r_t": -8.008521303258146,
+          "avg_hops": 3.590643274853801,
+          "max_hops": 7.0,
+          "avg_completion_duration": 31.053937221575882,
+          "tasks": 226,
+          "accepted": 171,
+          "lag_time": 94.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1094.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-12-16T00:23:38.054357"
+    },
+    {
+      "round_title": "Tester Param Group #3",
+      "config": {
+        "sn_topology": "/home/zrz/AgentVNE/AgentVNE/topo/SN_topology_2.json",
+        "workflow_types": "workflow1",
+        "arrival_rate": 0.25,
+        "mean_lifetime": 40.0,
+        "max_time_steps": 1000,
+        "device": "cpu",
+        "seed": 42,
+        "penalty": -150.0
+      },
+      "results": [
+        {
+          "strategy": "ga",
+          "acceptance_rate": 73.45132743362832,
+          "avg_r_t": -19.244011761331038,
+          "avg_hops": 5.234939759036145,
+          "max_hops": 19.0,
+          "avg_completion_duration": 38.21448739678232,
+          "tasks": 226,
+          "accepted": 166,
+          "lag_time": 132.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1132.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "gal-vne",
+          "acceptance_rate": 67.69911504424779,
+          "avg_r_t": -18.962838468720822,
+          "avg_hops": 5.176470588235294,
+          "max_hops": 19.0,
+          "avg_completion_duration": 39.0111163126888,
+          "tasks": 226,
+          "accepted": 153,
+          "lag_time": 132.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1132.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "greedy",
+          "acceptance_rate": 68.58407079646017,
+          "avg_r_t": -21.150376344086023,
+          "avg_hops": 5.509677419354839,
+          "max_hops": 17.0,
+          "avg_completion_duration": 38.82559751598177,
+          "tasks": 226,
+          "accepted": 155,
+          "lag_time": 132.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1132.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "pretrain",
+          "acceptance_rate": 74.33628318584071,
+          "avg_r_t": -15.155775226757369,
+          "avg_hops": 4.839285714285714,
+          "max_hops": 14.0,
+          "avg_completion_duration": 38.942095509354445,
+          "tasks": 226,
+          "accepted": 168,
+          "lag_time": 132.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1132.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        },
+        {
+          "strategy": "finetuned",
+          "acceptance_rate": 67.69911504424779,
+          "avg_r_t": -9.37164643635232,
+          "avg_hops": 3.496732026143791,
+          "max_hops": 7.0,
+          "avg_completion_duration": 39.0111163126888,
+          "tasks": 226,
+          "accepted": 153,
+          "lag_time": 132.0,
+          "stop_arrival_time": 1000.0,
+          "end_time": 1132.0,
+          "max_resource_failure_ratio": 3.9523808192856626
+        }
+      ],
+      "timestamp": "2025-12-16T00:24:51.184907"
+    }
+  ],
+  "timestamp": "2025-12-16T00:24:51.690187"
+}

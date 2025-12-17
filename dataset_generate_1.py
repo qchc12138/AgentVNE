@@ -976,13 +976,13 @@ def main():
                        help='测试样本输出文件路径（单条，支持绝对路径和相对路径）')
     parser.add_argument('--workflows_per_episode', type=int, default=7,
                        help='每个 episode 放置的 workflow 数量')
-    parser.add_argument('--num_episodes', type=int, default=400,
+    parser.add_argument('--num_episodes', type=int, default=200,
                        help='Episode 数量（重复次数）')
     parser.add_argument('--test_mode', action='store_true',
                        help='启用测试模式，打印放置前标签和放置动作')
     parser.add_argument('--test_episode_idx', type=int, default=0,
                        help='测试模式下要打印的 episode 索引（默认 0）')
-    parser.add_argument('--bias', type=float, default=0.3,
+    parser.add_argument('--bias', type=float, default=0.05,
                        help='bias 参数（约束节点 bias_cpu = bias * max_cpu）')
     parser.add_argument('--noderank_iterations', type=int, default=2,
                        help='NodeRank 迭代次数（默认 2）')
