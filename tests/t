@@ -1,4 +1,0 @@
-#!/bin/bash
-#echo "running ../tester4.py"
-python ../tester.py
-#python Null_tester.py

@@ -34,9 +34,8 @@ from tests.test_configs import (
     build_round_configs,
 )
 from tests.tester_ga import GAPlacementStrategy
+from tests.tester_greedy import GreedyPlacementStrategy
 from tests.tester_gal import GALPlacementStrategy
-from tests.tester_gal_2 import GAL2PlacementStrategy as GALPNPlacementStrategy
-from tests.tester_gal_3 import GAL3PlacementStrategy as GALSNPlacementStrategy
 from tests.tester_null import NullPlacementStrategy
 from tests.tester_ft1 import get_finetuned_tester_registry
 from tests.tester_ft1 import FT1PlacementStrategy

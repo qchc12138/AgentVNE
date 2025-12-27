@@ -119,7 +119,7 @@
       "bandwidth": 10,
       "comm_bandwidth": 10,
       "node_type": "edge",
-      "bias_cpu": 0.2,
+      "bias_cpu": 2.4,
       "bias_bandwidth": 10.0
     },
     {

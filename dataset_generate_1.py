@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 """
-预训练数据集生成脚本
-基于底层网络与 workflow 的拓扑，按要求生成 <x, y> 预训练数据集：
-- 在底层网络上依次放置 10 个相同的 workflow；
-- 每放置一个 workflow 前，记录当前 workflow 拓扑与当前底层网络状态，作为 x；
-- 用参考的 NodeRank 计算（底层网络来自 calculate_noderank_2 的公式，workflow 的节点 rank 直接读取）
-  构造分配概率矩阵 y（将当前 SN 的 noderank 重复 N1 行得到 N1×N2）。
-- 以贪心方式将该 workflow 的节点映射到底层网络（按各自 noderank 从高到低，检查 cpu/memory/disk 约束），
-  并更新底层网络资源；
-- 重复上述过程，直到 10 个 workflow 放置完成；将整个过程重复 50 次。
-
-- 这个是使用最开始的偏置生成时的计算，即输入偏置
+    预训练数据集快速生成脚本
 """
 
 import torch
