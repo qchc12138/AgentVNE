@@ -103,7 +103,6 @@ class PPOAgent:
 
     def _generate_priority_lists(self, probs_matrix: torch.Tensor, seed: Optional[int] = None) -> List[List[int]]:
         """从概率矩阵采样生成优先级列表（逐步排除方式）"""
-        # 如果提供了种子，创建Generator用于采样
         generator = None
         if seed is not None:
             generator = torch.Generator(device=self.device)
@@ -546,43 +545,32 @@ class PPOAgent:
         return mapping, logprob_sum, value, sn_with_bias
 
     def compute_gae(self, rewards: List[float], values: List[float], dones: List[bool]) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        计算 GAE (Generalized Advantage Estimation) 基于 Workflow 序列。
+    """
+    计算 GAE (Generalized Advantage Estimation)
+    
+    Args:
+        rewards: 奖励列表
+        values: 状态价值列表
+        dones: 结束标记列表
         
-        重要：这里的序列是 workflow 序列，不是时间序列。
-        - T = workflow 数量（不是时间步数）
-        - rewards[i] = 第 i 个 workflow 处理后的奖励
-        - values[i] = 第 i 个 workflow 到达时的状态价值
-        - dones[i] = 第 i 个 workflow 是否是序列中的最后一个
-        
-        Args:
-            rewards: workflow 序列的奖励列表，长度 = workflow 数量
-            values: workflow 序列的状态价值列表，长度 = workflow 数量
-            dones: workflow 序列的结束标记，长度 = workflow 数量
-        
-        Returns:
-            adv: 优势函数，shape=[T]
-            returns: 回报，shape=[T]
-        """
-        # 按 workflow 序列展开（支持批量更新时多个 episode 拼接）
-        T = len(rewards)  # T = workflow 数量
-        adv = torch.zeros(T, dtype=torch.float, device=self.device)
-        lastgaelam = 0.0
-        for t in reversed(range(T)):  # 从最后一个 workflow 往前计算
-            nonterminal = 0.0 if dones[t] else 1.0
-            # 如果是最后一个 workflow 或序列结束，next_value=0
-            # 这样可以正确处理批量更新时多个 episode 拼接的情况
-            if t == T - 1 or dones[t]:
-                next_value = 0.0  # 序列结束，没有下一个 workflow
-            else:
-                next_value = float(values[t + 1])  # 下一个 workflow 的状态价值
-            # GAE 计算：基于 workflow 序列的时序关系
-            delta = float(rewards[t]) + self.gamma * next_value * nonterminal - float(values[t])
-            lastgaelam = delta + self.gamma * self.lam * nonterminal * lastgaelam
-            adv[t] = lastgaelam
-        returns = adv + torch.tensor(values, dtype=torch.float, device=self.device)
-        # 归一化优势
-        adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+    Returns:
+        adv: 优势函数
+        returns: 回报
+    """
+    T = len(rewards)
+    adv = torch.zeros(T, dtype=torch.float, device=self.device)
+    lastgaelam = 0.0
+    for t in reversed(range(T)):
+        nonterminal = 0.0 if dones[t] else 1.0
+        if t == T - 1 or dones[t]:
+            next_value = 0.0
+        else:
+            next_value = float(values[t + 1])
+        delta = float(rewards[t]) + self.gamma * next_value * nonterminal - float(values[t])
+        lastgaelam = delta + self.gamma * self.lam * nonterminal * lastgaelam
+        adv[t] = lastgaelam
+    returns = adv + torch.tensor(values, dtype=torch.float, device=self.device)
+    adv = (adv - adv.mean()) / (adv.std() + 1e-8)
         return adv, returns
 
     def update(self,
@@ -594,24 +582,18 @@ class PPOAgent:
                rewards: torch.Tensor,
                dones: List[bool],
                train_iters: int = 5):
-        """
-        PPO 更新（基于 Workflow 序列轨迹）。
-        
-        重要：输入的轨迹是 workflow 序列，不是时间序列。
-        - 列表长度 = workflow 总数（可能包含多个 episode 的 workflow）
-        - vn_list[i] = 第 i 个 workflow 的 VN 图
-        - rewards[i] = 第 i 个 workflow 处理后的奖励
-        - dones[i] = 第 i 个 workflow 是否是某个 episode 的最后一个
-        
-        Args:
-            vn_list: workflow VN 图列表，长度 = workflow 总数
-            sn_list: SN 状态列表，长度 = workflow 总数
-            mappings: 节点映射列表，长度 = workflow 总数
-            logprobs_old: 旧策略的 log 概率，shape=[workflow 总数]
-            values_old: 旧策略的状态价值，shape=[workflow 总数]
-            rewards: 奖励序列，shape=[workflow 总数]
-            dones: 结束标记列表，长度 = workflow 总数
-            train_iters: PPO 更新迭代次数
+    """
+    PPO 更新
+    
+    Args:
+        vn_list: VN 图列表
+        sn_list: SN 状态列表
+        mappings: 节点映射列表
+        logprobs_old: 旧策略的 log 概率
+        values_old: 旧策略的状态价值
+        rewards: 奖励序列
+        dones: 结束标记列表
+        train_iters: PPO 更新迭代次数
         """
         # 确保values_old是1维tensor
         if values_old.dim() > 1:
@@ -689,11 +671,6 @@ class PPOAgent:
             print(f"策略损失: {loss_pi.item():.4f}, 价值损失: {loss_v.item():.4f}")
 
 
-# 已废弃：_rebuild_sn_state_with_bias 函数
-# 现在bias的应用在PPOAgent._apply_bias_to_sn_features()中完成，只在策略网络前向传播时临时使用
-# 这样可以避免修改sn_state对象，更清晰地表达"只在神经网络输入时临时使用bias"的意图
-
-
 def run_ppo_episode(
     agent: PPOAgent,
     sn_topology_path: str,
@@ -707,34 +684,22 @@ def run_ppo_episode(
     episode_seed: int = None,
     verbose: bool = False):
     """
-    运行一个PPO episode（基于 Workflow 序列）：
-    
-    【时间驱动】：
-    - 按时间单位推进，泊松到达控制任务生成
-    - 指数分布控制任务生存时间
-    - 收集 max_arrived_tasks 个任务到达后结束
-    
-    【Workflow 序列轨迹】（重要）：
-    - PPO 更新使用的轨迹是 workflow 序列，而不是时间序列
-    - 轨迹长度 = 到达的 workflow 数量（≤ max_arrived_tasks）
-    - 只在 workflow 到达时记录轨迹，无任务到达的时间步不记录
-    - 确保 PPO 学习的是"如何处理 workflow 序列"而不是"如何处理时间序列"
+    运行一个PPO episode
     
     Args:
-        agent: PPO智能体（可在多个episode间共享）
+        agent: PPO智能体
         sn_topology_path: SN拓扑文件路径
         workflow_types: workflow类型字典
         device: 设备
         arrival_rate: 泊松到达率
         mean_lifetime: 平均生存时间
-        max_arrived_tasks: 最大到达任务数（= workflow 序列长度）
-        max_time_steps: 最大时间步数（用于防止死循环）
-        update_after_episode: 如果True，episode结束后立即PPO更新；
-                            如果False，只收集数据不更新（用于批量更新）
-        episode_seed: episode随机种子（None则使用默认）
+        max_arrived_tasks: 最大到达任务数
+        max_time_steps: 最大时间步数
+        update_after_episode: 是否在episode结束后立即更新
+        episode_seed: episode随机种子
     
     Returns:
-        episode统计数据 + workflow序列轨迹数据（如果update_after_episode=False）
+        episode统计数据
     """
 
     # 构建环境与任务生成器
@@ -757,50 +722,32 @@ def run_ppo_episode(
         sn_capacity_for_norm=sn_capacity
     )
 
-    # ========== Workflow 序列轨迹（用于 PPO 更新）==========
-    # 重要：轨迹只记录 workflow 到达的时刻，不记录无任务到达的时间步
-    # 轨迹长度 = 到达的 workflow 数量（max_arrived_tasks）
-    # PPO 更新基于 workflow 序列，而不是时间序列
-    traj_vn = []      # Workflow 序列：每个元素是一个到达的 VN 图
-    traj_sn = []      # SN 状态序列：每个 workflow 到达时的 SN 状态
-    traj_map = []     # 映射序列：每个 workflow 的节点映射
-    traj_logp = []    # 动作 log 概率序列
-    traj_val = []     # 状态价值序列
-    traj_rew = []     # 奖励序列：每个 workflow 放置后的 r_t
-    traj_done = []    # 结束标记序列
+    traj_vn = []
+    traj_sn = []
+    traj_map = []
+    traj_logp = []
+    traj_val = []
+    traj_rew = []
+    traj_done = []
     
     time_step = 0
     while time_step < max_time_steps and not env.is_done():
-        # 1) 推进时间，移除到期任务
         env.step_time(time_delta=1.0)
-        
-        # 2) 检查是否有任务到达
         has_arrival = wf_gen.check_arrival(time_unit=1.0)
         
         if has_arrival and not env.is_done():
-            # 任务到达
             wf_type = wf_gen.sample_workflow_type()
             vn = wf_gen.load_workflow_graph(wf_type)
             lifetime = wf_gen.sample_lifetime()
             task_id = env.arrived_count
             env.arrived_count += 1
             
-            # 获取当前SN状态（包含剩余资源）
             sn_state = env.get_sn_state()
-            
-            # 调用策略网络生成放置方案（一次性采样，传入env以使用新的放置策略）
-            # 注意：bias会在agent.act()内部临时应用到SN特征上，不会修改sn_state
-            # act()内部会打印概率矩阵、优先级列表和每次放置的映射（如果verbose=True）
-            # 使用episode_seed作为动作采样随机数种子，使每个episode的采样结果不同（但workflow轨迹相同）
             mapping, logprob, value, sn_with_bias = agent.act(vn, sn_state, env=env, k_hop=1, verbose=verbose, seed=episode_seed)
             
-            # 检查是否成功放置（所有节点都已映射，资源已在act()中扣减）
             if len(mapping) == vn.x.size(0):
-                # 所有节点都已放置，资源已在act()中扣减，只需要添加到存活集合
                 vn_paths = env._compute_paths_and_bw_demand(vn, mapping)
                 if vn_paths is None:
-                    # 路径不存在，需要回滚资源
-                    # 根据mapping构建回滚历史
                     rollback_history = [(sn_id, vn_idx) for vn_idx, sn_id in mapping.items()]
                     agent._rollback_resource_deductions(env, rollback_history, vn, verbose=False)
                     success, r_t = False, env.penalty
@@ -817,39 +764,31 @@ def run_ppo_episode(
                     r_t = env._compute_rt()
                     success = True
             else:
-                # 部分节点未放置，资源已在act()中回滚，返回失败
                 success, r_t = False, env.penalty
             
-            # 打印放置结果（如果verbose=True）
             if verbose:
                 status = "✓成功" if success else "✗失败"
                 print(f"\n【放置结果】任务 #{task_id}: {status}, r_t={r_t:.3f}")
                 print(f"【存活任务数】当前底层网络中存活的任务总数: {len(env.active_workflows)}")
                 print("="*60)
             
-            # 记录环境轨迹（包含时间信息，用于统计）
             env.traj.append({
                 'time': env.current_time,
                 'task_id': task_id,
                 'success': success,
                 'r_t': r_t,
-                'active_tasks': len(env.active_workflows),  # 记录当前存活任务数量
+                'active_tasks': len(env.active_workflows),
                 'done': False,
             })
             
-            # ========== 记录 Workflow 序列轨迹（用于 PPO 更新）==========
-            # 重要：只在 workflow 到达时记录，轨迹索引 = workflow 序号
-            # 这确保了 PPO 更新基于 workflow 序列，而不是时间序列
-            traj_vn.append(vn)        # 第 task_id 个 workflow 的 VN 图
-            traj_sn.append(sn_with_bias)  # 第 task_id 个 workflow 到达时的 SN 状态
-            traj_map.append(mapping)  # 第 task_id 个 workflow 的节点映射
-            traj_logp.append(logprob) # 第 task_id 个 workflow 的动作 log 概率
-            traj_val.append(value)    # 第 task_id 个 workflow 到达时的状态价值
-            traj_rew.append(torch.tensor(r_t, dtype=torch.float, device=agent.device))  # 第 task_id 个 workflow 放置后的奖励
-            traj_done.append(False)   # 第 task_id 个 workflow 是否是最后一个
+            traj_vn.append(vn)
+            traj_sn.append(sn_with_bias)
+            traj_map.append(mapping)
+            traj_logp.append(logprob)
+            traj_val.append(value)
+            traj_rew.append(torch.tensor(r_t, dtype=torch.float, device=agent.device))
+            traj_done.append(False)
         else:
-            # 无 workflow 到达，仅推进时间
-            # 重要：不记录到 PPO 训练轨迹中，保持轨迹长度 = workflow 数量
             r_t = env._compute_rt()
             env.traj.append({
                 'time': env.current_time,
@@ -858,8 +797,6 @@ def run_ppo_episode(
                 'r_t': r_t,
                 'done': False,
             })
-            # 注意：这里不添加任何元素到 traj_vn, traj_sn 等列表
-            # 确保 PPO 更新的轨迹长度 = workflow 数量，而非时间步数
         
         time_step += 1
     
@@ -899,11 +836,6 @@ def run_ppo_episode(
     
     # Episode完成（不打印，精简输出）
     
-    # ========== PPO 更新（基于 Workflow 序列轨迹）==========
-    # 重要：更新使用的是 workflow 序列轨迹，而不是时间序列轨迹
-    # - 轨迹长度 = 到达的 workflow 数量（len(traj_logp) = env.arrived_count）
-    # - 每个样本对应一个 workflow 的处理过程
-    # - GAE 计算基于 workflow 序列的时序关系（处理完第 i 个 workflow 后处理第 i+1 个）
     if update_after_episode and len(traj_logp) > 0:
         logprobs_old = torch.stack(traj_logp)  # [num_workflows]
         values_old = torch.stack(traj_val)     # [num_workflows]
@@ -949,31 +881,8 @@ def run_ppo_batch_training(
     num_updates: int = 10,
     verbose: bool = False):
     """
-    批量PPO训练（基于 Workflow 序列）：收集多个episode的workflow序列数据后再更新。
-    
-    【Workflow 序列训练】（重要）：
-    - PPO 更新基于 workflow 序列轨迹，而不是时间序列轨迹
-    - 每个 episode 生成一个 workflow 序列（长度 ≤ max_arrived_tasks）
-    - 批量更新时合并多个 episode 的 workflow 序列
-    - 总样本数 = 所有 episode 中到达的 workflow 总数
-    
-    Args:
-        sn_topology_path: SN拓扑文件路径
-        workflow_types: workflow类型字典
-        policy_ckpt: 预训练策略网络路径（可选）
-        value_ckpt: 预训练价值网络路径（可选）
-        device: 设备
-        arrival_rate: 泊松到达率
-        mean_lifetime: 平均生存时间
-        max_arrived_tasks: 每个episode最大到达任务数（= workflow 序列长度）
-        max_time_steps: 每个episode最大时间步数（用于防止死循环）
-        num_episodes_per_update: 收集多少个episode后更新一次（批量大小）
-        train_iters: 每次更新的迭代次数
-        num_updates: 总共执行多少次批量更新
-    
-    Returns:
-        training_stats: 训练统计信息列表
-        agent: 训练后的PPOAgent对象
+    批量PPO训练
+
     """
     # 初始化策略和价值网络
     print(f"\n【初始化】创建策略网络和价值网络...")
@@ -1127,13 +1036,7 @@ def save_training_results(training_stats: List[Dict],
                           run_dir: str = None):
     """
     保存训练结果、模型参数和可视化图表
-    
-    Args:
-        training_stats: 训练统计信息列表
-        policy: 策略网络
-        value_net: 价值网络
-        output_dir: 输出基础目录（如果为None，使用相对于脚本目录的默认路径）
-        run_dir: 运行目录（如果指定，直接使用该目录；否则在output_dir下创建新的run_xxxxxx目录）
+
     """
     # 如果指定了run_dir，直接使用
     if run_dir is not None:
@@ -1321,14 +1224,7 @@ def save_training_results(training_stats: List[Dict],
 def get_model_paths(script_dir: str, use_finetuning_model: bool = False) -> Tuple[Optional[str], Optional[str]]:
     """
     根据 use_finetuning_model 参数获取模型路径
-    
-    Args:
-        script_dir: 脚本所在目录
-        use_finetuning_model: 设置为 True 使用微调后的最新模型，False 使用预训练模型（默认）
-        
-    Returns:
-        policy_ckpt_path: 策略网络路径
-        value_ckpt_path: 价值网络路径
+
     """
     if use_finetuning_model:
         # 使用 finetuning_output_4 目录下的最新模型（微调后的模型）
@@ -1383,33 +1279,6 @@ if __name__ == '__main__':
             'workflow1': os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
             # 可扩展：'workflow2': os.path.join(script_dir, 'workflow_topo', 'workflow2_topo.json'), ...
         }
-    
-        # ========== 方式1：单episode更新（每个episode结束后立即更新）==========
-        # print("="*60)
-        # print("方式1: 单episode更新（每个episode结束后立即更新）")
-        # print("="*60)
-        # policy1 = SimuVNE()
-        # value_net1 = ValueNet()
-        # agent1 = PPOAgent(policy1, value_net1, device='cpu')
-        # 
-        # stats1 = run_ppo_episode(
-        #     agent=agent1,
-        #     sn_topology_path=sn_path,
-        #     workflow_types=workflow_types,
-        #     device='cpu',
-        #     arrival_rate=0.05,
-        #     mean_lifetime=10.0,
-        #     max_arrived_tasks=20,
-        #     max_time_steps=1000,
-        #     update_after_episode=True  # 立即更新
-        # )
-        # print('单episode更新统计:', stats1)
-        
-        # ========== 方式2：批量更新（收集多个episode后统一更新）==========
-        # 不打印标题，精简输出
-        
-        # ========== 模型路径选择（通过参数控制）==========
-        # 设置为 True 使用微调后的最新模型，False 使用预训练模型（默认）
         USE_FINETUNING_MODEL = False
         
         # 获取模型路径

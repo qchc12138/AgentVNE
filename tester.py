@@ -52,15 +52,14 @@ def resolve_strategies(names: Optional[Iterable[str]]) -> Dict[str, StrategyFact
     base_registry: Dict[str, StrategyFactory] = {
         "null": lambda: NullPlacementStrategy(),
         "ga": lambda: GAPlacementStrategy(),
-        "gal-vne": lambda: GALPlacementStrategy(),  # 原 gal，改名为 GAL-VNE（小写）
-        "gal": lambda: GALPlacementStrategy(),  # 向后兼容别名
+        "gal-vne": lambda: GALPlacementStrategy(),
+        "gal": lambda: GALPlacementStrategy(),
         # "gal_pn": lambda: GALPNPlacementStrategy(),  # 已注释
-        "greedy": lambda: GALSNPlacementStrategy(),  # 原 gal_sn，改名为 greedy
-        "gal_sn": lambda: GALSNPlacementStrategy(),  # 向后兼容别名
-        "ft1": lambda: FT1PlacementStrategy(),  # FineTuned
-        "finetuned": lambda: FT1PlacementStrategy(),  # FineTuned 别名
-        "ft_n": lambda: FTNPlacementStrategy(),  # Pretrain
-        "pretrain": lambda: FTNPlacementStrategy(),  # Pretrain 别名
+        "greedy": lambda: GALSNPlacementStrategy(),
+        "ft1": lambda: FT1PlacementStrategy(),
+        "finetuned": lambda: FT1PlacementStrategy(),
+        "ft_n": lambda: FTNPlacementStrategy(),
+        "pretrain": lambda: FTNPlacementStrategy(),
     }
     finetuned_registry = get_finetuned_tester_registry()
     full_registry = dict(base_registry)
@@ -385,11 +384,11 @@ def main(argv: Optional[List[str]] = None) -> None:
     # 默认测试所有策略（不包括 null，因为它是测试用的占位策略）
     manual_strategies = [
         "ga",           # 遗传算法
-        "gal-vne",      # 贪心分配算法（基于 noderank），原 gal（注意：使用小写）
+        "gal-vne",
         # "gal_pn",     # 贪心分配算法（逐节点），已注释
-        "greedy",       # 贪心分配算法（SN 排序），原 gal_sn
-        "pretrain",     # 预训练模型（别名：ft_n）
-        "finetuned",    # 微调模型（别名：ft1）
+        "greedy",
+        "pretrain",
+        "finetuned",
     ]
     
     # 默认测试参数配置

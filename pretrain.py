@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 """
 预训练脚本
-使用预先生成的数据集对 SimuVNE 模型进行 BCEWithLogitsLoss 预训练。
-
-使用前请先运行 dataset_generate.py 生成预训练数据集。
-
-同时验证给模型的图输入（节点特征与 edge_index）是否正确。
 """
 
 import torch
@@ -59,18 +54,13 @@ class PretrainTrainer:
         # 创建输出目录
         os.makedirs(output_dir, exist_ok=True)
         
-        # 损失函数：KL散度 + MSE
         def kl_mse_loss(output, label):
             eps = 1e-8
-            # KL(Q||P) 按行求和后取平均（output/label 为每行概率分布）
             p = torch.clamp(output, min=eps)
             q = torch.clamp(label,  min=eps)
             kl_row = torch.sum(q * (torch.log(q) - torch.log(p)), dim=1)
             kl = kl_row.mean()
-            # MSE 元素级平均
             mse = torch.mean((output - label) ** 2)
-            # return kl + mse*100
-            # return kl
             return mse
         self.criterion = kl_mse_loss
         
@@ -121,29 +111,21 @@ class PretrainTrainer:
             for i in range(batch_size):
                 workflow_graph = batch['workflow_graphs'][i].to(self.device)
                 substrate_graph = batch['substrate_graphs'][i].to(self.device)
-                label = batch['labels'][i].to(self.device)  # (N1, N2)
+                label = batch['labels'][i].to(self.device)
                 
-                # 前向传播
-                output = self.model(workflow_graph, substrate_graph)  # (N1, N2)
-                
-                # 计算损失
+                output = self.model(workflow_graph, substrate_graph)
                 loss = self.criterion(output, label)
                 batch_loss += loss
             
             # 平均损失
             batch_loss = batch_loss / batch_size
             
-            # 反向传播
             self.optimizer.zero_grad()
             batch_loss.backward()
             self.optimizer.step()
             
             total_loss += batch_loss.item()
             num_batches += 1
-            
-            # 打印进度
-            # if (batch_idx + 1) % 10 == 0:
-            #     tqdm.write(f"  Train batch {batch_idx + 1}/{len(self.train_loader)} | Loss: {batch_loss.item():.6f}")
         
         avg_loss = total_loss / num_batches
         return avg_loss
@@ -218,23 +200,17 @@ class PretrainTrainer:
             print(f"\nEpoch [{epoch + 1}/{num_epochs}]")
             print("-" * 60)
             
-            # 训练
             train_loss = self.train_epoch(epoch)
             self.train_losses.append(train_loss)
             
-            # 验证（可选）
             val_loss = self.validate(epoch)
             if val_loss is not None:
                 self.val_losses.append(val_loss)
             
-            # 更新学习率
             self.scheduler.step()
             current_lr = self.optimizer.param_groups[0]['lr']
-            
-            # 计算epoch耗时
             epoch_time = time.time() - epoch_start_time
             
-            # 打印统计信息（仅训练损失）
             print(f"\nEpoch [{epoch + 1}/{num_epochs}] 完成:")
             print(f"  训练损失: {train_loss:.6f}")
             print(f"  学习率: {current_lr:.6f}")

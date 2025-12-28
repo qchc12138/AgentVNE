@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-为 SN 拓扑添加偏置字段 bias_cpu / bias_bandwidth。
-规则：
-- max_cpu = 所有节点 cpu 最大值
-- 若 node.id == constraint_node: bias_cpu = bias * max_cpu
-- 否则 bias_cpu = 0
-- bias_bandwidth = comm_bandwidth
-默认读写同目录下 SN_topology.json -> SN_topology_2.json
-"""
+"""为 SN 拓扑添加偏置字段 bias_cpu / bias_bandwidth"""
 
 import argparse
 import json

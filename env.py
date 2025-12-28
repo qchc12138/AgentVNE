@@ -233,10 +233,7 @@ class SimuVNEEnv:
             return None
 
     def _check_node_feasible(self, vn: Data, mapping: Dict[int, int]) -> bool:
-        """
-        按 VN 节点需求从高到低的顺序检查资源可行性
-        """
-        # 计算每个VN节点的绝对需求和优先级（归一化需求之和）
+        """按 VN 节点需求从高到低的顺序检查资源可行性"""
         vn_demands = []
         for vn_node, sn_node in mapping.items():
             feats = vn.x[vn_node]
@@ -246,10 +243,7 @@ class SimuVNEEnv:
             disk = float(feats[2].item()) * (self._sn_max_capacity['disk_max'] + 1e-8)
             vn_demands.append((norm_sum, vn_node, sn_node, cpu, mem, disk))
         
-        # 按归一化需求从高到低排序
         vn_demands.sort(key=lambda x: x[0], reverse=True)
-        
-        # 创建临时的SN剩余资源副本
         temp_sn_res = {}
         for n in self.G_sn.nodes:
             nd = self.G_sn.nodes[n]

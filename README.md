@@ -1,69 +1,62 @@
 # AgentVNE
 
-Layer2——基于强化学习和图神经网络的虚拟网络嵌入（Virtual Network Embedding）系统
+基于深度强化学习和图神经网络的虚拟网络嵌入（Virtual Network Embedding）系统
 
-## 📋 项目简介
+## 项目简介
 
-AgentVNE 是一个使用深度强化学习解决虚拟网络嵌入问题的系统。该系统通过预训练和微调两阶段训练，学习如何将虚拟网络（VN）节点和链路高效地映射到底层网络（SN）上，以优化资源利用率和接受率。
+AgentVNE 使用两阶段训练（预训练 + PPO微调）解决虚拟网络嵌入问题，通过图神经网络（GCN）编码网络拓扑特征，学习将虚拟网络节点和链路高效映射到底层网络上。
 
-### 主要特性
+## 系统架构
+
+AgentVNE 采用分层架构设计，第一层为 **LLM-based Semantic Perception & Constraint Resolution（基于LLM的语义感知与约束解析）**。
+
+### 第一层：LLM-based Semantic Perception & Constraint Resolution
+
+第一层通过大语言模型（LLM）进行语义感知和约束解析，实现智能节点匹配与资源增强。
+
+**核心功能：**
+- 🔍 **语义感知**：分析虚拟节点(VN)的提示词，理解节点的语义需求和功能特性
+- 🎯 **约束识别**：自动识别节点所需的特殊执行环境（如PCI DSS安全环境、GPU计算环境、摄像头硬件等）
+- 🔗 **智能匹配**：将需要特殊环境的VN节点匹配到合适的基础网络节点(SN)
+- 📊 **资源增强**：为后续的嵌入决策提供语义层面的约束和偏置信息
+
+**实现模块：** `LLM_resource_augmentation/node_optimizer/`
+
+该模块通过LLM分析工作流节点的提示词，判断节点是否需要特殊执行环境，并自动匹配到合适的SN节点，为第二层的嵌入决策提供语义约束。
+
+**使用示例：**
+```bash
+cd LLM_resource_augmentation/node_optimizer
+uv run run_optimizer.py
+```
+
+## 核心特性
 
 - 🎯 **两阶段训练**：预训练 + PPO微调
-- 🧠 **图神经网络**：使用GCN编码网络拓扑特征
-- 🔄 **强化学习**：PPO算法进行策略优化
-- 📊 **多策略支持**：包含贪心、遗传算法等基线方法
-- 🔧 **灵活配置**：支持多种网络拓扑和工作流类型
+- 🧠 **图神经网络**：GCN编码器 + 自注意力机制
+- 🔄 **强化学习**：PPO算法优化策略
+- 📊 **多策略支持**：贪心、遗传算法、NodeRank等基线方法
 
-## 🏗️ 项目结构
-
-```
-agentvne/
-├── model.py                 # SimuVNE模型定义（策略网络）
-├── model__sigmoid.py        # 带Sigmoid激活的模型变体
-├── env.py                   # 环境定义（SimuVNEEnv, WorkflowGenerator）
-├── pretrain.py              # 预训练脚本
-├── fine_tuning.py           # PPO微调脚本
-├── dataset_generate_1.py    # 数据集生成脚本
-├── tester.py                # 测试脚本（支持多种策略）
-├── config.json              # 配置文件
-├── environment.yml          # Conda环境配置
-├── baselines/               # 基线方法
-│   ├── greedy.py           # 贪心算法
-│   └── genetic_algorithm/  # 遗传算法
-├── topo/                    # 网络拓扑文件
-├── workflow_topo/           # 工作流拓扑文件
-├── pretrain_data/           # 预训练数据集
-├── pretrain_outputs/        # 预训练模型输出
-└── finetuning_output/       # 微调模型输出
-```
-
-## 🚀 快速开始
+## 快速开始
 
 ### 环境配置
 
-1. **使用Conda创建环境**：
 ```bash
 conda env create -f environment.yml
 conda activate AgentVNE
 ```
 
-2. **手动安装依赖**（如果Conda环境创建失败）：
-```bash
-pip install torch torch-geometric networkx numpy matplotlib tqdm tensorboard
-```
-
 ### 数据准备
 
-1. **准备网络拓扑文件**：
-   - 将SN拓扑文件放在 `topo/` 目录下
-   - 将Workflow拓扑文件放在 `workflow_topo/` 目录下
+1. 将SN拓扑文件放在 `topo/` 目录
+2. 将Workflow拓扑文件放在 `Workflow_topo/` 目录
+3. 生成预训练数据集：
 
-2. **生成预训练数据集**：
 ```bash
 python dataset_generate_1.py \
     --sn_topo topo/SN_topology.json \
-    --workflow_topo workflow_topo/workflow1_topo.json \
-    --workflow_noderank workflow_topo/workflow1_noderank.json \
+    --workflow_topo Workflow_topo/workflow1_topo.json \
+    --workflow_noderank Workflow_topo/workflow1_noderank.json \
     --output pretrain_data/pretrain_dataset.pt \
     --workflows_per_episode 10 \
     --num_episodes 50
@@ -71,10 +64,7 @@ python dataset_generate_1.py \
 
 ### 训练流程
 
-#### 1. 预训练阶段
-
-使用生成的数据集对模型进行预训练：
-
+**1. 预训练**
 ```bash
 python pretrain.py \
     --data_path pretrain_data/pretrain_dataset.pt \
@@ -84,189 +74,70 @@ python pretrain.py \
     --learning_rate 0.001
 ```
 
-#### 2. 微调阶段
-
-使用PPO算法在真实环境中进行强化学习微调：
-
+**2. 微调**
 ```bash
 python fine_tuning.py \
     --pretrain_model pretrain_outputs/checkpoint_latest.pt \
     --sn_topology topo/SN_topology.json \
-    --workflow_types workflow_topo/workflow1_topo.json \
+    --workflow_types Workflow_topo/workflow1_topo.json \
     --output_dir finetuning_output \
     --num_episodes 1000 \
     --max_arrived_tasks 100
 ```
 
-### 测试评估
-
-运行测试脚本评估不同策略的性能：
-
+**3. 测试评估**
 ```bash
 python tester.py \
     --sn_topology topo/SN_topology.json \
-    --workflow_types workflow_topo/workflow1_topo.json \
-    --strategies greedy,ga,ft1 \
-    --num_tests 10
+    --workflow workflow1=Workflow_topo/workflow1_topo.json \
+    --strategy ga --strategy greedy --strategy pretrain --strategy finetuned \
+    --parameter arrival_rate=0.25,mean_lifetime=40,max_time_steps=11000,seed=42 \
+    --plot
 ```
 
-## 📖 详细说明
+## 项目结构
 
-### 模型架构
+```
+agentvne/
+├── model.py                    # SimuVNE模型（策略网络）
+├── env.py                      # 环境定义（SimuVNEEnv）
+├── pretrain.py                 # 预训练脚本
+├── fine_tuning.py              # PPO微调脚本
+├── dataset_generate_1.py       # 数据集生成
+├── tester.py                   # 多策略测试脚本
+├── LLM_resource_augmentation/  # 第一层：LLM语义感知与约束解析
+│   └── node_optimizer/         # 节点优化器（VN-SN智能匹配）
+├── baselines/                  # 基线方法
+├── topo/                       # SN拓扑文件
+├── Workflow_topo/              # Workflow拓扑文件
+├── pretrain_data/              # 预训练数据集
+├── pretrain_outputs/           # 预训练模型输出
+└── finetuning_output/          # 微调模型输出
+```
 
-**SimuVNE模型**包含以下组件：
+## 模型架构
+
 - **GCN编码器**：对VN和SN图进行特征编码
 - **自注意力机制**：增强节点特征表示
 - **神经张量网络**：计算VN节点到SN节点的匹配概率
 - **输出层**：生成概率矩阵 [N_v, N_s]
 
-### 环境说明
+## 支持的策略
 
-**SimuVNEEnv** 环境特点：
-- 支持多种Workflow类型
-- 泊松到达过程
-- 指数生存时间分布
-- 资源约束检查（CPU、内存、磁盘、带宽）
-- 路径计算和带宽分配
+- `ga`: 遗传算法
+- `gal-vne`: 基于NodeRank的贪心算法
+- `greedy`: 基于SN排序的贪心算法
+- `pretrain`: 预训练模型（ft_n）
+- `finetuned`: 微调模型（ft1）
 
-### 训练策略
+## 配置说明
 
-1. **预训练**：
-   - 使用KL散度 + MSE损失
-   - 学习NodeRank标签分布
-   - 批量训练，支持验证集
+主要配置在 `config.json` 中，包括模型维度、训练参数等。命令行参数支持灵活配置网络拓扑、工作流类型、训练参数等。
 
-2. **微调（PPO）**：
-   - 策略网络：SimuVNE模型
-   - 价值网络：独立的GCN编码器
-   - 奖励函数：基于接受率和资源利用率
-   - 支持经验回放和批量更新
+## 许可证
 
-### 基线方法
-
-- **Greedy**：贪心算法，优先选择资源充足的节点
-- **Genetic Algorithm (GA)**：遗传算法优化
-- **NodeRank-based**：基于节点重要性的启发式方法
-
-## ⚙️ 配置说明
-
-### config.json
-
-```json
-{
-  "model": {
-    "input_dim": 6,
-    "hidden_dim": 64,
-    "hist_dim": 32
-  },
-  "training": {
-    "learning_rate": 0.001,
-    "weight_decay": 1e-5,
-    "batch_size": 16,
-    "num_epochs": 100
-  }
-}
-```
-
-### 命令行参数
-
-主要脚本支持的命令行参数：
-
-**dataset_generate_1.py**:
-- `--sn_topo`: SN拓扑文件路径
-- `--workflow_topo`: Workflow拓扑文件路径
-- `--workflow_noderank`: Workflow NodeRank文件路径
-- `--output`: 输出数据集路径
-- `--workflows_per_episode`: 每个episode的workflow数量
-- `--num_episodes`: Episode数量
-
-**pretrain.py**:
-- `--data_path`: 预训练数据集路径
-- `--output_dir`: 模型输出目录
-- `--batch_size`: 批次大小
-- `--num_epochs`: 训练轮数
-- `--learning_rate`: 学习率
-
-**fine_tuning.py**:
-- `--pretrain_model`: 预训练模型路径
-- `--sn_topology`: SN拓扑文件路径
-- `--workflow_types`: Workflow类型字典
-- `--output_dir`: 输出目录
-- `--num_episodes`: 训练episode数
-- `--max_arrived_tasks`: 最大到达任务数
-
-## 📊 输出说明
-
-### 预训练输出
-
-- `checkpoint_latest.pt`: 最新模型检查点
-- `checkpoint_best.pt`: 最佳验证性能模型
-- `training_log.txt`: 训练日志
-- TensorBoard日志（如果启用）
-
-### 微调输出
-
-- `policy_network_latest.pth`: 最新策略网络
-- `value_network_latest.pth`: 最新价值网络
-- `training_log.txt`: 训练日志
-- `reward_history.png`: 奖励曲线图
-- `acceptance_rate_history.png`: 接受率曲线图
-
-## 🔬 实验建议
-
-1. **数据生成**：
-   - 根据实际网络规模调整 `workflows_per_episode`
-   - 确保数据集足够大以覆盖各种场景
-
-2. **预训练**：
-   - 监控验证损失，避免过拟合
-   - 调整学习率和批次大小
-
-3. **微调**：
-   - 根据环境动态调整PPO超参数
-   - 监控接受率和奖励趋势
-   - 使用不同的随机种子进行多次实验
-
-## 🐛 常见问题
-
-1. **CUDA内存不足**：
-   - 减小批次大小
-   - 使用CPU训练（`device='cpu'`）
-
-2. **导入错误**：
-   - 确保已安装所有依赖
-   - 检查Python版本（推荐3.8+）
-
-3. **路径问题**：
-   - 使用绝对路径或相对于脚本目录的路径
-   - 检查文件是否存在
-
-## 📝 引用
-
-如果使用本项目，请引用相关论文：
-
-```bibtex
-@article{agentvne,
-  title={AgentVNE: Virtual Network Embedding with Deep Reinforcement Learning},
-  author={Your Name},
-  journal={Journal Name},
-  year={2024}
-}
-```
-
-## 📄 许可证
-
-本项目采用 MIT 许可证。
-
-## 👥 贡献
-
-欢迎提交Issue和Pull Request！
-
-## 📧 联系方式
-
-如有问题，请通过Issue联系。
+MIT License
 
 ---
 
-**注意**：本项目仍在积极开发中，API可能会发生变化。
-
+**注意：本项目仍在积极开发中，API可能会发生变化。**
