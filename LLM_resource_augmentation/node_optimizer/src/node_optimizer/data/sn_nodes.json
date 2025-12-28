@@ -1,0 +1,16 @@
+{
+  "special_environment_nodes": [
+    {
+      "node_id": 4,
+      "node_name": "SN4",
+      "special_environment_type": "camera_hardware_access",
+      "description": "车载摄像头节点 - 边缘计算设备，配备摄像头硬件接口，可进行图像采集和实时视频处理"
+    },
+    {
+      "node_id": 5,
+      "node_name": "SN5",
+      "special_environment_type": "secure_payment_environment",
+      "description": "安全支付节点 - 具有PCI DSS认证的金融级安全服务器，配备硬件加密模块(HSM)和安全隔离环境，可执行支付、转账等敏感金融操作"
+    }
+  ]
+}
