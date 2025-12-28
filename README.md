@@ -1,56 +1,83 @@
 # AgentVNE
 
-基于深度强化学习和图神经网络的虚拟网络嵌入（Virtual Network Embedding）系统
+AgentVNE: LLM-Augmented Graph Reinforcement Learning for Affinity-Aware Multi-Agent Placement in Edge Agentic AI
 
-## 项目简介
+## Project Overview
 
-AgentVNE 使用两阶段训练（预训练 + PPO微调）解决虚拟网络嵌入问题，通过图神经网络（GCN）编码网络拓扑特征，学习将虚拟网络节点和链路高效映射到底层网络上。
+AgentVNE is a virtual network embedding framework designed for agentic edge computing scenarios. It employs a dual-layer architecture that combines semantic perception with graph similarity learning to address the deployment challenges of dynamic workflows on heterogeneous edge infrastructure.
 
-## 系统架构
+**Key Advantages:**
+- **Semantic Perception**: Identifies implicit semantic constraints of workflow nodes through LLM
+- **Graph Similarity Learning**: Pre-training + PPO fine-tuning strategy to precisely capture topological similarities
+- **Dynamic Adaptation**: Supports real-time workflow arrivals and dynamic resource changes
+- **Performance Improvement**: Reduces communication latency to less than 40% of baselines and improves acceptance rate by 5%-10%
 
-AgentVNE 采用分层架构设计，第一层为 **LLM-based Semantic Perception & Constraint Resolution（基于LLM的语义感知与约束解析）**。
+## System Architecture
 
-### 第一层：LLM-based Semantic Perception & Constraint Resolution
+AgentVNE adopts a dual-layer architecture that combines semantic perception with topological reasoning:
 
-第一层通过大语言模型（LLM）进行语义感知和约束解析，实现智能节点匹配与资源增强。
+### Layer 1: LLM-based Semantic Perception & Constraint Resolution
 
-**核心功能：**
-- 🔍 **语义感知**：分析虚拟节点(VN)的提示词，理解节点的语义需求和功能特性
-- 🎯 **约束识别**：自动识别节点所需的特殊执行环境（如PCI DSS安全环境、GPU计算环境、摄像头硬件等）
-- 🔗 **智能匹配**：将需要特殊环境的VN节点匹配到合适的基础网络节点(SN)
-- 📊 **资源增强**：为后续的嵌入决策提供语义层面的约束和偏置信息
+Performs semantic perception and constraint resolution through large language models, enabling intelligent node matching and resource augmentation.
 
-**实现模块：** `LLM_resource_augmentation/node_optimizer/`
+**Core Functions:**
+- 🔍 **Semantic Perception**: Analyzes prompts of virtual nodes (VN) to understand semantic requirements and functional characteristics
+- 🎯 **Constraint Identification**: Automatically identifies special execution environments required by nodes (e.g., PCI DSS security environment, GPU computing environment, camera hardware, etc.)
+- 🔗 **Intelligent Matching**: Matches VN nodes requiring special environments to appropriate substrate network (SN) nodes
+- 📊 **Resource Augmentation**: Provides semantic-level constraints and bias information for subsequent embedding decisions
 
-该模块通过LLM分析工作流节点的提示词，判断节点是否需要特殊执行环境，并自动匹配到合适的SN节点，为第二层的嵌入决策提供语义约束。
+**Implementation Module:** `LLM_resource_augmentation/node_optimizer/`
 
-**使用示例：**
+This module uses LLM to analyze workflow node prompts, determines whether nodes require special execution environments, and automatically matches them to appropriate SN nodes, providing semantic constraints for Layer 2 embedding decisions.
+
+**Usage Example:**
 ```bash
 cd LLM_resource_augmentation/node_optimizer
 uv run run_optimizer.py
 ```
 
-## 核心特性
+### Layer 2: Graph Similarity Deep Embedding & Policy Optimization
 
-- 🎯 **两阶段训练**：预训练 + PPO微调
-- 🧠 **图神经网络**：GCN编码器 + 自注意力机制
-- 🔄 **强化学习**：PPO算法优化策略
-- 📊 **多策略支持**：贪心、遗传算法、NodeRank等基线方法
+Deep embedding and policy optimization layer based on graph neural networks and reinforcement learning.
 
-## 快速开始
+**Core Functions:**
+- 🧠 **Graph Encoding**: Uses GCN encoders to process VN and SN graphs separately, extracting node features
+- 🔄 **Transformer Enhancement**: Enhances node feature representations through Transformer Encoder
+- 🎯 **Similarity Computation**: Uses Neural Tensor Network (NTN) to compute matching probabilities between VN nodes and SN nodes
+- 🚀 **PPO Optimization**: Fine-tunes policy network in real environments using Proximal Policy Optimization (PPO) algorithm
 
-### 环境配置
+**Training Pipeline:**
+1. **Pre-training Phase**: Supervised learning using NodeRank labels to learn graph similarity representations
+2. **Fine-tuning Phase**: Optimizes policy using PPO algorithm in dynamic environments to maximize acceptance rate and resource utilization
+
+**Implementation Modules:**
+- `model.py`: SimuVNE model (policy network)
+- `pretrain.py`: Pre-training script
+- `fine_tuning.py`: PPO fine-tuning script
+- `env.py`: Reinforcement learning environment (SimuVNEEnv)
+
+## Core Features
+
+- 🎯 **Two-Stage Training**: Pre-training + PPO fine-tuning
+- 🧠 **Graph Neural Networks**: GCN encoder + Transformer Encoder
+- 🔄 **Reinforcement Learning**: PPO algorithm for policy optimization
+- 📊 **Multi-Strategy Support**: Baseline methods including greedy, genetic algorithm, NodeRank, etc.
+- 🔍 **Semantic Perception**: LLM-driven constraint identification and resource augmentation
+
+## Quick Start
+
+### Environment Setup
 
 ```bash
 conda env create -f environment.yml
 conda activate AgentVNE
 ```
 
-### 数据准备
+### Data Preparation
 
-1. 将SN拓扑文件放在 `topo/` 目录
-2. 将Workflow拓扑文件放在 `Workflow_topo/` 目录
-3. 生成预训练数据集：
+1. Place SN topology files in the `topo/` directory
+2. Place Workflow topology files in the `Workflow_topo/` directory
+3. Generate pre-training dataset:
 
 ```bash
 python dataset_generate_1.py \
@@ -62,9 +89,9 @@ python dataset_generate_1.py \
     --num_episodes 50
 ```
 
-### 训练流程
+### Training Pipeline
 
-**1. 预训练**
+**1. Pre-training**
 ```bash
 python pretrain.py \
     --data_path pretrain_data/pretrain_dataset.pt \
@@ -74,7 +101,7 @@ python pretrain.py \
     --learning_rate 0.001
 ```
 
-**2. 微调**
+**2. Fine-tuning**
 ```bash
 python fine_tuning.py \
     --pretrain_model pretrain_outputs/checkpoint_latest.pt \
@@ -85,7 +112,7 @@ python fine_tuning.py \
     --max_arrived_tasks 100
 ```
 
-**3. 测试评估**
+**3. Testing & Evaluation**
 ```bash
 python tester.py \
     --sn_topology topo/SN_topology.json \
@@ -95,49 +122,56 @@ python tester.py \
     --plot
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 agentvne/
-├── model.py                    # SimuVNE模型（策略网络）
-├── env.py                      # 环境定义（SimuVNEEnv）
-├── pretrain.py                 # 预训练脚本
-├── fine_tuning.py              # PPO微调脚本
-├── dataset_generate_1.py       # 数据集生成
-├── tester.py                   # 多策略测试脚本
-├── LLM_resource_augmentation/  # 第一层：LLM语义感知与约束解析
-│   └── node_optimizer/         # 节点优化器（VN-SN智能匹配）
-├── baselines/                  # 基线方法
-├── topo/                       # SN拓扑文件
-├── Workflow_topo/              # Workflow拓扑文件
-├── pretrain_data/              # 预训练数据集
-├── pretrain_outputs/           # 预训练模型输出
-└── finetuning_output/          # 微调模型输出
+├── model.py                    # SimuVNE model (policy network)
+├── model__sigmoid.py           # SimuVNE model variant (with Sigmoid)
+├── env.py                      # Environment definition (SimuVNEEnv, WorkflowGenerator)
+├── pretrain.py                 # Pre-training script
+├── fine_tuning.py              # PPO fine-tuning script
+├── dataset_generate_1.py       # Dataset generation
+├── tester.py                   # Multi-strategy testing script
+├── LLM_resource_augmentation/  # Layer 1: LLM semantic perception & constraint resolution
+│   └── node_optimizer/         # Node optimizer (VN-SN intelligent matching)
+├── baselines/                  # Baseline methods
+├── topo/                       # SN topology files and tools
+├── Workflow_topo/              # Workflow topology files
+├── pretrain_data/              # Pre-training dataset
+├── pretrain_outputs/           # Pre-training model outputs
+└── finetuning_output/          # Fine-tuning model outputs
 ```
 
-## 模型架构
+## Model Architecture
 
-- **GCN编码器**：对VN和SN图进行特征编码
-- **自注意力机制**：增强节点特征表示
-- **神经张量网络**：计算VN节点到SN节点的匹配概率
-- **输出层**：生成概率矩阵 [N_v, N_s]
+The **SimuVNE model** consists of the following components:
 
-## 支持的策略
+- **GCN Encoder**: Encodes VN and SN graphs to extract node embeddings
+- **Transformer Encoder**: Enhances node feature representations and captures graph structure information
+- **Neural Tensor Network (NTN)**: Computes matching probabilities between VN nodes and SN nodes
+- **Output Layer**: Generates probability matrix [N_v, N_s], representing matching probabilities from each VN node to each SN node
 
-- `ga`: 遗传算法
-- `gal-vne`: 基于NodeRank的贪心算法
-- `greedy`: 基于SN排序的贪心算法
-- `pretrain`: 预训练模型（ft_n）
-- `finetuned`: 微调模型（ft1）
+**Training Strategy:**
+- **Pre-training**: Learns NodeRank label distribution using MSE loss
+- **Fine-tuning**: Optimizes policy using PPO algorithm with reward function based on acceptance rate and resource utilization
 
-## 配置说明
+## Supported Strategies
 
-主要配置在 `config.json` 中，包括模型维度、训练参数等。命令行参数支持灵活配置网络拓扑、工作流类型、训练参数等。
+- `ga`: Genetic Algorithm
+- `gal-vne`: Greedy algorithm based on NodeRank
+- `greedy`: Greedy algorithm based on SN sorting
+- `pretrain`: Pre-trained model (ft_n)
+- `finetuned`: Fine-tuned model (ft1)
 
-## 许可证
+## Configuration
+
+Main configuration is in `config.json`, including model dimensions, training parameters, etc. Command-line arguments support flexible configuration of network topology, workflow types, training parameters, etc.
+
+## License
 
 MIT License
 
 ---
 
-**注意：本项目仍在积极开发中，API可能会发生变化。**
+**Note: This project is under active development and APIs may change.**
