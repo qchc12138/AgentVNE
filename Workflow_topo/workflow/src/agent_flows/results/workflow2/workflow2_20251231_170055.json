@@ -1,0 +1,291 @@
+{
+  "workflow_name": "workflow2",
+  "pid": 801477,
+  "start_time": "2025-12-31T17:00:46.648905",
+  "end_time": "2025-12-31T17:00:55.304799",
+  "duration_seconds": 8.6559,
+  "nodes": [
+    {
+      "node_name": "节点1-意图理解",
+      "start_time": "2025-12-31T17:00:47.801496",
+      "end_time": "2025-12-31T17:00:48.200642",
+      "duration_seconds": 0.3991,
+      "metrics": {
+        "cpu": {
+          "process_cpu_percent": 0.0,
+          "system_cpu_percent": 0.8,
+          "cpu_time_user": 0.02,
+          "cpu_time_system": 0.0,
+          "cpu_count": 48,
+          "avg_cpu_percent": 0.0,
+          "peak_cpu_percent": 0.0,
+          "sample_count": 0
+        },
+        "memory": {
+          "rss_mb": 580.12,
+          "vms_mb": 6691.79,
+          "peak_rss_mb": 580.12,
+          "percent": 0.23,
+          "system_total_gb": 251.55,
+          "system_available_gb": 200.7,
+          "system_percent": 20.2,
+          "avg_rss_mb": 580.05,
+          "sample_count": 2
+        }
+      }
+    },
+    {
+      "node_name": "节点2-采集",
+      "start_time": "2025-12-31T17:00:48.404291",
+      "end_time": "2025-12-31T17:00:48.406938",
+      "duration_seconds": 0.0026,
+      "metrics": {
+        "cpu": {
+          "process_cpu_percent": 0.0,
+          "system_cpu_percent": 0.4,
+          "cpu_time_user": 0.0,
+          "cpu_time_system": 0.01,
+          "cpu_count": 48,
+          "avg_cpu_percent": 0.0,
+          "peak_cpu_percent": 0.0,
+          "sample_count": 0
+        },
+        "memory": {
+          "rss_mb": 582.49,
+          "vms_mb": 6692.03,
+          "peak_rss_mb": 582.49,
+          "percent": 0.23,
+          "system_total_gb": 251.55,
+          "system_available_gb": 200.7,
+          "system_percent": 20.2,
+          "avg_rss_mb": 581.3,
+          "sample_count": 2
+        }
+      }
+    },
+    {
+      "node_name": "节点3-预处理",
+      "start_time": "2025-12-31T17:00:48.610199",
+      "end_time": "2025-12-31T17:00:49.313799",
+      "duration_seconds": 0.7036,
+      "metrics": {
+        "cpu": {
+          "process_cpu_percent": 0.0,
+          "system_cpu_percent": 0.6,
+          "cpu_time_user": 0.59,
+          "cpu_time_system": 0.49,
+          "cpu_count": 48,
+          "avg_cpu_percent": 0.0,
+          "peak_cpu_percent": 0.0,
+          "sample_count": 0
+        },
+        "memory": {
+          "rss_mb": 870.88,
+          "vms_mb": 44764.95,
+          "peak_rss_mb": 870.88,
+          "percent": 0.34,
+          "system_total_gb": 251.55,
+          "system_available_gb": 200.47,
+          "system_percent": 20.3,
+          "avg_rss_mb": 726.68,
+          "sample_count": 2
+        }
+      }
+    },
+    {
+      "node_name": "节点4-特征",
+      "start_time": "2025-12-31T17:00:49.516951",
+      "end_time": "2025-12-31T17:00:49.522704",
+      "duration_seconds": 0.0058,
+      "metrics": {
+        "cpu": {
+          "process_cpu_percent": 10.0,
+          "system_cpu_percent": 2.7,
+          "cpu_time_user": 0.05,
+          "cpu_time_system": 0.03,
+          "cpu_count": 48,
+          "avg_cpu_percent": 0.0,
+          "peak_cpu_percent": 0.0,
+          "sample_count": 0
+        },
+        "memory": {
+          "rss_mb": 872.36,
+          "vms_mb": 44765.82,
+          "peak_rss_mb": 872.36,
+          "percent": 0.34,
+          "system_total_gb": 251.55,
+          "system_available_gb": 200.47,
+          "system_percent": 20.3,
+          "avg_rss_mb": 871.62,
+          "sample_count": 2
+        }
+      }
+    },
+    {
+      "node_name": "节点5-分析",
+      "start_time": "2025-12-31T17:00:49.725671",
+      "end_time": "2025-12-31T17:00:52.062334",
+      "duration_seconds": 2.3367,
+      "metrics": {
+        "cpu": {
+          "process_cpu_percent": 0.0,
+          "system_cpu_percent": 1.5,
+          "cpu_time_user": 0.01,
+          "cpu_time_system": 0.0,
+          "cpu_count": 48,
+          "avg_cpu_percent": 0.0,
+          "peak_cpu_percent": 0.0,
+          "sample_count": 0
+        },
+        "memory": {
+          "rss_mb": 872.36,
+          "vms_mb": 44765.82,
+          "peak_rss_mb": 872.36,
+          "percent": 0.34,
+          "system_total_gb": 251.55,
+          "system_available_gb": 200.47,
+          "system_percent": 20.3,
+          "avg_rss_mb": 872.36,
+          "sample_count": 2
+        }
+      }
+    },
+    {
+      "node_name": "节点6-总结",
+      "start_time": "2025-12-31T17:00:52.264734",
+      "end_time": "2025-12-31T17:00:54.398839",
+      "duration_seconds": 2.1341,
+      "metrics": {
+        "cpu": {
+          "process_cpu_percent": 0.0,
+          "system_cpu_percent": 1.7,
+          "cpu_time_user": 0.01,
+          "cpu_time_system": 0.0,
+          "cpu_count": 48,
+          "avg_cpu_percent": 0.0,
+          "peak_cpu_percent": 0.0,
+          "sample_count": 0
+        },
+        "memory": {
+          "rss_mb": 872.67,
+          "vms_mb": 44765.82,
+          "peak_rss_mb": 872.67,
+          "percent": 0.34,
+          "system_total_gb": 251.55,
+          "system_available_gb": 200.54,
+          "system_percent": 20.3,
+          "avg_rss_mb": 872.52,
+          "sample_count": 2
+        }
+      }
+    }
+  ],
+  "summary": {
+    "cpu": {
+      "process_cpu_percent": 10.76,
+      "system_cpu_percent": 2.3,
+      "cpu_time_user": 0.71,
+      "cpu_time_system": 0.55,
+      "cpu_count": 48,
+      "avg_cpu_percent": 10.76,
+      "peak_cpu_percent": 99.8,
+      "sample_count": 12
+    },
+    "memory": {
+      "rss_mb": 872.71,
+      "vms_mb": 44765.81,
+      "peak_rss_mb": 872.71,
+      "percent": 0.34,
+      "system_total_gb": 251.55,
+      "system_available_gb": 200.54,
+      "system_percent": 20.3,
+      "avg_rss_mb": 801.49,
+      "sample_count": 15
+    },
+    "storage": {
+      "read_count": 1027,
+      "write_count": 225,
+      "read_mb": 0.0,
+      "write_mb": 0.0,
+      "total_io_mb": 0.0,
+      "supported": true
+    },
+    "gpu": {
+      "available": true,
+      "gpu_count": 8,
+      "process_gpu_memory_mb": 0.0,
+      "gpus": [
+        {
+          "id": 0,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 2416.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 47.0
+        },
+        {
+          "id": 1,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 13030.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 48.0
+        },
+        {
+          "id": 2,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 13506.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 49.0
+        },
+        {
+          "id": 3,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 13030.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 46.0
+        },
+        {
+          "id": 4,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 13506.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 47.0
+        },
+        {
+          "id": 5,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 13030.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 48.0
+        },
+        {
+          "id": 6,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 13316.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 48.0
+        },
+        {
+          "id": 7,
+          "utilization_percent": 0.0,
+          "memory_used_mb": 13506.0,
+          "memory_total_mb": 15360.0,
+          "temperature_c": 48.0
+        }
+      ],
+      "avg_utilization_percent": 0.0,
+      "total_memory_used_mb": 95340.0,
+      "total_memory_mb": 122880.0
+    },
+    "network": {
+      "connections_count": 1,
+      "bytes_sent": 47255,
+      "bytes_recv": 31164,
+      "sent_mb": 0.05,
+      "recv_mb": 0.03,
+      "total_traffic_mb": 0.07,
+      "packets_sent": 164,
+      "packets_recv": 159,
+      "note": "Network IO metrics are system-wide during workflow execution, not process-specific"
+    }
+  }
+}
