@@ -6,6 +6,8 @@ AgentVNE: LLM-Augmented Graph Reinforcement Learning for Affinity-Aware Multi-Ag
 
 AgentVNE is a virtual network embedding framework designed for agentic edge computing scenarios. It employs a dual-layer architecture that combines semantic perception with graph similarity learning to address the deployment challenges of dynamic workflows on heterogeneous edge infrastructure.
 
+All codes will be released after the paper is accepted.
+
 **Key Advantages:**
 - **Semantic Perception**: Identifies implicit semantic constraints of workflow nodes through LLM
 - **Graph Similarity Learning**: Pre-training + PPO fine-tuning strategy to precisely capture topological similarities

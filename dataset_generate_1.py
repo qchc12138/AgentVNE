@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
     预训练数据集快速生成脚本
+    预训练方案的简单示意
 """
 
 import torch

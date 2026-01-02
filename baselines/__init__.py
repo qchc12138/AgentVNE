@@ -8,7 +8,7 @@
 """
 
 __all__ = [
-    "Greedy",
+    "greedy",
     "GAL_VNE",
     "genetic_algorithm",
 ]
