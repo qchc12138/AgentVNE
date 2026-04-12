@@ -184,10 +184,10 @@ def parameter_extraction_node(state: BookingState) -> BookingState:
     try:
         ai_msg = llm.invoke(prompt)
         content = getattr(ai_msg, "content", "{}")
-        parsed = _parse_json_from_text(content)
+        parsed = _parse_json_from_text(content) # 从用户原始表达式中提取参数，（价格、天数、房间数）
 
         # 使用启发式规则作为后备
-        parsed = _fallback_parse(user_request, parsed)
+        parsed = _fallback_parse(user_request, parsed) # 如果提取的参数不完整，使用启发式规则补充
 
         state["parsed_params"] = parsed
         _append_log(state, f"[节点2-参数提取] 提取参数: {parsed}")
@@ -238,6 +238,12 @@ def hotel_search_node(state: BookingState) -> BookingState:
     节点4：酒店搜索智能体
     职责：调用搜索工具，获取酒店列表
     资源特点：涉及外部工具调用（模拟），中等I/O和内存使用
+    
+    节点4不调用 LLM，直接调用工具函数
+    工具函数 search_hotels() 模拟数据库查询
+    包含错误处理：街道为空或搜索失败都有相应处理
+    结果保存到 state["search_results"]，供后续节点使用
+    
     """
     parsed_params = state.get("parsed_params", {})
     street = parsed_params.get("street", "")
@@ -271,6 +277,10 @@ def filter_and_selection_node(state: BookingState) -> BookingState:
     """
     节点5：结果筛选与选择智能体
     职责：根据预算筛选酒店，并选择最合适的一家
+
+    步骤1：按预算筛选酒店（数据处理）
+    步骤2：用 LLM 从筛选结果中选择最合适的一家（智能选择）
+
     资源特点：数据处理+LLM推理，较高CPU和内存使用
     """
     search_results = state.get("search_results", [])
@@ -524,7 +534,7 @@ def build_booking_workflow():
     # 搜索后的条件路由
     graph.add_conditional_edges(
         "search",
-        route_after_search,
+        route_after_search,             # 神似 switch
         {
             "filter_select": "filter_select",   # 有结果 -> 5
             "summarize": "summarize"            # 无结果 -> 7
@@ -571,7 +581,7 @@ def run_booking_workflow(user_request: str) -> str:
     }
 
     try:
-        # 执行工作流
+        # 执行工作流    build_booking_workflow() 函数返回  graph.compile() 会将定义好的图（节点、边、路由）编译成可执行的工作流对象
         result = app.invoke(initial_state)
 
         # 返回最终回复
