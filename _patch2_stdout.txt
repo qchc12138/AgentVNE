@@ -1,0 +1,6 @@
+Found at: 6301 - 6374
+Match: 'start_time = time.time()\n        \n        for epoch in range(num_epochs):'
+5. best_epoch added (regex)
+6. early-stop block replaced
+
+Done

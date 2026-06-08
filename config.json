@@ -28,3 +28,5 @@
     "num_workers": 0
   }
 }
+ "data_dir": "pretrain_data",
+ "output_dir": "pretrain_outputs",

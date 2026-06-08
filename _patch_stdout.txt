@@ -1,0 +1,14 @@
+1. import math added
+2. step_size 20->50
+3. patience_counter added
+4. train signature updated
+5. best_epoch SKIPPED
+6. early-stop SKIPPED (not found)
+7a. batch_size default 100->16
+7b. num_epochs default 8->100
+7c. learning_rate default 0.005->0.001
+8. create_train_val_dataloaders added
+9. main dataloader updated
+10. val_loader=val_loader in main
+
+File written successfully

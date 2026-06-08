@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
     预训练数据集快速生成脚本
     预训练方案的简单示意
@@ -951,7 +951,7 @@ def main():
     
     parser = argparse.ArgumentParser(description='生成预训练数据集')
     parser.add_argument('--sn_topo', type=str, 
-                       default='/home/zrz/AgentVNE/AgentVNE/topo/SN_topology_2.json',
+                       default=os.path.join(script_dir, 'topo', 'SN_topology_2.json'),
                        help='带偏置的 SN 拓扑输出路径（固定 SN_topology_2.json）')
     parser.add_argument('--workflow_topo', type=str,
                        default=os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
@@ -960,10 +960,10 @@ def main():
                        default=os.path.join(script_dir, 'workflow_topo', 'workflow1_noderank.json'),
                        help='Workflow NodeRank 文件路径（支持绝对路径和相对路径）')
     parser.add_argument('--output', type=str,
-                       default='/home/zrz/AgentVNE/AgentVNE/pretrain_data/pretrain_dataset.pt',
+                       default=os.path.join(script_dir, 'pretrain_data', 'pretrain_dataset.pt'),
                        help='输出数据集文件路径（支持绝对路径和相对路径）')
     parser.add_argument('--test_output', type=str,
-                       default='/home/zrz/AgentVNE/AgentVNE/pretrain_data/test_sample.pt',
+                       default=os.path.join(script_dir, 'pretrain_data', 'test_sample.pt'),
                        help='测试样本输出文件路径（单条，支持绝对路径和相对路径）')
     parser.add_argument('--workflows_per_episode', type=int, default=7,
                        help='每个 episode 放置的 workflow 数量')

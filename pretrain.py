@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 预训练脚本
 """
@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import os
+import math
 import json
 import time
 from datetime import datetime
@@ -21,7 +22,7 @@ except ImportError:
     print("警告: TensorBoard不可用，将跳过TensorBoard日志记录")
 
 from tqdm import tqdm
-from model_1 import SimuVNE
+from model import SimuVNE
 from torch_geometric.data import Data
 
 
@@ -74,7 +75,7 @@ class PretrainTrainer:
         # 学习率调度器
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer,
-            step_size=20,
+            step_size=50,
             gamma=0.5
         )
         
@@ -90,6 +91,7 @@ class PretrainTrainer:
         self.train_losses = []
         self.val_losses = []
         self.best_val_loss = float('inf')
+        self.patience_counter = 0
         
         print(f"\n预训练器初始化完成:")
         print(f"  设备: {device}")
@@ -181,7 +183,7 @@ class PretrainTrainer:
             epoch_path = os.path.join(self.output_dir, f'checkpoint_epoch_{epoch+1}.pt')
             torch.save(checkpoint, epoch_path)
     
-    def train(self, num_epochs):
+    def train(self, num_epochs, patience=15):
         """
         执行预训练
         
@@ -193,7 +195,9 @@ class PretrainTrainer:
         print(f"{'='*60}\n")
         
         start_time = time.time()
-        
+
+        best_epoch = 0
+
         for epoch in range(num_epochs):
             epoch_start_time = time.time()
             
@@ -223,13 +227,27 @@ class PretrainTrainer:
                     self.writer.add_scalar('Loss/val', val_loss, epoch)
                 self.writer.add_scalar('Learning_rate', current_lr, epoch)
             
-            # 保存检查点
+            # 最优保存与早停
             is_best = False
             if val_loss is not None:
                 is_best = val_loss < self.best_val_loss
                 if is_best:
+                    self.patience_counter = 0
                     self.best_val_loss = val_loss
+                    best_epoch = epoch + 1
                     print(f"  *** 新的最优验证损失: {val_loss:.6f} ***")
+                else:
+                    self.patience_counter += 1
+                    print(f"  验证损失未改善 ({self.patience_counter}/{patience})")
+                    if self.patience_counter >= patience:
+                        print(f"\n  早停触发! 最优验证损失: {self.best_val_loss:.6f} (epoch {best_epoch})")
+                        self.save_checkpoint(epoch, val_loss, is_best)
+                        break
+            else:
+                is_best = train_loss < self.best_val_loss
+                if is_best:
+                    self.best_val_loss = train_loss
+                    best_epoch = epoch + 1
             self.save_checkpoint(epoch, val_loss if val_loss is not None else train_loss, is_best)
         
         # 训练完成
@@ -306,10 +324,27 @@ def _collate_samples(batch: List[Dict]) -> Dict[str, List]:
 
 
 def create_pretrain_dataloader(samples: List[Dict], batch_size: int = 16):
-    """创建仅训练用的 DataLoader（不划分验证集）。"""
+    """创建单个 DataLoader（不分 train/val）。保留兼容旧调用。"""
     from torch.utils.data import DataLoader
     train_loader = DataLoader(samples, batch_size=batch_size, shuffle=True, collate_fn=_collate_samples)
     return train_loader
+
+
+def create_train_val_dataloaders(samples: List[Dict], batch_size: int = 16, train_ratio: float = 0.8):
+    """按比例拆分训练/验证集，返回两个 DataLoader。"""
+    from torch.utils.data import DataLoader
+    n = len(samples)
+    n_train = int(np.ceil(n * train_ratio))
+    indices = list(range(n))
+    np.random.shuffle(indices)
+    train_indices = indices[:n_train]
+    val_indices = indices[n_train:]
+    train_samples = [samples[i] for i in train_indices]
+    val_samples = [samples[i] for i in val_indices]
+    print(f"  训练集: {len(train_samples)} 样本, 验证集: {len(val_samples)} 样本")
+    train_loader = DataLoader(train_samples, batch_size=batch_size, shuffle=True, collate_fn=_collate_samples)
+    val_loader = DataLoader(val_samples, batch_size=batch_size, shuffle=False, collate_fn=_collate_samples)
+    return train_loader, val_loader
 
 
 def main():
@@ -323,11 +358,11 @@ def main():
     parser.add_argument('--output_dir', type=str,
                        default='/home/zrz/AgentVNE/AgentVNE/pretrain_outputs',
                        help='输出目录')
-    parser.add_argument('--batch_size', type=int, default=100,
+    parser.add_argument('--batch_size', type=int, default=16,
                        help='批大小')
-    parser.add_argument('--num_epochs', type=int, default=8,
+    parser.add_argument('--num_epochs', type=int, default=100,
                        help='训练轮数')
-    parser.add_argument('--learning_rate', type=float, default=0.005,
+    parser.add_argument('--learning_rate', type=float, default=0.001,
                        help='学习率')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                        help='权重衰减')
@@ -388,11 +423,12 @@ def main():
     
     config['num_nodes_j'] = num_nodes_j
 
-    # 创建数据加载器（全量作为训练集）
+    # 创建训练/验证数据加载器
     print("\n" + "="*60)
-    print("创建训练数据加载器...")
+    print("创建训练/验证数据加载器...")
     print("="*60)
-    train_loader = create_pretrain_dataloader(samples=samples, batch_size=config['batch_size'])
+    train_loader, val_loader = create_train_val_dataloaders(
+        samples=samples, batch_size=config['batch_size'], train_ratio=0.8)
 
     # 创建模型
     print("\n" + "="*60)
@@ -413,7 +449,7 @@ def main():
     trainer = PretrainTrainer(
         model=model,
         train_loader=train_loader,
-        val_loader=None,
+        val_loader=val_loader,
         learning_rate=config['learning_rate'],
         weight_decay=config['weight_decay'],
         device=config['device'],
