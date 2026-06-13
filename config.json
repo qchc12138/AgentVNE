@@ -2,7 +2,8 @@
   "model": {
     "input_dim": 6,
     "hidden_dim": 64,
-    "hist_dim": 32
+    "hist_dim": 32,
+    "num_nodes_j": 10
   },
   "training": {
     "learning_rate": 0.001,
@@ -14,11 +15,11 @@
     "lr_gamma": 0.5
   },
   "data": {
-    "data_dir": "/home/yc2/mrt/a/data",
+    "data_dir": "pretrain_data",
     "normalize_features": true
   },
   "logging": {
-    "output_dir": "/home/yc2/mrt/a/outputs",
+    "output_dir": "pretrain_outputs",
     "use_tensorboard": true,
     "log_interval": 5,
     "save_interval": 10
@@ -28,5 +29,3 @@
     "num_workers": 0
   }
 }
- "data_dir": "pretrain_data",
- "output_dir": "pretrain_outputs",

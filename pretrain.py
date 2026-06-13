@@ -29,10 +29,10 @@ from torch_geometric.data import Data
 class PretrainTrainer:
     """预训练器"""
     
-    def __init__(self, model, train_loader, val_loader=None, 
+    def __init__(self, model, train_loader, val_loader=None,
                  learning_rate=0.001, weight_decay=1e-5,
                  device='cuda', output_dir='./pretrain_outputs',
-                 use_tensorboard=True):
+                 use_tensorboard=True, model_config=None):
         """
         初始化预训练器
         
@@ -51,6 +51,7 @@ class PretrainTrainer:
         self.val_loader = val_loader
         self.device = device
         self.output_dir = output_dir
+        self.model_config = model_config or {}
         
         # 创建输出目录
         os.makedirs(output_dir, exist_ok=True)
@@ -160,6 +161,7 @@ class PretrainTrainer:
         """保存检查点"""
         checkpoint = {
             'epoch': epoch,
+            'model_config': self.model_config,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'scheduler_state_dict': self.scheduler.state_dict(),
@@ -454,7 +456,13 @@ def main():
         weight_decay=config['weight_decay'],
         device=config['device'],
         output_dir=config['output_dir'],
-        use_tensorboard=True
+        use_tensorboard=True,
+        model_config={
+            'input_dim': config['input_dim'],
+            'hidden_dim': config['hidden_dim'],
+            'hist_dim': config['hist_dim'],
+            'num_nodes_j': config['num_nodes_j'],
+        },
     )
 
     # 开始训练（BCEWithLogitsLoss 损失）

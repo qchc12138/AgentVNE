@@ -19,7 +19,7 @@ import matplotlib
 matplotlib.use('Agg')  # 使用非交互式后端
 import networkx as nx
 
-from model_1 import SimuVNE
+from model import SimuVNE
 from env import SimuVNEEnv, WorkflowGenerator
 
 import random
@@ -51,60 +51,422 @@ def set_seed(seed=42):
 set_seed(42)  # 在main函数开头调用
 
 class ValueNet(nn.Module):
+    """Value network: estimates V(sn_state, vn_state) as a scalar.
+
+    Two-branch GCN encoder (SN + VN) -> global mean pool -> MLP head.
+    """
+
+    def __init__(self, input_dim=6, hidden_dim=64):
+        super().__init__()
+        self.hidden_dim = hidden_dim
+
+        self.sn_conv1 = GCNConv(input_dim, hidden_dim)
+        self.sn_conv2 = GCNConv(hidden_dim, hidden_dim)
+
+        self.vn_conv1 = GCNConv(input_dim, hidden_dim)
+        self.vn_conv2 = GCNConv(hidden_dim, hidden_dim)
+
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1),
+        )
+
+    def _pool(self, x):
+        return x.mean(dim=0, keepdim=True)   # [1, hidden_dim]
+
+    def forward(self, sn_data, vn_data):
+        """Returns scalar state value.
+
+        Args:
+            sn_data: PyG Data for substrate network
+            vn_data: PyG Data for virtual network (or None)
+        """
+        # --- SN branch ---
+        h_sn = F.relu(self.sn_conv1(sn_data.x, sn_data.edge_index))
+        h_sn = F.relu(self.sn_conv2(h_sn, sn_data.edge_index))
+        sn_vec = self._pool(h_sn)
+
+        # --- VN branch ---
+        if vn_data is not None and vn_data.x.size(0) > 0:
+            h_vn = F.relu(self.vn_conv1(vn_data.x, vn_data.edge_index))
+            h_vn = F.relu(self.vn_conv2(h_vn, vn_data.edge_index))
+            vn_vec = self._pool(h_vn)
+        else:
+            vn_vec = torch.zeros(1, self.hidden_dim, device=sn_vec.device)
+
+        combined = torch.cat([sn_vec, vn_vec], dim=-1)   # [1, 2*hidden_dim]
+        return self.fc(combined).squeeze()              # scalar
 
 
 class PPOAgent:
+    """PPO agent holding a SimuVNE policy and a ValueNet critic."""
+
+    def __init__(
+        self, policy, value_net, device='cpu',
+        lr_policy=1e-4, lr_value=1e-3,
+        gamma=0.99, gae_lambda=0.95,
+        clip_epsilon=0.2, entropy_coef=0.01,
+        value_loss_coef=0.5, max_grad_norm=0.5,
+        train_iters=5,
+    ):
+        self.policy = policy.to(device)
+        self.value_net = value_net.to(device)
+        self.device = device
+
+        self.gamma = gamma
+        self.gae_lambda = gae_lambda
+        self.clip_epsilon = clip_epsilon
+        self.entropy_coef = entropy_coef
+        self.value_loss_coef = value_loss_coef
+        self.max_grad_norm = max_grad_norm
+        self.train_iters = train_iters
+
+        self.optimizer_policy = optim.Adam(policy.parameters(), lr=lr_policy)
+        self.optimizer_value = optim.Adam(value_net.parameters(), lr=lr_value)
+
+        self.trajectories = []   # list of episode trajectory dicts
+
+    # ---- trajectory helpers ------------------------------------------
+
+    def compute_log_prob(self, action_probs, mapping):
+        """Joint log-prob of a greedy placement *mapping* given *action_probs*."""
+        lp = 0.0
+        for vn_idx, sn_idx in mapping.items():
+            lp = lp + torch.log(action_probs[vn_idx, sn_idx] + 1e-8)
+        return lp
+
+    def compute_gae(self, rewards, values, dones):
+        """Generalised Advantage Estimation.
+
+        Returns (returns, advantages) as lists of floats.
+        """
+        T = len(rewards)
+        returns = [0.0] * T
+        advantages = [0.0] * T
+        gae = 0.0
+        next_val = 0.0
+        for t in reversed(range(T)):
+            non_term = 0.0 if dones[t] else 1.0
+            delta = rewards[t] + self.gamma * next_val * non_term - values[t]
+            gae = delta + self.gamma * self.gae_lambda * gae * non_term
+            advantages[t] = gae
+            returns[t] = gae + values[t]
+            next_val = values[t]
+        return returns, advantages
+
+    # ---- storage -----------------------------------------------------
+
+    def store_trajectory(self, trajectory):
+        self.trajectories.append(trajectory)
+
+    # ---- PPO update --------------------------------------------------
+
+    def update(self):
+        """Multi-epoch PPO-Clip update on all stored trajectories."""
+        if not self.trajectories:
+            return {'policy_loss': 0.0, 'value_loss': 0.0}
+
+        # Flatten all steps
+        all_sn, all_vn = [], []
+        all_log_probs, all_returns, all_advantages = [], [], []
+        all_mappings = []
+
+        for traj in self.trajectories:
+            steps = traj['steps']
+            returns, advs = self.compute_gae(
+                [s['reward'] for s in steps],
+                [s['value'] for s in steps],
+                [s['done'] for s in steps],
+            )
+            for i, s in enumerate(steps):
+                all_sn.append(s['sn_data'])
+                all_vn.append(s['vn_data'])
+                all_log_probs.append(s['log_prob'])
+                all_mappings.append(s['mapping'])
+            all_returns.extend(returns)
+            all_advantages.extend(advs)
+
+        N = len(all_sn)
+        if N == 0:
+            self.trajectories = []
+            return {'policy_loss': 0.0, 'value_loss': 0.0}
+
+        adv_t = torch.tensor(all_advantages, dtype=torch.float32, device=self.device)
+        ret_t = torch.tensor(all_returns, dtype=torch.float32, device=self.device)
+        old_lp = torch.tensor(all_log_probs, dtype=torch.float32, device=self.device)
+        # Standardize returns for stable value network training
+        ret_t = (ret_t - ret_t.mean()) / (ret_t.std() + 1e-8)
+        ret_t = torch.where(ret_t.isnan(), torch.zeros_like(ret_t), ret_t)
+
+        # Normalise advantages
+        adv_t = (adv_t - adv_t.mean()) / (adv_t.std() + 1e-8)
+        adv_t = torch.where(adv_t.isnan(), torch.zeros_like(adv_t), adv_t)
+
+        for _ in range(self.train_iters):
+            self.optimizer_policy.zero_grad()
+            self.optimizer_value.zero_grad()
+
+            total_p_loss, total_v_loss = 0.0, 0.0
+            total_entropy = 0.0
+            for i in range(N):
+                sn_data = all_sn[i].to(self.device)
+                vn_data = all_vn[i].to(self.device) if all_vn[i] is not None else None
+
+                action_probs_raw = self.policy(vn_data, sn_data)   # [N_vn, N_sn]
+                action_probs = action_probs_raw.T                   # [N_vn, N_sn]
+                # Row-normalize: each VN row sums to 1 (valid distribution over SN)
+                action_probs = action_probs / (action_probs.sum(dim=1, keepdim=True) + 1e-8)
+
+                # Per-sample entropy to encourage exploration
+                ent = -(action_probs * torch.log(action_probs + 1e-8)).sum(dim=-1).mean()
+                total_entropy += ent
+
+                new_lp = self.compute_log_prob(action_probs, all_mappings[i])  # expects [N_vn, N_sn]
+                new_val = self.value_net(sn_data, vn_data)
+
+                ratio = torch.exp(new_lp - old_lp[i])
+                surr1 = ratio * adv_t[i]
+                surr2 = torch.clamp(ratio, 1.0 - self.clip_epsilon,
+                                    1.0 + self.clip_epsilon) * adv_t[i]
+                p_loss = -torch.min(surr1, surr2)
+                v_loss = F.mse_loss(new_val, ret_t[i])
+
+                total_p_loss += p_loss
+                total_v_loss += v_loss
+
+            avg_p_loss = total_p_loss / N
+            avg_v_loss = total_v_loss / N
+            avg_entropy = total_entropy / N
+            loss = avg_p_loss + self.value_loss_coef * avg_v_loss - self.entropy_coef * avg_entropy
+
+            loss.backward()
+            nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            nn.utils.clip_grad_norm_(self.value_net.parameters(), self.max_grad_norm)
+            self.optimizer_policy.step()
+            self.optimizer_value.step()
+
+        self.trajectories = []
+        return {'policy_loss': avg_p_loss.item(), 'value_loss': avg_v_loss.item()}
+
+
+def _build_env(sn_topo_path, workflow_types, arrival_rate, mean_lifetime,
+               max_arrived_tasks, max_time_steps, seed):
+    """Create WorkflowGenerator + SimuVNEEnv pair."""
+    wf_gen = WorkflowGenerator(
+        arrival_rate=arrival_rate,
+        mean_lifetime=mean_lifetime,
+        workflow_types=workflow_types,
+        max_arrived_tasks=max_arrived_tasks,
+        seed=seed,
+    )
+    env = SimuVNEEnv(
+        sn_topology_path=sn_topo_path,
+        workflow_generator=wf_gen,
+        max_time_steps=max_time_steps,
+        seed=seed,
+    )
+    return env
+
 
 def run_ppo_episode(
-    agent: PPOAgent,
-    sn_topology_path: str,
-    workflow_types: Dict[str, str],
-    device: str = 'cpu',
-    arrival_rate: float = 0.05,
-    mean_lifetime: float = 10.0,
-    max_arrived_tasks: int = 20,
-    max_time_steps: int = 1000,
-    update_after_episode: bool = True,
-    episode_seed: int = None,
-    verbose: bool = False):
-    """
-    运行一个PPO episode
-    
-    Args:
-        agent: PPO智能体
-        sn_topology_path: SN拓扑文件路径
-        workflow_types: workflow类型字典
-        device: 设备
-        arrival_rate: 泊松到达率
-        mean_lifetime: 平均生存时间
-        max_arrived_tasks: 最大到达任务数
-        max_time_steps: 最大时间步数
-        update_after_episode: 是否在episode结束后立即更新
-        episode_seed: episode随机种子
-    
+    agent,
+    sn_topology_path,
+    workflow_types,
+    device='cpu',
+    arrival_rate=0.05,
+    mean_lifetime=10.0,
+    max_arrived_tasks=20,
+    max_time_steps=1000,
+    update_after_episode=True,
+    episode_seed=None,
+    verbose=False,
+):
+    """Run a single PPO episode, collect trajectory, optionally update.
+
     Returns:
-        episode统计数据
+        dict with keys: total_return, num_steps, accepted, arrived, avg_rt,
+                        trajectory
     """
+    env = _build_env(sn_topology_path, workflow_types, arrival_rate,
+                     mean_lifetime, max_arrived_tasks, max_time_steps,
+                     seed=episode_seed)
+
+    (sn_data, vn_data) = env.reset()
+    done = False
+    episode_return = 0.0
+    steps = []
+
+    while not done:
+        if vn_data is None:
+            # no VN pending -- advance time without policy forward
+            (sn_data, vn_data), _, done, _ = env.step(
+                torch.zeros(1, env.num_sn_nodes))
+            continue
+
+        sn_dev = sn_data.to(device)
+        vn_dev = vn_data.to(device)
+
+        with torch.no_grad():
+            action_probs_raw = agent.policy(vn_dev, sn_dev)       # [N_vn, N_sn]
+            action_probs = action_probs_raw                       # already [N_vn, N_sn]
+            # Row-normalize: each VN row sums to 1 (valid distribution over SN)
+            action_probs = action_probs / (action_probs.sum(dim=1, keepdim=True) + 1e-8)
+            value = agent.value_net(sn_dev, vn_dev)
+
+        (next_sn, next_vn), reward, done, info = env.step(action_probs)
+
+        mapping = info.get('mapping', {})
+        log_prob = (agent.compute_log_prob(action_probs, mapping)  # expects [N_vn, N_sn]
+                    if mapping else 0.0)
+
+        steps.append({
+            'sn_data': sn_data,
+            'vn_data': vn_data,
+            'log_prob': log_prob,
+            'value': value.item(),
+            'reward': reward,
+            'done': done,
+            'mapping': mapping,
+            'info': info,
+        })
+
+        episode_return += reward
+        sn_data, vn_data = next_sn, next_vn
+
+    stats = env.get_stats()
+
+    trajectory = {
+        'steps': steps,
+        'total_return': episode_return,
+        'stats': stats,
+    }
+
+    if update_after_episode:
+        agent.store_trajectory(trajectory)
+        agent.update()
+
+    return {
+        'total_return': episode_return,
+        'num_steps': len(steps),
+        'accepted': stats['total_accepted'],
+        'arrived': stats['total_arrived'],
+        'avg_rt': episode_return / max(len(steps), 1),
+        'trajectory': trajectory,
+    }
+
 
 def run_ppo_batch_training(
-    sn_topology_path: str,
-    workflow_types: Dict[str, str],
-    policy_ckpt: str = None,
-    value_ckpt: str = None,
-    device: str = 'cpu',
-    arrival_rate: float = 0.05,
-    mean_lifetime: float = 10.0,
-    max_arrived_tasks: int = 20,
-    max_time_steps: int = 1000,
-    num_episodes_per_update: int = 4,
-    train_iters: int = 5,
-    num_updates: int = 10,
-    verbose: bool = False):
-    """
-    批量PPO训练
+    sn_topology_path,
+    workflow_types,
+    policy_ckpt=None,
+    value_ckpt=None,
+    device='cpu',
+    arrival_rate=0.05,
+    mean_lifetime=10.0,
+    max_arrived_tasks=20,
+    max_time_steps=1000,
+    num_episodes_per_update=4,
+    train_iters=5,
+    num_updates=10,
+    verbose=False,
+):
+    """Batch PPO training loop.
 
+    Returns:
+        (training_stats, agent)
     """
- 
+    # ---- resolve VN node count from first workflow template ----
+    import json as _json
+    first_wf = next(iter(workflow_types.values()))
+    with open(first_wf, 'r', encoding='utf-8') as f:
+        wf_topo = _json.load(f)
+    num_nodes_j = len(json.load(open(sn_topology_path, 'r', encoding='utf-8'))['nodes'])
+
+    # ---- build models ----
+    policy = SimuVNE(input_dim=6, hidden_dim=64, hist_dim=32,
+                     num_nodes_j=num_nodes_j)
+    value_net = ValueNet(input_dim=6, hidden_dim=64)
+
+    if policy_ckpt is not None and os.path.exists(policy_ckpt):
+        ckpt = torch.load(policy_ckpt, map_location=device)
+        if 'model_state_dict' in ckpt:
+            policy.load_state_dict(ckpt['model_state_dict'])
+            print(f"  Loaded pretrained policy: {policy_ckpt}")
+        else:
+            policy.load_state_dict(ckpt)
+            print(f"  Loaded pretrained policy: {policy_ckpt}")
+    else:
+        print("  Using randomly initialized policy network")
+
+    if value_ckpt is not None and os.path.exists(value_ckpt):
+        ckpt_v = torch.load(value_ckpt, map_location=device)
+        value_net.load_state_dict(ckpt_v['model_state_dict'])
+        print(f"  Loaded pretrained value net: {value_ckpt}")
+    else:
+        print("  Using randomly initialized value network")
+
+    agent = PPOAgent(policy, value_net, device=device,
+                     train_iters=train_iters)
+    print(f"  PPO Agent created (device: {device})")
+
+    training_stats = []
+
+    for update_idx in range(num_updates):
+        ep_returns, ep_accepted, ep_arrived = [], [], []
+        total_steps = 0
+
+        for ep in range(num_episodes_per_update):
+            ep_seed = (random.randint(0, 2**31 - 1)
+                       if num_episodes_per_update > 1 else None)
+            ep_result = run_ppo_episode(
+                agent=agent,
+                sn_topology_path=sn_topology_path,
+                workflow_types=workflow_types,
+                device=device,
+                arrival_rate=arrival_rate,
+                mean_lifetime=mean_lifetime,
+                max_arrived_tasks=max_arrived_tasks,
+                max_time_steps=max_time_steps,
+                update_after_episode=False,
+                episode_seed=ep_seed,
+                verbose=verbose,
+            )
+            ep_returns.append(ep_result['total_return'])
+            ep_accepted.append(ep_result['accepted'])
+            ep_arrived.append(ep_result['arrived'])
+            total_steps += ep_result['num_steps']
+
+            # store for batch update later
+            agent.store_trajectory(ep_result['trajectory'])
+
+        # ---- batch PPO update ----
+        update_info = agent.update()
+
+        avg_return = sum(ep_returns) / len(ep_returns)
+        total_accepted = sum(ep_accepted)
+        total_arrived = sum(ep_arrived)
+
+        if verbose:
+            print(f"  [PPO update {update_idx + 1}/{num_updates}] "
+                  f"policy_loss={update_info['policy_loss']:.4f}  "
+                  f"value_loss={update_info['value_loss']:.4f}  "
+                  f"avg_return={avg_return:.2f}  "
+                  f"acceptance={total_accepted}/{total_arrived}")
+
+        training_stats.append({
+            'update_idx': update_idx,
+            'avg_return': avg_return,
+            'avg_accepted': total_accepted,
+            'avg_arrived': total_arrived,
+            'total_samples': total_steps,
+            'policy_loss': update_info['policy_loss'],
+            'value_loss': update_info['value_loss'],
+        })
+
+    return training_stats, agent
+
+
 def save_training_results(training_stats: List[Dict], 
                           policy: SimuVNE, 
                           value_net: ValueNet,
@@ -174,7 +536,7 @@ def save_training_results(training_stats: List[Dict],
     plt.tight_layout()
     plot_path1 = os.path.join(run_dir, 'training_curves_return.png')
     plt.savefig(plot_path1, dpi=300, bbox_inches='tight')
-    print(f"✓ 训练曲线图（总回报）已保存: {plot_path1}")
+    print(f"? 训练曲线图（总回报）已保存: {plot_path1}")
     plt.close()
     
     # 图2: Acceptance rate
@@ -190,7 +552,7 @@ def save_training_results(training_stats: List[Dict],
     plt.tight_layout()
     plot_path2 = os.path.join(run_dir, 'training_curves_acceptance.png')
     plt.savefig(plot_path2, dpi=300, bbox_inches='tight')
-    print(f"✓ 训练曲线图（接受率）已保存: {plot_path2}")
+    print(f"? 训练曲线图（接受率）已保存: {plot_path2}")
     plt.close()
     
     # 图3: Average r_t per episode (mean of all time steps)
@@ -205,7 +567,7 @@ def save_training_results(training_stats: List[Dict],
     plt.tight_layout()
     plot_path3 = os.path.join(run_dir, 'training_curves_rt.png')
     plt.savefig(plot_path3, dpi=300, bbox_inches='tight')
-    print(f"✓ 训练曲线图（平均r_t）已保存: {plot_path3}")
+    print(f"? 训练曲线图（平均r_t）已保存: {plot_path3}")
     plt.close()
     
     # 3. 保存模型参数
@@ -218,13 +580,13 @@ def save_training_results(training_stats: List[Dict],
             'hist_dim': policy.hist_dim,
         }
     }, model_path)
-    print(f"✓ 策略网络已保存: {model_path}")
+    print(f"? 策略网络已保存: {model_path}")
     
     value_path = os.path.join(run_dir, 'value_network.pth')
     torch.save({
         'model_state_dict': value_net.state_dict(),
     }, value_path)
-    print(f"✓ 价值网络已保存: {value_path}")
+    print(f"? 价值网络已保存: {value_path}")
     
     # 3.5. 额外保存最新模型到 finetuning_output_4 目录（不带时间戳）
     latest_policy_path = os.path.join(output_dir, 'policy_network_latest.pth')
@@ -236,13 +598,13 @@ def save_training_results(training_stats: List[Dict],
             'hist_dim': policy.hist_dim,
         }
     }, latest_policy_path)
-    print(f"✓ 策略网络（最新）已保存: {latest_policy_path}")
+    print(f"? 策略网络（最新）已保存: {latest_policy_path}")
     
     latest_value_path = os.path.join(output_dir, 'value_network_latest.pth')
     torch.save({
         'model_state_dict': value_net.state_dict(),
     }, latest_value_path)
-    print(f"✓ 价值网络（最新）已保存: {latest_value_path}")
+    print(f"? 价值网络（最新）已保存: {latest_value_path}")
     
     # 4. 保存训练统计数据（JSON格式）
     stats_path = os.path.join(run_dir, 'training_stats.json')
@@ -259,7 +621,7 @@ def save_training_results(training_stats: List[Dict],
                 'total_samples': sum(total_samples),
             }
         }, f, indent=2)
-    print(f"✓ 训练统计已保存: {stats_path}")
+    print(f"? 训练统计已保存: {stats_path}")
     
     # 5. 保存文本格式的训练摘要
     summary_path = os.path.join(run_dir, 'training_summary.txt')
@@ -288,7 +650,7 @@ def save_training_results(training_stats: List[Dict],
         f.write(f"Best Return: {max(avg_returns):.2f}\n")
         f.write(f"Best Acceptance Rate: {max(avg_acceptance_rates):.2%}\n")
     
-    print(f"✓ 训练摘要已保存: {summary_path}")
+    print(f"? 训练摘要已保存: {summary_path}")
     
     print(f"\n{'='*60}")
     print(f"所有结果已成功保存到: {run_dir}")
@@ -309,10 +671,10 @@ def get_model_paths(script_dir: str, use_finetuning_model: bool = False) -> Tupl
         if os.path.exists(finetuning_policy_path):
             policy_ckpt_path = finetuning_policy_path
             value_ckpt_path = finetuning_value_path if os.path.exists(finetuning_value_path) else None
-            print(f"  ✓ 使用微调后的最新模型: {policy_ckpt_path}")
+            print(f"  ? 使用微调后的最新模型: {policy_ckpt_path}")
             return policy_ckpt_path, value_ckpt_path
         else:
-            print(f"  ⚠️  微调模型不存在，使用随机初始化")
+            print(f"  ??  微调模型不存在，使用随机初始化")
             return None, None
     else:
         # 使用 pretrain_outputs 目录下的预训练模型
@@ -320,10 +682,10 @@ def get_model_paths(script_dir: str, use_finetuning_model: bool = False) -> Tupl
         if os.path.exists(pretrain_policy_path):
             policy_ckpt_path = pretrain_policy_path
             value_ckpt_path = None  # pretrain_outputs目录下没有单独的价值网络
-            print(f"  ✓ 使用预训练模型: {policy_ckpt_path}")
+            print(f"  ? 使用预训练模型: {policy_ckpt_path}")
             return policy_ckpt_path, value_ckpt_path
         else:
-            print(f"  ⚠️  预训练模型不存在，使用随机初始化")
+            print(f"  ??  预训练模型不存在，使用随机初始化")
             return None, None
 
 
@@ -350,10 +712,10 @@ if __name__ == '__main__':
     try:
         # 示例运行：使用仓库内示例拓扑（时间驱动版本）
         # 使用相对于脚本目录的路径
-        sn_path = os.path.join(script_dir, 'topo', 'SN_topology_2.json')
+        sn_path = os.path.join(script_dir, 'topo', 'SN_topology.json')
         workflow_types = {
-            'workflow1': os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
-            # 可扩展：'workflow2': os.path.join(script_dir, 'workflow_topo', 'workflow2_topo.json'), ...
+            'workflow1': os.path.join(script_dir, 'Workflow_topo', 'workflow1_topo.json'),
+            # 可扩展：'workflow2': os.path.join(script_dir, 'Workflow_topo', 'workflow2_topo.json'), ...
         }
         USE_FINETUNING_MODEL = False
         

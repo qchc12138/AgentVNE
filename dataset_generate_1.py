@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
     预训练数据集快速生成脚本
     预训练方案的简单示意
@@ -954,10 +954,10 @@ def main():
                        default=os.path.join(script_dir, 'topo', 'SN_topology_2.json'),
                        help='带偏置的 SN 拓扑输出路径（固定 SN_topology_2.json）')
     parser.add_argument('--workflow_topo', type=str,
-                       default=os.path.join(script_dir, 'workflow_topo', 'workflow1_topo.json'),
+                       default=os.path.join(script_dir, 'Workflow_topo', 'workflow1_topo.json'),
                        help='Workflow 拓扑文件路径（支持绝对路径和相对路径）')
     parser.add_argument('--workflow_noderank', type=str,
-                       default=os.path.join(script_dir, 'workflow_topo', 'workflow1_noderank.json'),
+                       default=os.path.join(script_dir, 'Workflow_topo', 'workflow1_noderank.json'),
                        help='Workflow NodeRank 文件路径（支持绝对路径和相对路径）')
     parser.add_argument('--output', type=str,
                        default=os.path.join(script_dir, 'pretrain_data', 'pretrain_dataset.pt'),
