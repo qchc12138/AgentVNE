@@ -1,0 +1,63 @@
+============================================================
+PPO Training Summary
+============================================================
+
+Training Time: 20260613_180155
+Total Updates: 44
+Total Samples: 13182
+
+------------------------------------------------------------
+Training Progress:
+------------------------------------------------------------
+Update 1: Return=-627.19, Acceptance=10.00%, Samples=290
+Update 2: Return=-618.22, Acceptance=10.88%, Samples=294
+Update 3: Return=-627.14, Acceptance=9.93%, Samples=282
+Update 4: Return=-712.70, Acceptance=9.58%, Samples=313
+Update 5: Return=-733.22, Acceptance=8.20%, Samples=305
+Update 6: Return=-751.25, Acceptance=8.91%, Samples=303
+Update 7: Return=-749.12, Acceptance=9.57%, Samples=324
+Update 8: Return=-818.25, Acceptance=9.91%, Samples=323
+Update 9: Return=-616.13, Acceptance=11.22%, Samples=312
+Update 10: Return=-667.22, Acceptance=11.15%, Samples=305
+Update 11: Return=-730.89, Acceptance=12.97%, Samples=316
+Update 12: Return=-717.88, Acceptance=9.25%, Samples=292
+Update 13: Return=-788.91, Acceptance=9.17%, Samples=338
+Update 14: Return=-640.91, Acceptance=10.53%, Samples=266
+Update 15: Return=-602.28, Acceptance=12.46%, Samples=305
+Update 16: Return=-586.98, Acceptance=11.31%, Samples=283
+Update 17: Return=-860.66, Acceptance=9.34%, Samples=332
+Update 18: Return=-523.43, Acceptance=14.29%, Samples=266
+Update 19: Return=-608.00, Acceptance=10.88%, Samples=285
+Update 20: Return=-703.30, Acceptance=7.61%, Samples=276
+Update 21: Return=-710.41, Acceptance=9.72%, Samples=319
+Update 22: Return=-562.91, Acceptance=11.47%, Samples=279
+Update 23: Return=-754.03, Acceptance=8.17%, Samples=306
+Update 24: Return=-580.09, Acceptance=13.09%, Samples=275
+Update 25: Return=-724.60, Acceptance=9.03%, Samples=310
+Update 26: Return=-656.02, Acceptance=10.17%, Samples=295
+Update 27: Return=-796.74, Acceptance=9.09%, Samples=330
+Update 28: Return=-668.78, Acceptance=9.84%, Samples=305
+Update 29: Return=-650.42, Acceptance=9.19%, Samples=283
+Update 30: Return=-694.54, Acceptance=9.68%, Samples=310
+Update 31: Return=-687.22, Acceptance=9.90%, Samples=313
+Update 32: Return=-734.95, Acceptance=8.77%, Samples=308
+Update 33: Return=-687.37, Acceptance=11.51%, Samples=304
+Update 34: Return=-763.20, Acceptance=10.40%, Samples=346
+Update 35: Return=-763.07, Acceptance=7.96%, Samples=314
+Update 36: Return=-575.85, Acceptance=12.69%, Samples=268
+Update 37: Return=-585.77, Acceptance=10.60%, Samples=283
+Update 38: Return=-611.55, Acceptance=13.04%, Samples=276
+Update 39: Return=-653.84, Acceptance=10.76%, Samples=288
+Update 40: Return=-722.17, Acceptance=10.95%, Samples=283
+Update 41: Return=-691.91, Acceptance=8.45%, Samples=296
+Update 42: Return=-741.15, Acceptance=10.39%, Samples=308
+Update 43: Return=-557.36, Acceptance=12.89%, Samples=287
+Update 44: Return=-604.83, Acceptance=10.49%, Samples=286
+
+------------------------------------------------------------
+Final Results:
+------------------------------------------------------------
+Final Average Return: -604.83
+Final Acceptance Rate: 10.49%
+Best Return: -523.43
+Best Acceptance Rate: 14.29%

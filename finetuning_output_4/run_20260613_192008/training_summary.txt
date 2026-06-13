@@ -1,0 +1,49 @@
+============================================================
+PPO Training Summary
+============================================================
+
+Training Time: 20260613_192008
+Total Updates: 30
+Total Samples: 12000
+
+------------------------------------------------------------
+Training Progress:
+------------------------------------------------------------
+Update 1: Return=899.60, Acceptance=92.84%, Samples=391
+Update 2: Return=872.49, Acceptance=93.46%, Samples=382
+Update 3: Return=856.76, Acceptance=88.74%, Samples=435
+Update 4: Return=622.23, Acceptance=89.86%, Samples=414
+Update 5: Return=954.99, Acceptance=95.57%, Samples=384
+Update 6: Return=790.80, Acceptance=88.42%, Samples=449
+Update 7: Return=838.78, Acceptance=92.25%, Samples=387
+Update 8: Return=779.97, Acceptance=93.59%, Samples=390
+Update 9: Return=803.28, Acceptance=93.89%, Samples=360
+Update 10: Return=688.40, Acceptance=92.16%, Samples=408
+Update 11: Return=821.20, Acceptance=92.88%, Samples=365
+Update 12: Return=899.93, Acceptance=96.73%, Samples=367
+Update 13: Return=796.58, Acceptance=92.91%, Samples=381
+Update 14: Return=776.69, Acceptance=94.10%, Samples=390
+Update 15: Return=855.48, Acceptance=96.03%, Samples=403
+Update 16: Return=730.33, Acceptance=94.13%, Samples=375
+Update 17: Return=685.03, Acceptance=92.89%, Samples=380
+Update 18: Return=907.48, Acceptance=93.80%, Samples=387
+Update 19: Return=753.26, Acceptance=91.33%, Samples=392
+Update 20: Return=790.05, Acceptance=92.25%, Samples=413
+Update 21: Return=728.49, Acceptance=93.08%, Samples=419
+Update 22: Return=677.17, Acceptance=91.03%, Samples=390
+Update 23: Return=557.75, Acceptance=89.49%, Samples=409
+Update 24: Return=715.84, Acceptance=94.80%, Samples=404
+Update 25: Return=602.35, Acceptance=88.63%, Samples=466
+Update 26: Return=675.48, Acceptance=92.82%, Samples=404
+Update 27: Return=558.44, Acceptance=92.75%, Samples=400
+Update 28: Return=704.27, Acceptance=92.38%, Samples=433
+Update 29: Return=791.43, Acceptance=95.24%, Samples=378
+Update 30: Return=673.05, Acceptance=88.29%, Samples=444
+
+------------------------------------------------------------
+Final Results:
+------------------------------------------------------------
+Final Average Return: 673.05
+Final Acceptance Rate: 88.29%
+Best Return: 954.99
+Best Acceptance Rate: 96.73%

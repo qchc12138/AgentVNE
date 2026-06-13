@@ -214,7 +214,7 @@ class PPOAgent:
                 vn_data = all_vn[i].to(self.device) if all_vn[i] is not None else None
 
                 action_probs_raw = self.policy(vn_data, sn_data)   # [N_vn, N_sn]
-                action_probs = action_probs_raw.T                   # [N_vn, N_sn]
+                action_probs = action_probs_raw                       # [N_vn, N_sn]
                 # Row-normalize: each VN row sums to 1 (valid distribution over SN)
                 action_probs = action_probs / (action_probs.sum(dim=1, keepdim=True) + 1e-8)
 
@@ -730,12 +730,12 @@ if __name__ == '__main__':
             value_ckpt=value_ckpt_path,  # 如果文件存在则使用预训练价值网络
             device='cpu',
             arrival_rate=0.1,   # arrival_rate = 0.2 表示每5个时间单位到达1个任务
-            mean_lifetime=1000.0,
-            max_arrived_tasks=7,
-            max_time_steps=3000,
-            num_episodes_per_update=1,  # 批量大小：收集多少个episode的轨迹数据后再进行一次PPO更新
-            train_iters=3,  # PPO更新迭代次数
-            num_updates=44,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
+            mean_lifetime=50.0,
+            max_arrived_tasks=10,
+            max_time_steps=2000,
+            num_episodes_per_update=2,  # 批量大小：收集多少个episode的轨迹数据后再进行一次PPO更新
+            train_iters=5,  # PPO更新迭代次数
+            num_updates=30,  # 批量更新次数：总共执行多少次批量更新（即训练轮数）
         
             verbose = False  
         )

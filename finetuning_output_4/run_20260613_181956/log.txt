@@ -1,0 +1,6 @@
+日志文件保存路径: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_181956\log.txt
+============================================================
+  ? 使用预训练模型: E:\E桌面\AgentVNE\pretrain_outputs\checkpoint_latest.pt
+  Loaded pretrained policy: E:\E桌面\AgentVNE\pretrain_outputs\checkpoint_latest.pt
+  Using randomly initialized value network
+  PPO Agent created (device: cpu)

@@ -3,7 +3,7 @@
 
 Provides:
   - GreedySN: greedy placement by highest residual resource
-  - GreedyNodeRank: greedy placement using precomputed NodeRank scores
+  - gal-vne: greedy placement using precomputed NodeRank scores
   - GA: genetic algorithm with population-based search
   - GRC: GCN-based similarity ranking
   - PretrainStrategy: frozen pretrained SimuVNE model inference
@@ -19,8 +19,7 @@ from baselines.ga import GA
 STRATEGY_REGISTRY: Dict[str, type] = {
     "greedy": GreedySN,
     "greedy-sn": GreedySN,
-    "greedy_noderank": GreedyNodeRank,
-    "noderank": GreedyNodeRank,
+    "gal-vne": GreedyNodeRank,
     "ga": GA,
 }
 
@@ -54,8 +53,7 @@ def resolve_strategy(name: str, extra_args: Dict[str, Any]) -> Callable:
     sig_params: Dict[str, list] = {
         "greedy": [],
         "greedy-sn": [],
-        "greedy_noderank": ["sn_noderank_path", "vn_noderank_path"],
-        "noderank": ["sn_noderank_path", "vn_noderank_path"],
+        "gal-vne": ["sn_noderank_path", "vn_noderank_path"],
         "ga": ["pop_size", "generations"],
         "grc": ["model_path", "device"],
         "pretrain": ["model_path", "device"],

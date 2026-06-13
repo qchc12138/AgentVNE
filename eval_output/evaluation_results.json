@@ -2,164 +2,143 @@
   {
     "time_step": 5000,
     "done": true,
-    "total_accepted": 473,
-    "total_arrived": 485,
-    "acceptance_rate": 0.9752577319587629,
-    "cumulative_reward": 1579.8160733008224,
-    "active_vns": 2,
+    "total_accepted": 239,
+    "total_arrived": 239,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 1133.6517472365733,
+    "active_vns": 0,
     "pending_vns": 0,
-    "avg_comm_delay": 65.83898365114531,
-    "avg_time_per_vn_ms": 0.4270905165539421,
-    "total_vn": 485,
-    "accepted_vn": 473,
-    "rejected_vn": 12,
+    "avg_comm_delay": 1.0718270571827055,
+    "avg_time_per_vn_ms": 0.5255159035434159,
+    "total_vn": 239,
+    "accepted_vn": 239,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 500,
+        "hops": 1.1031746031746033
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.0533333333333332
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.0033333333333332
+      }
+    ],
     "strategy": "greedy",
-    "arrival_rate": 0.1,
-    "mean_lifetime": 40.0
+    "arrival_rate": 0.05,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
   },
   {
     "time_step": 5000,
     "done": true,
-    "total_accepted": 883,
-    "total_arrived": 1452,
-    "acceptance_rate": 0.6081267217630854,
-    "cumulative_reward": -778.7910358404725,
-    "active_vns": 6,
+    "total_accepted": 239,
+    "total_arrived": 239,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 1632.2354799809546,
+    "active_vns": 0,
     "pending_vns": 0,
-    "avg_comm_delay": 89.48800720091133,
-    "avg_time_per_vn_ms": 0.29606797362641835,
-    "total_vn": 1452,
-    "accepted_vn": 883,
-    "rejected_vn": 569,
-    "strategy": "greedy",
-    "arrival_rate": 0.3,
-    "mean_lifetime": 40.0
+    "avg_comm_delay": 0.6234309623430963,
+    "avg_time_per_vn_ms": 5.484460672328568,
+    "total_vn": 239,
+    "accepted_vn": 239,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 500,
+        "hops": 0.4285714285714285
+      },
+      {
+        "time_step": 4500,
+        "hops": 0.7866666666666667
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.7899999999999998
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.05,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
   },
   {
     "time_step": 5000,
     "done": true,
-    "total_accepted": 947,
-    "total_arrived": 2461,
-    "acceptance_rate": 0.38480292563998375,
-    "cumulative_reward": -3574.4658300496635,
-    "active_vns": 19,
+    "total_accepted": 239,
+    "total_arrived": 239,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 1674.3598505362436,
+    "active_vns": 0,
     "pending_vns": 0,
-    "avg_comm_delay": 89.78316610400908,
-    "avg_time_per_vn_ms": 0.26356838827090673,
-    "total_vn": 2461,
-    "accepted_vn": 947,
-    "rejected_vn": 1514,
-    "strategy": "greedy",
-    "arrival_rate": 0.5,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 473,
-    "total_arrived": 485,
-    "acceptance_rate": 0.9752577319587629,
-    "cumulative_reward": -244.30003710368226,
-    "active_vns": 2,
-    "pending_vns": 0,
-    "avg_comm_delay": 104.40380628126177,
-    "avg_time_per_vn_ms": 0.40156556960656165,
-    "total_vn": 485,
-    "accepted_vn": 473,
-    "rejected_vn": 12,
-    "strategy": "noderank",
-    "arrival_rate": 0.1,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 888,
-    "total_arrived": 1452,
-    "acceptance_rate": 0.6115702479338843,
-    "cumulative_reward": -2414.274384814787,
-    "active_vns": 6,
-    "pending_vns": 0,
-    "avg_comm_delay": 108.13372054971599,
-    "avg_time_per_vn_ms": 0.26534724539304894,
-    "total_vn": 1452,
-    "accepted_vn": 888,
-    "rejected_vn": 564,
-    "strategy": "noderank",
-    "arrival_rate": 0.3,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 963,
-    "total_arrived": 2461,
-    "acceptance_rate": 0.391304347826087,
-    "cumulative_reward": -5021.3489693359825,
-    "active_vns": 19,
-    "pending_vns": 0,
-    "avg_comm_delay": 105.47610560058148,
-    "avg_time_per_vn_ms": 0.17002856644413145,
-    "total_vn": 2461,
-    "accepted_vn": 963,
-    "rejected_vn": 1498,
-    "strategy": "noderank",
-    "arrival_rate": 0.5,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 471,
-    "total_arrived": 485,
-    "acceptance_rate": 0.9711340206185567,
-    "cumulative_reward": 3278.0930727207005,
-    "active_vns": 2,
-    "pending_vns": 0,
-    "avg_comm_delay": 30.06275664250043,
-    "avg_time_per_vn_ms": 174.3476241241334,
-    "total_vn": 485,
-    "accepted_vn": 471,
-    "rejected_vn": 14,
-    "strategy": "ga",
-    "arrival_rate": 0.1,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 857,
-    "total_arrived": 1452,
-    "acceptance_rate": 0.5902203856749312,
-    "cumulative_reward": 3516.8030695186867,
-    "active_vns": 6,
-    "pending_vns": 0,
-    "avg_comm_delay": 46.09903740871236,
-    "avg_time_per_vn_ms": 100.79236556437526,
-    "total_vn": 1452,
-    "accepted_vn": 857,
-    "rejected_vn": 595,
-    "strategy": "ga",
-    "arrival_rate": 0.3,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 933,
-    "total_arrived": 2461,
-    "acceptance_rate": 0.37911418122714347,
-    "cumulative_reward": 873.577015403813,
-    "active_vns": 19,
-    "pending_vns": 0,
-    "avg_comm_delay": 50.194941025529474,
-    "avg_time_per_vn_ms": 65.58051019768301,
-    "total_vn": 2461,
-    "accepted_vn": 933,
-    "rejected_vn": 1528,
-    "strategy": "ga",
-    "arrival_rate": 0.5,
-    "mean_lifetime": 40.0
+    "avg_comm_delay": 0.5892608089260809,
+    "avg_time_per_vn_ms": 4.15171296764399,
+    "total_vn": 239,
+    "accepted_vn": 239,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 500,
+        "hops": 0.492063492063492
+      },
+      {
+        "time_step": 4500,
+        "hops": 0.8933333333333334
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.8866666666666667
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.05,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
   },
   {
     "time_step": 5000,
@@ -167,53 +146,157 @@
     "total_accepted": 473,
     "total_arrived": 485,
     "acceptance_rate": 0.9752577319587629,
-    "cumulative_reward": 1561.8914628888933,
+    "cumulative_reward": 1579.8160733008224,
     "active_vns": 2,
     "pending_vns": 0,
-    "avg_comm_delay": 66.2179394738077,
-    "avg_time_per_vn_ms": 5.549598555560656,
+    "avg_comm_delay": 1.3167723749119096,
+    "avg_time_per_vn_ms": 0.47110247368127417,
     "total_vn": 485,
     "accepted_vn": 473,
     "rejected_vn": 12,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 1.1388888888888886
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2753623188405798
+      },
+      {
+        "time_step": 800,
+        "hops": 1.4166666666666665
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.3
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.39
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.2733333333333334
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.31
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 472,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9731958762886598,
+    "cumulative_reward": 2781.1320916140808,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.7877824858757062,
+    "avg_time_per_vn_ms": 5.910722679727394,
+    "total_vn": 485,
+    "accepted_vn": 472,
+    "rejected_vn": 13,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9488636363636364
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9658703071672355
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9662337662337662
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.9715536105032823
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.5486111111111112
+      },
+      {
+        "time_step": 500,
+        "hops": 0.6992753623188406
+      },
+      {
+        "time_step": 800,
+        "hops": 0.8766666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.8133333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.79
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1233333333333333
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.6099999999999999
+      }
+    ],
     "strategy": "pretrain",
     "arrival_rate": 0.1,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 874,
-    "total_arrived": 1452,
-    "acceptance_rate": 0.6019283746556474,
-    "cumulative_reward": -723.0479064582462,
-    "active_vns": 6,
-    "pending_vns": 0,
-    "avg_comm_delay": 88.43304240798906,
-    "avg_time_per_vn_ms": 5.75423429547886,
-    "total_vn": 1452,
-    "accepted_vn": 874,
-    "rejected_vn": 578,
-    "strategy": "pretrain",
-    "arrival_rate": 0.3,
-    "mean_lifetime": 40.0
-  },
-  {
-    "time_step": 5000,
-    "done": true,
-    "total_accepted": 954,
-    "total_arrived": 2461,
-    "acceptance_rate": 0.3876472978464039,
-    "cumulative_reward": -4337.976026624586,
-    "active_vns": 19,
-    "pending_vns": 0,
-    "avg_comm_delay": 98.08150971304605,
-    "avg_time_per_vn_ms": 6.40221564418022,
-    "total_vn": 2461,
-    "accepted_vn": 954,
-    "rejected_vn": 1507,
-    "strategy": "pretrain",
-    "arrival_rate": 0.5,
-    "mean_lifetime": 40.0
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
   },
   {
     "time_step": 5000,
@@ -224,14 +307,622 @@
     "cumulative_reward": 2371.0701461208637,
     "active_vns": 2,
     "pending_vns": 0,
-    "avg_comm_delay": 49.11056773528824,
-    "avg_time_per_vn_ms": 3.464242472486167,
+    "avg_comm_delay": 0.9661733615221986,
+    "avg_time_per_vn_ms": 3.7598612372638636,
     "total_vn": 485,
     "accepted_vn": 473,
     "rejected_vn": 12,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.8402777777777777
+      },
+      {
+        "time_step": 500,
+        "hops": 0.9818840579710144
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0566666666666669
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1533333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8999999999999999
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1433333333333335
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.7033333333333331
+      }
+    ],
     "strategy": "agentvne",
     "arrival_rate": 0.1,
-    "mean_lifetime": 40.0
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 780,
+    "total_arrived": 1021,
+    "acceptance_rate": 0.7639569049951028,
+    "cumulative_reward": 503.6752256041867,
+    "active_vns": 13,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.6728632478632477,
+    "avg_time_per_vn_ms": 0.299249559524127,
+    "total_vn": 1021,
+    "accepted_vn": 780,
+    "rejected_vn": 241,
+    "history": [
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.7792207792207793
+      },
+      {
+        "time_step": 2200,
+        "acceptance_rate": 0.7525987525987526
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.75591985428051
+      },
+      {
+        "time_step": 3400,
+        "acceptance_rate": 0.75
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.7736670293797606
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.7697916666666667
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 400,
+        "hops": 1.41
+      },
+      {
+        "time_step": 2200,
+        "hops": 1.7533333333333332
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.67
+      },
+      {
+        "time_step": 3400,
+        "hops": 1.71
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.4066666666666663
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.5500000000000003
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.2,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 776,
+    "total_arrived": 1021,
+    "acceptance_rate": 0.7600391772771793,
+    "cumulative_reward": 3022.4959354618604,
+    "active_vns": 13,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.0266323024054984,
+    "avg_time_per_vn_ms": 5.007232030708595,
+    "total_vn": 1021,
+    "accepted_vn": 776,
+    "rejected_vn": 245,
+    "history": [
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.7662337662337663
+      },
+      {
+        "time_step": 2200,
+        "acceptance_rate": 0.7505197505197505
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.7540983606557377
+      },
+      {
+        "time_step": 3400,
+        "acceptance_rate": 0.7443181818181818
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.7693144722524483
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.765625
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 400,
+        "hops": 0.9066666666666664
+      },
+      {
+        "time_step": 2200,
+        "hops": 1.1333333333333333
+      },
+      {
+        "time_step": 2600,
+        "hops": 0.9566666666666667
+      },
+      {
+        "time_step": 3400,
+        "hops": 0.8833333333333333
+      },
+      {
+        "time_step": 4500,
+        "hops": 0.81
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.01
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.2,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 768,
+    "total_arrived": 1021,
+    "acceptance_rate": 0.752203721841332,
+    "cumulative_reward": 1988.5089202074942,
+    "active_vns": 13,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.2719184027777777,
+    "avg_time_per_vn_ms": 3.808258667457794,
+    "total_vn": 1021,
+    "accepted_vn": 768,
+    "rejected_vn": 253,
+    "history": [
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.7532467532467533
+      },
+      {
+        "time_step": 2200,
+        "acceptance_rate": 0.7422037422037422
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.7449908925318761
+      },
+      {
+        "time_step": 3400,
+        "acceptance_rate": 0.7400568181818182
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.7616974972796517
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.7572916666666667
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 400,
+        "hops": 0.9666666666666666
+      },
+      {
+        "time_step": 2200,
+        "hops": 0.9966666666666667
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.0366666666666666
+      },
+      {
+        "time_step": 3400,
+        "hops": 1.3066666666666669
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.0399999999999998
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.2399999999999998
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.2,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 883,
+    "total_arrived": 1452,
+    "acceptance_rate": 0.6081267217630854,
+    "cumulative_reward": -778.7910358404725,
+    "active_vns": 6,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.7718006795016987,
+    "avg_time_per_vn_ms": 0.2381356041615485,
+    "total_vn": 1452,
+    "accepted_vn": 883,
+    "rejected_vn": 569,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1000,
+        "acceptance_rate": 0.580952380952381
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.577023498694517
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5878048780487805
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5888077858880778
+      },
+      {
+        "time_step": 1500,
+        "acceptance_rate": 0.5796178343949044
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5753968253968254
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5742574257425742
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.570631970260223
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.5908440629470673
+      },
+      {
+        "time_step": 2400,
+        "acceptance_rate": 0.5892857142857143
+      },
+      {
+        "time_step": 2700,
+        "acceptance_rate": 0.5904059040590406
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.5995850622406639
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.61400512382579
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.6127694859038143
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.6203125
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.6113879003558719
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.6092114445219818
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.6666666666666666
+      },
+      {
+        "time_step": 1000,
+        "hops": 1.4566666666666666
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.8266666666666662
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.9966666666666666
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.9733333333333332
+      },
+      {
+        "time_step": 1500,
+        "hops": 1.9733333333333332
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.84
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.84
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.8033333333333335
+      },
+      {
+        "time_step": 2300,
+        "hops": 1.7266666666666668
+      },
+      {
+        "time_step": 2400,
+        "hops": 1.7333333333333334
+      },
+      {
+        "time_step": 2700,
+        "hops": 1.9599999999999997
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.8166666666666669
+      },
+      {
+        "time_step": 4000,
+        "hops": 2.0266666666666664
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.7666666666666666
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.9066666666666665
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.8133333333333335
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.6466666666666665
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.3,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 874,
+    "total_arrived": 1452,
+    "acceptance_rate": 0.6019283746556474,
+    "cumulative_reward": 1918.3954865833382,
+    "active_vns": 6,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.1588482074752098,
+    "avg_time_per_vn_ms": 4.865261224581483,
+    "total_vn": 1452,
+    "accepted_vn": 874,
+    "rejected_vn": 578,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1000,
+        "acceptance_rate": 0.580952380952381
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.577023498694517
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5853658536585366
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5863746958637469
+      },
+      {
+        "time_step": 1500,
+        "acceptance_rate": 0.5774946921443737
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5734126984126984
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5722772277227722
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.5687732342007435
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.5822603719599427
+      },
+      {
+        "time_step": 2400,
+        "acceptance_rate": 0.5824175824175825
+      },
+      {
+        "time_step": 2700,
+        "acceptance_rate": 0.5842558425584256
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.5933609958506224
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.6063193851409052
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.603648424543947
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.61171875
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.6035587188612099
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.6029309141660851
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.0
+      },
+      {
+        "time_step": 1000,
+        "hops": 1.05
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.1833333333333333
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.4
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.3900000000000003
+      },
+      {
+        "time_step": 1500,
+        "hops": 1.2233333333333334
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1833333333333333
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1833333333333333
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.36
+      },
+      {
+        "time_step": 2300,
+        "hops": 0.98
+      },
+      {
+        "time_step": 2400,
+        "hops": 0.9166666666666667
+      },
+      {
+        "time_step": 2700,
+        "hops": 0.9700000000000002
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.0266666666666666
+      },
+      {
+        "time_step": 4000,
+        "hops": 1.0799999999999998
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.04
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.52
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.5666666666666667
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.3933333333333335
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.3,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
   },
   {
     "time_step": 5000,
@@ -242,14 +933,1430 @@
     "cumulative_reward": 823.8200261346774,
     "active_vns": 6,
     "pending_vns": 0,
-    "avg_comm_delay": 69.13254963414009,
-    "avg_time_per_vn_ms": 3.241417977074418,
+    "avg_comm_delay": 1.3726987857422641,
+    "avg_time_per_vn_ms": 3.6274648057271217,
     "total_vn": 1452,
     "accepted_vn": 851,
     "rejected_vn": 601,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1000,
+        "acceptance_rate": 0.5523809523809524
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.5352480417754569
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.551219512195122
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5523114355231143
+      },
+      {
+        "time_step": 1500,
+        "acceptance_rate": 0.5435244161358811
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5436507936507936
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5425742574257426
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.5408921933085502
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.5665236051502146
+      },
+      {
+        "time_step": 2400,
+        "acceptance_rate": 0.5631868131868132
+      },
+      {
+        "time_step": 2700,
+        "acceptance_rate": 0.5682656826568265
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.5726141078838174
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.5883859948761742
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.5854063018242123
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.59140625
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.5864768683274021
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.586880669923238
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.3333333333333333
+      },
+      {
+        "time_step": 1000,
+        "hops": 1.0933333333333333
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.5333333333333334
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.72
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.6966666666666668
+      },
+      {
+        "time_step": 1500,
+        "hops": 1.62
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.5766666666666669
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.5766666666666669
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.5266666666666666
+      },
+      {
+        "time_step": 2300,
+        "hops": 1.3766666666666665
+      },
+      {
+        "time_step": 2400,
+        "hops": 1.3233333333333335
+      },
+      {
+        "time_step": 2700,
+        "hops": 1.363333333333333
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.2466666666666666
+      },
+      {
+        "time_step": 4000,
+        "hops": 1.52
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.4400000000000004
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.3133333333333335
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.5966666666666667
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.5633333333333332
+      }
+    ],
     "strategy": "agentvne",
     "arrival_rate": 0.3,
-    "mean_lifetime": 40.0
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 900,
+    "total_arrived": 1940,
+    "acceptance_rate": 0.4639175257731959,
+    "cumulative_reward": -1832.3652200105314,
+    "active_vns": 18,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.6951851851851854,
+    "avg_time_per_vn_ms": 0.1902943307812297,
+    "total_vn": 1940,
+    "accepted_vn": 900,
+    "rejected_vn": 1040,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6470588235294118
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6285714285714286
+      },
+      {
+        "time_step": 200,
+        "acceptance_rate": 0.5540540540540541
+      },
+      {
+        "time_step": 300,
+        "acceptance_rate": 0.5
+      },
+      {
+        "time_step": 900,
+        "acceptance_rate": 0.47076023391812866
+      },
+      {
+        "time_step": 1100,
+        "acceptance_rate": 0.4482758620689655
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.451271186440678
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4502923976608187
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4494163424124514
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.4482288828337875
+      },
+      {
+        "time_step": 2000,
+        "acceptance_rate": 0.45057766367137353
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.44740024183796856
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4468599033816425
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.44974093264248705
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.45254745254745254
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.46629213483146065
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.47703180212014135
+      },
+      {
+        "time_step": 3100,
+        "acceptance_rate": 0.4762308998302207
+      },
+      {
+        "time_step": 3600,
+        "acceptance_rate": 0.47883211678832116
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.4831763122476447
+      },
+      {
+        "time_step": 4200,
+        "acceptance_rate": 0.48346849656893326
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.4794188861985472
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.47337962962962965
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.47310584152689417
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.4695603156708005
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.6666666666666666
+      },
+      {
+        "time_step": 100,
+        "hops": 1.848484848484848
+      },
+      {
+        "time_step": 100,
+        "hops": 1.848484848484848
+      },
+      {
+        "time_step": 200,
+        "hops": 1.5772357723577233
+      },
+      {
+        "time_step": 300,
+        "hops": 1.58
+      },
+      {
+        "time_step": 900,
+        "hops": 1.646666666666667
+      },
+      {
+        "time_step": 1100,
+        "hops": 1.9533333333333331
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.9433333333333331
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.8433333333333335
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.8433333333333335
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.8
+      },
+      {
+        "time_step": 2000,
+        "hops": 1.9933333333333332
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.8133333333333332
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.8133333333333332
+      },
+      {
+        "time_step": 2500,
+        "hops": 2.1933333333333334
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.913333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.5700000000000003
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.73
+      },
+      {
+        "time_step": 3100,
+        "hops": 1.7366666666666668
+      },
+      {
+        "time_step": 3600,
+        "hops": 1.86
+      },
+      {
+        "time_step": 3900,
+        "hops": 2.01
+      },
+      {
+        "time_step": 4200,
+        "hops": 1.5533333333333335
+      },
+      {
+        "time_step": 4300,
+        "hops": 1.67
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.75
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.75
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.6066666666666665
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.4,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 896,
+    "total_arrived": 1940,
+    "acceptance_rate": 0.4618556701030928,
+    "cumulative_reward": 466.3527226956608,
+    "active_vns": 18,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.189546130952381,
+    "avg_time_per_vn_ms": 12.371773556350087,
+    "total_vn": 1940,
+    "accepted_vn": 896,
+    "rejected_vn": 1044,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6470588235294118
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6285714285714286
+      },
+      {
+        "time_step": 200,
+        "acceptance_rate": 0.5540540540540541
+      },
+      {
+        "time_step": 300,
+        "acceptance_rate": 0.5
+      },
+      {
+        "time_step": 900,
+        "acceptance_rate": 0.4678362573099415
+      },
+      {
+        "time_step": 1100,
+        "acceptance_rate": 0.4413793103448276
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.4470338983050847
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.44639376218323584
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4455252918287938
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.44959128065395093
+      },
+      {
+        "time_step": 2000,
+        "acceptance_rate": 0.45057766367137353
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4449818621523579
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4444444444444444
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.45284974093264246
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.4565434565434565
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.46629213483146065
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.4734982332155477
+      },
+      {
+        "time_step": 3100,
+        "acceptance_rate": 0.47283531409168084
+      },
+      {
+        "time_step": 3600,
+        "acceptance_rate": 0.4751824817518248
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.4791386271870794
+      },
+      {
+        "time_step": 4200,
+        "acceptance_rate": 0.47972551466001245
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.4763922518159806
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.4704861111111111
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.470213996529786
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.46561443066516345
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.0
+      },
+      {
+        "time_step": 100,
+        "hops": 0.7196969696969697
+      },
+      {
+        "time_step": 100,
+        "hops": 0.7196969696969697
+      },
+      {
+        "time_step": 200,
+        "hops": 0.8008130081300812
+      },
+      {
+        "time_step": 300,
+        "hops": 0.9533333333333333
+      },
+      {
+        "time_step": 900,
+        "hops": 1.2233333333333334
+      },
+      {
+        "time_step": 1100,
+        "hops": 1.28
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.3233333333333333
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.1966666666666665
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.1966666666666665
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.46
+      },
+      {
+        "time_step": 2000,
+        "hops": 1.2066666666666666
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.0899999999999999
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.0899999999999999
+      },
+      {
+        "time_step": 2500,
+        "hops": 1.26
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.04
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8866666666666666
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.0199999999999998
+      },
+      {
+        "time_step": 3100,
+        "hops": 1.17
+      },
+      {
+        "time_step": 3600,
+        "hops": 1.4399999999999997
+      },
+      {
+        "time_step": 3900,
+        "hops": 1.4499999999999997
+      },
+      {
+        "time_step": 4200,
+        "hops": 1.04
+      },
+      {
+        "time_step": 4300,
+        "hops": 1.1533333333333333
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.22
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.22
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.2633333333333332
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.4,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 889,
+    "total_arrived": 1940,
+    "acceptance_rate": 0.45824742268041235,
+    "cumulative_reward": -742.1143389101263,
+    "active_vns": 18,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.4416947881514812,
+    "avg_time_per_vn_ms": 7.1642524751200884,
+    "total_vn": 1940,
+    "accepted_vn": 889,
+    "rejected_vn": 1051,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6470588235294118
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6285714285714286
+      },
+      {
+        "time_step": 200,
+        "acceptance_rate": 0.5135135135135135
+      },
+      {
+        "time_step": 300,
+        "acceptance_rate": 0.45454545454545453
+      },
+      {
+        "time_step": 900,
+        "acceptance_rate": 0.4619883040935672
+      },
+      {
+        "time_step": 1100,
+        "acceptance_rate": 0.4482758620689655
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.451271186440678
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.44834307992202727
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4474708171206226
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.44686648501362397
+      },
+      {
+        "time_step": 2000,
+        "acceptance_rate": 0.45057766367137353
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4437726723095526
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.44323671497584544
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.45181347150259066
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.45454545454545453
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.46629213483146065
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.47703180212014135
+      },
+      {
+        "time_step": 3100,
+        "acceptance_rate": 0.47453310696095075
+      },
+      {
+        "time_step": 3600,
+        "acceptance_rate": 0.47737226277372263
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.48115746971736206
+      },
+      {
+        "time_step": 4200,
+        "acceptance_rate": 0.479101684341859
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.4745762711864407
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.4670138888888889
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.4667437825332562
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.46223224351747466
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.3333333333333333
+      },
+      {
+        "time_step": 100,
+        "hops": 1.159090909090909
+      },
+      {
+        "time_step": 100,
+        "hops": 1.159090909090909
+      },
+      {
+        "time_step": 200,
+        "hops": 1.307017543859649
+      },
+      {
+        "time_step": 300,
+        "hops": 1.3899999999999997
+      },
+      {
+        "time_step": 900,
+        "hops": 1.54
+      },
+      {
+        "time_step": 1100,
+        "hops": 1.6733333333333333
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.7333333333333334
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.67
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.67
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.3633333333333335
+      },
+      {
+        "time_step": 2000,
+        "hops": 1.4633333333333334
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.2833333333333334
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.2833333333333334
+      },
+      {
+        "time_step": 2500,
+        "hops": 1.3
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.2466666666666666
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.12
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.5066666666666668
+      },
+      {
+        "time_step": 3100,
+        "hops": 1.5566666666666669
+      },
+      {
+        "time_step": 3600,
+        "hops": 1.1033333333333333
+      },
+      {
+        "time_step": 3900,
+        "hops": 1.5433333333333332
+      },
+      {
+        "time_step": 4200,
+        "hops": 1.4700000000000002
+      },
+      {
+        "time_step": 4300,
+        "hops": 1.56
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.5966666666666667
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.5966666666666667
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.5400000000000003
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.4,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 947,
+    "total_arrived": 2461,
+    "acceptance_rate": 0.38480292563998375,
+    "cumulative_reward": -3574.4658300496635,
+    "active_vns": 19,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.8014783526927138,
+    "avg_time_per_vn_ms": 1.0155761473097304,
+    "total_vn": 2461,
+    "accepted_vn": 947,
+    "rejected_vn": 1514,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.4263959390862944
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 0.3983739837398374
+      },
+      {
+        "time_step": 600,
+        "acceptance_rate": 0.3559870550161812
+      },
+      {
+        "time_step": 700,
+        "acceptance_rate": 0.34818941504178275
+      },
+      {
+        "time_step": 700,
+        "acceptance_rate": 0.3472222222222222
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 0.3483709273182957
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.3576158940397351
+      },
+      {
+        "time_step": 1400,
+        "acceptance_rate": 0.36056338028169016
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.3733650416171225
+      },
+      {
+        "time_step": 1800,
+        "acceptance_rate": 0.3674832962138085
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.3693121693121693
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.37112403100775193
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.37254901960784315
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.3794238683127572
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.3879668049792531
+      },
+      {
+        "time_step": 3200,
+        "acceptance_rate": 0.3936031331592689
+      },
+      {
+        "time_step": 3200,
+        "acceptance_rate": 0.3933463796477495
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.387806411062225
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.38819095477386933
+      },
+      {
+        "time_step": 3500,
+        "acceptance_rate": 0.38543516873889877
+      },
+      {
+        "time_step": 3700,
+        "acceptance_rate": 0.3871508379888268
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.3906829010058232
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.39114770972722596
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.39
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.3823251417769376
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.3871568171242438
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.38629142078983203
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.38408003479773817
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.3839130434782609
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.3842887473460722
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.38412563667232597
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.38365823309829944
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.6666666666666666
+      },
+      {
+        "time_step": 400,
+        "hops": 1.7566666666666668
+      },
+      {
+        "time_step": 500,
+        "hops": 1.7633333333333334
+      },
+      {
+        "time_step": 600,
+        "hops": 1.6133333333333335
+      },
+      {
+        "time_step": 700,
+        "hops": 1.5266666666666668
+      },
+      {
+        "time_step": 700,
+        "hops": 1.5266666666666668
+      },
+      {
+        "time_step": 800,
+        "hops": 1.4433333333333338
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.56
+      },
+      {
+        "time_step": 1400,
+        "hops": 1.6933333333333331
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.5699999999999996
+      },
+      {
+        "time_step": 1800,
+        "hops": 1.33
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.47
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.8066666666666666
+      },
+      {
+        "time_step": 2300,
+        "hops": 2.17
+      },
+      {
+        "time_step": 2500,
+        "hops": 2.066666666666667
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.9666666666666668
+      },
+      {
+        "time_step": 3200,
+        "hops": 1.8066666666666666
+      },
+      {
+        "time_step": 3200,
+        "hops": 1.8066666666666666
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.92
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.906666666666667
+      },
+      {
+        "time_step": 3500,
+        "hops": 2.0066666666666664
+      },
+      {
+        "time_step": 3700,
+        "hops": 2.0
+      },
+      {
+        "time_step": 3900,
+        "hops": 1.8033333333333335
+      },
+      {
+        "time_step": 4000,
+        "hops": 1.87
+      },
+      {
+        "time_step": 4100,
+        "hops": 2.033333333333333
+      },
+      {
+        "time_step": 4300,
+        "hops": 2.026666666666667
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.9766666666666666
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.7533333333333332
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.38
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.38
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.4666666666666666
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.4666666666666666
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.833333333333333
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.5,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 961,
+    "total_arrived": 2461,
+    "acceptance_rate": 0.39049167005282404,
+    "cumulative_reward": -424.887999183272,
+    "active_vns": 19,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.1493236212278877,
+    "avg_time_per_vn_ms": 13.412135189475945,
+    "total_vn": 2461,
+    "accepted_vn": 961,
+    "rejected_vn": 1500,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.4263959390862944
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 0.4065040650406504
+      },
+      {
+        "time_step": 600,
+        "acceptance_rate": 0.36893203883495146
+      },
+      {
+        "time_step": 700,
+        "acceptance_rate": 0.3593314763231198
+      },
+      {
+        "time_step": 700,
+        "acceptance_rate": 0.35833333333333334
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 0.3583959899749373
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.36423841059602646
+      },
+      {
+        "time_step": 1400,
+        "acceptance_rate": 0.3619718309859155
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.3745541022592152
+      },
+      {
+        "time_step": 1800,
+        "acceptance_rate": 0.3674832962138085
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.37037037037037035
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.37209302325581395
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.3770053475935829
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.3851851851851852
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.39280774550484093
+      },
+      {
+        "time_step": 3200,
+        "acceptance_rate": 0.39947780678851175
+      },
+      {
+        "time_step": 3200,
+        "acceptance_rate": 0.39921722113502933
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.3953488372093023
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.3957286432160804
+      },
+      {
+        "time_step": 3500,
+        "acceptance_rate": 0.39490822972172884
+      },
+      {
+        "time_step": 3700,
+        "acceptance_rate": 0.39553072625698327
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.39756484912652196
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.39835306227483275
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.3965
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.388468809073724
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.3932061423918101
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.392192464820699
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.389734667246629
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.38956521739130434
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.38980891719745225
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.3896434634974533
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.3894649523019494
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.0
+      },
+      {
+        "time_step": 400,
+        "hops": 1.17
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2233333333333334
+      },
+      {
+        "time_step": 600,
+        "hops": 1.2499999999999998
+      },
+      {
+        "time_step": 700,
+        "hops": 1.2366666666666668
+      },
+      {
+        "time_step": 700,
+        "hops": 1.2366666666666668
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0966666666666667
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.0566666666666666
+      },
+      {
+        "time_step": 1400,
+        "hops": 0.9933333333333333
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.2466666666666666
+      },
+      {
+        "time_step": 1800,
+        "hops": 1.12
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.1866666666666668
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.08
+      },
+      {
+        "time_step": 2300,
+        "hops": 1.2766666666666666
+      },
+      {
+        "time_step": 2500,
+        "hops": 1.1166666666666667
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.45
+      },
+      {
+        "time_step": 3200,
+        "hops": 1.5466666666666666
+      },
+      {
+        "time_step": 3200,
+        "hops": 1.5466666666666666
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.643333333333333
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.59
+      },
+      {
+        "time_step": 3500,
+        "hops": 1.2366666666666666
+      },
+      {
+        "time_step": 3700,
+        "hops": 1.01
+      },
+      {
+        "time_step": 3900,
+        "hops": 0.9466666666666664
+      },
+      {
+        "time_step": 4000,
+        "hops": 1.04
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.0099999999999998
+      },
+      {
+        "time_step": 4300,
+        "hops": 0.9033333333333333
+      },
+      {
+        "time_step": 4400,
+        "hops": 0.9433333333333335
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.08
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.0566666666666666
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.0566666666666666
+      },
+      {
+        "time_step": 4800,
+        "hops": 0.9133333333333333
+      },
+      {
+        "time_step": 4800,
+        "hops": 0.9133333333333333
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.1833333333333333
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.5,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
   },
   {
     "time_step": 5000,
@@ -260,14 +2367,1468 @@
     "cumulative_reward": -2099.1990889098342,
     "active_vns": 19,
     "pending_vns": 0,
-    "avg_comm_delay": 73.54913556527595,
-    "avg_time_per_vn_ms": 2.9578151958829952,
+    "avg_comm_delay": 1.4615384615384615,
+    "avg_time_per_vn_ms": 6.921184355372617,
     "total_vn": 2461,
     "accepted_vn": 936,
     "rejected_vn": 1525,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.41116751269035534
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 0.4065040650406504
+      },
+      {
+        "time_step": 600,
+        "acceptance_rate": 0.36893203883495146
+      },
+      {
+        "time_step": 700,
+        "acceptance_rate": 0.3593314763231198
+      },
+      {
+        "time_step": 700,
+        "acceptance_rate": 0.35833333333333334
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 0.3558897243107769
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.3675496688741722
+      },
+      {
+        "time_step": 1400,
+        "acceptance_rate": 0.36338028169014086
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.3686087990487515
+      },
+      {
+        "time_step": 1800,
+        "acceptance_rate": 0.3619153674832962
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.3619047619047619
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.36627906976744184
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.37433155080213903
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.38106995884773665
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.3872752420470263
+      },
+      {
+        "time_step": 3200,
+        "acceptance_rate": 0.3936031331592689
+      },
+      {
+        "time_step": 3200,
+        "acceptance_rate": 0.3933463796477495
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.3871778755499686
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.38756281407035176
+      },
+      {
+        "time_step": 3500,
+        "acceptance_rate": 0.384251036116045
+      },
+      {
+        "time_step": 3700,
+        "acceptance_rate": 0.38379888268156426
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.3869772366331392
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.38908903757076685
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.3865
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.3804347826086957
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.38436482084690554
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.38356786200635495
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.3823401478903871
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.38217391304347825
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.38174097664543527
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.3815789473684211
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.3803401078390709
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.3333333333333333
+      },
+      {
+        "time_step": 400,
+        "hops": 1.3033333333333335
+      },
+      {
+        "time_step": 500,
+        "hops": 1.4533333333333334
+      },
+      {
+        "time_step": 600,
+        "hops": 1.5033333333333332
+      },
+      {
+        "time_step": 700,
+        "hops": 1.623333333333333
+      },
+      {
+        "time_step": 700,
+        "hops": 1.623333333333333
+      },
+      {
+        "time_step": 800,
+        "hops": 1.4266666666666665
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.7100000000000002
+      },
+      {
+        "time_step": 1400,
+        "hops": 1.613333333333333
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.4466666666666665
+      },
+      {
+        "time_step": 1800,
+        "hops": 1.58
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.6533333333333333
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.6033333333333335
+      },
+      {
+        "time_step": 2300,
+        "hops": 1.4766666666666663
+      },
+      {
+        "time_step": 2500,
+        "hops": 1.5666666666666669
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.613333333333333
+      },
+      {
+        "time_step": 3200,
+        "hops": 1.7866666666666668
+      },
+      {
+        "time_step": 3200,
+        "hops": 1.7866666666666668
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.7366666666666666
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.7
+      },
+      {
+        "time_step": 3500,
+        "hops": 1.3133333333333335
+      },
+      {
+        "time_step": 3700,
+        "hops": 1.416666666666667
+      },
+      {
+        "time_step": 3900,
+        "hops": 1.2966666666666669
+      },
+      {
+        "time_step": 4000,
+        "hops": 1.1533333333333333
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.163333333333333
+      },
+      {
+        "time_step": 4300,
+        "hops": 1.2
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.3433333333333335
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.4933333333333334
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.5733333333333337
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.5733333333333337
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.6033333333333335
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.6033333333333335
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.5766666666666669
+      }
+    ],
     "strategy": "agentvne",
     "arrival_rate": 0.5,
-    "mean_lifetime": 40.0
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig5b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 2783.7990788343945,
+    "active_vns": 1,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.8721649484536081,
+    "avg_time_per_vn_ms": 2.7321767009141826,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.6527777777777778
+      },
+      {
+        "time_step": 500,
+        "hops": 0.9021739130434782
+      },
+      {
+        "time_step": 800,
+        "hops": 0.9333333333333332
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.9733333333333334
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.9299999999999998
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.9933333333333332
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.63
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 15,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3698.6184733327204,
+    "active_vns": 1,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.4707903780068728,
+    "avg_time_per_vn_ms": 12.926410725244233,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.3958333333333333
+      },
+      {
+        "time_step": 500,
+        "hops": 0.4710144927536232
+      },
+      {
+        "time_step": 800,
+        "hops": 0.45666666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.5666666666666668
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.49666666666666665
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.51
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.35666666666666663
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 15,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3722.9253092047197,
+    "active_vns": 1,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.45738831615120273,
+    "avg_time_per_vn_ms": 6.838144126021755,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.38888888888888884
+      },
+      {
+        "time_step": 500,
+        "hops": 0.46376811594202894
+      },
+      {
+        "time_step": 800,
+        "hops": 0.48999999999999994
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.6133333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.37666666666666665
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.5566666666666668
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.3733333333333333
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 15,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 2504.801580288136,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.979381443298969,
+    "avg_time_per_vn_ms": 2.950762884844978,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.8263888888888888
+      },
+      {
+        "time_step": 500,
+        "hops": 1.0869565217391304
+      },
+      {
+        "time_step": 800,
+        "hops": 1.1133333333333333
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.0033333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.0366666666666666
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.0133333333333332
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.7599999999999999
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 20,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3415.150853027368,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.5876288659793815,
+    "avg_time_per_vn_ms": 12.938880823437392,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.47222222222222215
+      },
+      {
+        "time_step": 500,
+        "hops": 0.5688405797101449
+      },
+      {
+        "time_step": 800,
+        "hops": 0.6366666666666666
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.5633333333333335
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.7533333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.6866666666666665
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.4033333333333334
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 20,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3440.6780031262388,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.5697594501718214,
+    "avg_time_per_vn_ms": 6.914973613018765,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.4861111111111111
+      },
+      {
+        "time_step": 500,
+        "hops": 0.5688405797101448
+      },
+      {
+        "time_step": 800,
+        "hops": 0.6399999999999999
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.6666666666666669
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.6033333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.5966666666666667
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.46
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 20,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 2262.58227283022,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.0831615120274913,
+    "avg_time_per_vn_ms": 2.997341029557217,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.9722222222222223
+      },
+      {
+        "time_step": 500,
+        "hops": 1.0688405797101448
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0699999999999998
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.05
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.07
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.0933333333333333
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.0266666666666666
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 25,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3252.961943569459,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.6518900343642611,
+    "avg_time_per_vn_ms": 12.875297730404538,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.6458333333333333
+      },
+      {
+        "time_step": 500,
+        "hops": 0.6847826086956522
+      },
+      {
+        "time_step": 800,
+        "hops": 0.6833333333333332
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.7299999999999999
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.7466666666666667
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.7366666666666665
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.43666666666666665
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 25,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3134.9871373006613,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.6934707903780067,
+    "avg_time_per_vn_ms": 6.8827327772898155,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.673611111111111
+      },
+      {
+        "time_step": 500,
+        "hops": 0.605072463768116
+      },
+      {
+        "time_step": 800,
+        "hops": 0.83
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.8566666666666667
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.5433333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.8133333333333335
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.46
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 25,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 1512.623828541402,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.3752577319587629,
+    "avg_time_per_vn_ms": 2.851011134568871,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 1.1805555555555556
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2246376811594202
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0866666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.36
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.4233333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.64
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.2366666666666664
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 30,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 2946.5082641203808,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.7738831615120275,
+    "avg_time_per_vn_ms": 12.84837010964636,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.611111111111111
+      },
+      {
+        "time_step": 500,
+        "hops": 0.713768115942029
+      },
+      {
+        "time_step": 800,
+        "hops": 0.8766666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.9666666666666666
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8866666666666667
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.9699999999999999
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.4333333333333333
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 30,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3058.08593459906,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.7278350515463917,
+    "avg_time_per_vn_ms": 6.786858143534549,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.5763888888888888
+      },
+      {
+        "time_step": 500,
+        "hops": 0.5579710144927535
+      },
+      {
+        "time_step": 800,
+        "hops": 0.6366666666666666
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.9333333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.6433333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.7999999999999998
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.43999999999999995
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 30,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 479,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9876288659793815,
+    "cumulative_reward": 1889.402222048065,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.1941544885177453,
+    "avg_time_per_vn_ms": 2.6774241264967116,
+    "total_vn": 485,
+    "accepted_vn": 479,
+    "rejected_vn": 6,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9772727272727273
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9863481228668942
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9844155844155844
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.986870897155361
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 1.298611111111111
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2463768115942029
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0699999999999998
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.3366666666666667
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.2066666666666666
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.32
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.1066666666666665
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 35,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 479,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9876288659793815,
+    "cumulative_reward": 2877.663389279001,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.778705636743215,
+    "avg_time_per_vn_ms": 12.770601858135274,
+    "total_vn": 485,
+    "accepted_vn": 479,
+    "rejected_vn": 6,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9772727272727273
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9863481228668942
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9844155844155844
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.986870897155361
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.7152777777777777
+      },
+      {
+        "time_step": 500,
+        "hops": 0.7355072463768115
+      },
+      {
+        "time_step": 800,
+        "hops": 0.8666666666666666
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.09
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8866666666666668
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.8466666666666667
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.5
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 35,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 478,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9855670103092784,
+    "cumulative_reward": 2757.878693420731,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.8249651324965133,
+    "avg_time_per_vn_ms": 6.815292573889199,
+    "total_vn": 485,
+    "accepted_vn": 478,
+    "rejected_vn": 7,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9772727272727273
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9863481228668942
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9818181818181818
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.9846827133479212
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.7638888888888888
+      },
+      {
+        "time_step": 500,
+        "hops": 0.8876811594202899
+      },
+      {
+        "time_step": 800,
+        "hops": 0.9933333333333334
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.113333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8266666666666665
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.9566666666666666
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.5466666666666665
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 35,
+    "sweep_tag": "fig5c"
   },
   {
     "time_step": 5000,
@@ -275,17 +3836,616 @@
     "total_accepted": 473,
     "total_arrived": 485,
     "acceptance_rate": 0.9752577319587629,
-    "cumulative_reward": 1561.8914628888933,
+    "cumulative_reward": 1579.8160733008224,
     "active_vns": 2,
     "pending_vns": 0,
-    "avg_comm_delay": 66.2179394738077,
-    "avg_time_per_vn_ms": 4.239997731224086,
+    "avg_comm_delay": 1.3167723749119096,
+    "avg_time_per_vn_ms": 1.624120205650394,
     "total_vn": 485,
     "accepted_vn": 473,
     "rejected_vn": 12,
-    "strategy": "grc",
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 1.1388888888888886
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2753623188405798
+      },
+      {
+        "time_step": 800,
+        "hops": 1.4166666666666665
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.3
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.39
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.2733333333333334
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.31
+      }
+    ],
+    "strategy": "greedy",
     "arrival_rate": 0.1,
-    "mean_lifetime": 40.0
+    "mean_lifetime": 40,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 472,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9731958762886598,
+    "cumulative_reward": 2781.1320916140808,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.7877824858757062,
+    "avg_time_per_vn_ms": 12.776957731213919,
+    "total_vn": 485,
+    "accepted_vn": 472,
+    "rejected_vn": 13,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9488636363636364
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9658703071672355
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9662337662337662
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.9715536105032823
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.5486111111111112
+      },
+      {
+        "time_step": 500,
+        "hops": 0.6992753623188406
+      },
+      {
+        "time_step": 800,
+        "hops": 0.8766666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.8133333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.79
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1233333333333333
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.6099999999999999
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 473,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9752577319587629,
+    "cumulative_reward": 2371.0701461208637,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.9661733615221986,
+    "avg_time_per_vn_ms": 6.7369701028753495,
+    "total_vn": 485,
+    "accepted_vn": 473,
+    "rejected_vn": 12,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.8402777777777777
+      },
+      {
+        "time_step": 500,
+        "hops": 0.9818840579710144
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0566666666666669
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1533333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8999999999999999
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1433333333333335
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.7033333333333331
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40,
+    "sweep_tag": "fig5c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 780,
+    "total_arrived": 1021,
+    "acceptance_rate": 0.7639569049951028,
+    "cumulative_reward": 503.6752256041867,
+    "active_vns": 13,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.6728632478632477,
+    "avg_time_per_vn_ms": 1.7787920678012532,
+    "total_vn": 1021,
+    "accepted_vn": 780,
+    "rejected_vn": 241,
+    "history": [
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.7792207792207793
+      },
+      {
+        "time_step": 2200,
+        "acceptance_rate": 0.7525987525987526
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.75591985428051
+      },
+      {
+        "time_step": 3400,
+        "acceptance_rate": 0.75
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.7736670293797606
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.7697916666666667
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 400,
+        "hops": 1.41
+      },
+      {
+        "time_step": 2200,
+        "hops": 1.7533333333333332
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.67
+      },
+      {
+        "time_step": 3400,
+        "hops": 1.71
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.4066666666666663
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.5500000000000003
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.2,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 776,
+    "total_arrived": 1021,
+    "acceptance_rate": 0.7600391772771793,
+    "cumulative_reward": 3022.4959354618604,
+    "active_vns": 13,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.0266323024054984,
+    "avg_time_per_vn_ms": 12.516769832871255,
+    "total_vn": 1021,
+    "accepted_vn": 776,
+    "rejected_vn": 245,
+    "history": [
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.7662337662337663
+      },
+      {
+        "time_step": 2200,
+        "acceptance_rate": 0.7505197505197505
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.7540983606557377
+      },
+      {
+        "time_step": 3400,
+        "acceptance_rate": 0.7443181818181818
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.7693144722524483
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.765625
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 400,
+        "hops": 0.9066666666666664
+      },
+      {
+        "time_step": 2200,
+        "hops": 1.1333333333333333
+      },
+      {
+        "time_step": 2600,
+        "hops": 0.9566666666666667
+      },
+      {
+        "time_step": 3400,
+        "hops": 0.8833333333333333
+      },
+      {
+        "time_step": 4500,
+        "hops": 0.81
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.01
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.2,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 768,
+    "total_arrived": 1021,
+    "acceptance_rate": 0.752203721841332,
+    "cumulative_reward": 1988.5089202074942,
+    "active_vns": 13,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.2719184027777777,
+    "avg_time_per_vn_ms": 6.5359332987329,
+    "total_vn": 1021,
+    "accepted_vn": 768,
+    "rejected_vn": 253,
+    "history": [
+      {
+        "time_step": 400,
+        "acceptance_rate": 0.7532467532467533
+      },
+      {
+        "time_step": 2200,
+        "acceptance_rate": 0.7422037422037422
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.7449908925318761
+      },
+      {
+        "time_step": 3400,
+        "acceptance_rate": 0.7400568181818182
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.7616974972796517
+      },
+      {
+        "time_step": 4700,
+        "acceptance_rate": 0.7572916666666667
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 400,
+        "hops": 0.9666666666666666
+      },
+      {
+        "time_step": 2200,
+        "hops": 0.9966666666666667
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.0366666666666666
+      },
+      {
+        "time_step": 3400,
+        "hops": 1.3066666666666669
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.0399999999999998
+      },
+      {
+        "time_step": 4700,
+        "hops": 1.2399999999999998
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.2,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 883,
+    "total_arrived": 1452,
+    "acceptance_rate": 0.6081267217630854,
+    "cumulative_reward": -778.7910358404725,
+    "active_vns": 6,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.7718006795016987,
+    "avg_time_per_vn_ms": 1.3731396021052025,
+    "total_vn": 1452,
+    "accepted_vn": 883,
+    "rejected_vn": 569,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1000,
+        "acceptance_rate": 0.580952380952381
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.577023498694517
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5878048780487805
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5888077858880778
+      },
+      {
+        "time_step": 1500,
+        "acceptance_rate": 0.5796178343949044
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5753968253968254
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5742574257425742
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.570631970260223
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.5908440629470673
+      },
+      {
+        "time_step": 2400,
+        "acceptance_rate": 0.5892857142857143
+      },
+      {
+        "time_step": 2700,
+        "acceptance_rate": 0.5904059040590406
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.5995850622406639
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.61400512382579
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.6127694859038143
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.6203125
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.6113879003558719
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.6092114445219818
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.6666666666666666
+      },
+      {
+        "time_step": 1000,
+        "hops": 1.4566666666666666
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.8266666666666662
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.9966666666666666
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.9733333333333332
+      },
+      {
+        "time_step": 1500,
+        "hops": 1.9733333333333332
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.84
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.84
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.8033333333333335
+      },
+      {
+        "time_step": 2300,
+        "hops": 1.7266666666666668
+      },
+      {
+        "time_step": 2400,
+        "hops": 1.7333333333333334
+      },
+      {
+        "time_step": 2700,
+        "hops": 1.9599999999999997
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.8166666666666669
+      },
+      {
+        "time_step": 4000,
+        "hops": 2.0266666666666664
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.7666666666666666
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.9066666666666665
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.8133333333333335
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.6466666666666665
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.3,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
   },
   {
     "time_step": 5000,
@@ -293,34 +4453,2093 @@
     "total_accepted": 874,
     "total_arrived": 1452,
     "acceptance_rate": 0.6019283746556474,
-    "cumulative_reward": -723.0479064582462,
+    "cumulative_reward": 1918.3954865833382,
     "active_vns": 6,
     "pending_vns": 0,
-    "avg_comm_delay": 88.43304240798906,
-    "avg_time_per_vn_ms": 4.487866186216145,
+    "avg_comm_delay": 1.1588482074752098,
+    "avg_time_per_vn_ms": 12.475657643453339,
     "total_vn": 1452,
     "accepted_vn": 874,
     "rejected_vn": 578,
-    "strategy": "grc",
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1000,
+        "acceptance_rate": 0.580952380952381
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.577023498694517
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5853658536585366
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5863746958637469
+      },
+      {
+        "time_step": 1500,
+        "acceptance_rate": 0.5774946921443737
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5734126984126984
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5722772277227722
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.5687732342007435
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.5822603719599427
+      },
+      {
+        "time_step": 2400,
+        "acceptance_rate": 0.5824175824175825
+      },
+      {
+        "time_step": 2700,
+        "acceptance_rate": 0.5842558425584256
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.5933609958506224
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.6063193851409052
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.603648424543947
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.61171875
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.6035587188612099
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.6029309141660851
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.0
+      },
+      {
+        "time_step": 1000,
+        "hops": 1.05
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.1833333333333333
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.4
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.3900000000000003
+      },
+      {
+        "time_step": 1500,
+        "hops": 1.2233333333333334
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1833333333333333
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1833333333333333
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.36
+      },
+      {
+        "time_step": 2300,
+        "hops": 0.98
+      },
+      {
+        "time_step": 2400,
+        "hops": 0.9166666666666667
+      },
+      {
+        "time_step": 2700,
+        "hops": 0.9700000000000002
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.0266666666666666
+      },
+      {
+        "time_step": 4000,
+        "hops": 1.0799999999999998
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.04
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.52
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.5666666666666667
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.3933333333333335
+      }
+    ],
+    "strategy": "pretrain",
     "arrival_rate": 0.3,
-    "mean_lifetime": 40.0
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
   },
   {
     "time_step": 5000,
     "done": true,
-    "total_accepted": 954,
-    "total_arrived": 2461,
-    "acceptance_rate": 0.3876472978464039,
-    "cumulative_reward": -4337.976026624586,
-    "active_vns": 19,
+    "total_accepted": 851,
+    "total_arrived": 1452,
+    "acceptance_rate": 0.5860881542699724,
+    "cumulative_reward": 823.8200261346774,
+    "active_vns": 6,
     "pending_vns": 0,
-    "avg_comm_delay": 98.08150971304605,
-    "avg_time_per_vn_ms": 5.2467556282414725,
-    "total_vn": 2461,
-    "accepted_vn": 954,
-    "rejected_vn": 1507,
-    "strategy": "grc",
-    "arrival_rate": 0.5,
-    "mean_lifetime": 40.0
+    "avg_comm_delay": 1.3726987857422641,
+    "avg_time_per_vn_ms": 6.502418801125612,
+    "total_vn": 1452,
+    "accepted_vn": 851,
+    "rejected_vn": 601,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1000,
+        "acceptance_rate": 0.5523809523809524
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.5352480417754569
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.551219512195122
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.5523114355231143
+      },
+      {
+        "time_step": 1500,
+        "acceptance_rate": 0.5435244161358811
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5436507936507936
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.5425742574257426
+      },
+      {
+        "time_step": 1700,
+        "acceptance_rate": 0.5408921933085502
+      },
+      {
+        "time_step": 2300,
+        "acceptance_rate": 0.5665236051502146
+      },
+      {
+        "time_step": 2400,
+        "acceptance_rate": 0.5631868131868132
+      },
+      {
+        "time_step": 2700,
+        "acceptance_rate": 0.5682656826568265
+      },
+      {
+        "time_step": 3300,
+        "acceptance_rate": 0.5726141078838174
+      },
+      {
+        "time_step": 4000,
+        "acceptance_rate": 0.5883859948761742
+      },
+      {
+        "time_step": 4100,
+        "acceptance_rate": 0.5854063018242123
+      },
+      {
+        "time_step": 4400,
+        "acceptance_rate": 0.59140625
+      },
+      {
+        "time_step": 4800,
+        "acceptance_rate": 0.5864768683274021
+      },
+      {
+        "time_step": 4900,
+        "acceptance_rate": 0.586880669923238
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.3333333333333333
+      },
+      {
+        "time_step": 1000,
+        "hops": 1.0933333333333333
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.5333333333333334
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.72
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.6966666666666668
+      },
+      {
+        "time_step": 1500,
+        "hops": 1.62
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.5766666666666669
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.5766666666666669
+      },
+      {
+        "time_step": 1700,
+        "hops": 1.5266666666666666
+      },
+      {
+        "time_step": 2300,
+        "hops": 1.3766666666666665
+      },
+      {
+        "time_step": 2400,
+        "hops": 1.3233333333333335
+      },
+      {
+        "time_step": 2700,
+        "hops": 1.363333333333333
+      },
+      {
+        "time_step": 3300,
+        "hops": 1.2466666666666666
+      },
+      {
+        "time_step": 4000,
+        "hops": 1.52
+      },
+      {
+        "time_step": 4100,
+        "hops": 1.4400000000000004
+      },
+      {
+        "time_step": 4400,
+        "hops": 1.3133333333333335
+      },
+      {
+        "time_step": 4800,
+        "hops": 1.5966666666666667
+      },
+      {
+        "time_step": 4900,
+        "hops": 1.5633333333333332
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.3,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 900,
+    "total_arrived": 1940,
+    "acceptance_rate": 0.4639175257731959,
+    "cumulative_reward": -1832.3652200105314,
+    "active_vns": 18,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.6951851851851854,
+    "avg_time_per_vn_ms": 1.293508197629786,
+    "total_vn": 1940,
+    "accepted_vn": 900,
+    "rejected_vn": 1040,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6470588235294118
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6285714285714286
+      },
+      {
+        "time_step": 200,
+        "acceptance_rate": 0.5540540540540541
+      },
+      {
+        "time_step": 300,
+        "acceptance_rate": 0.5
+      },
+      {
+        "time_step": 900,
+        "acceptance_rate": 0.47076023391812866
+      },
+      {
+        "time_step": 1100,
+        "acceptance_rate": 0.4482758620689655
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.451271186440678
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4502923976608187
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4494163424124514
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.4482288828337875
+      },
+      {
+        "time_step": 2000,
+        "acceptance_rate": 0.45057766367137353
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.44740024183796856
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4468599033816425
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.44974093264248705
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.45254745254745254
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.46629213483146065
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.47703180212014135
+      },
+      {
+        "time_step": 3100,
+        "acceptance_rate": 0.4762308998302207
+      },
+      {
+        "time_step": 3600,
+        "acceptance_rate": 0.47883211678832116
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.4831763122476447
+      },
+      {
+        "time_step": 4200,
+        "acceptance_rate": 0.48346849656893326
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.4794188861985472
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.47337962962962965
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.47310584152689417
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.4695603156708005
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.6666666666666666
+      },
+      {
+        "time_step": 100,
+        "hops": 1.848484848484848
+      },
+      {
+        "time_step": 100,
+        "hops": 1.848484848484848
+      },
+      {
+        "time_step": 200,
+        "hops": 1.5772357723577233
+      },
+      {
+        "time_step": 300,
+        "hops": 1.58
+      },
+      {
+        "time_step": 900,
+        "hops": 1.646666666666667
+      },
+      {
+        "time_step": 1100,
+        "hops": 1.9533333333333331
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.9433333333333331
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.8433333333333335
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.8433333333333335
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.8
+      },
+      {
+        "time_step": 2000,
+        "hops": 1.9933333333333332
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.8133333333333332
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.8133333333333332
+      },
+      {
+        "time_step": 2500,
+        "hops": 2.1933333333333334
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.913333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.5700000000000003
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.73
+      },
+      {
+        "time_step": 3100,
+        "hops": 1.7366666666666668
+      },
+      {
+        "time_step": 3600,
+        "hops": 1.86
+      },
+      {
+        "time_step": 3900,
+        "hops": 2.01
+      },
+      {
+        "time_step": 4200,
+        "hops": 1.5533333333333335
+      },
+      {
+        "time_step": 4300,
+        "hops": 1.67
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.75
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.75
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.6066666666666665
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.4,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 896,
+    "total_arrived": 1940,
+    "acceptance_rate": 0.4618556701030928,
+    "cumulative_reward": 466.3527226956608,
+    "active_vns": 18,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.189546130952381,
+    "avg_time_per_vn_ms": 12.361205205592547,
+    "total_vn": 1940,
+    "accepted_vn": 896,
+    "rejected_vn": 1044,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6470588235294118
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6285714285714286
+      },
+      {
+        "time_step": 200,
+        "acceptance_rate": 0.5540540540540541
+      },
+      {
+        "time_step": 300,
+        "acceptance_rate": 0.5
+      },
+      {
+        "time_step": 900,
+        "acceptance_rate": 0.4678362573099415
+      },
+      {
+        "time_step": 1100,
+        "acceptance_rate": 0.4413793103448276
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.4470338983050847
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.44639376218323584
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4455252918287938
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.44959128065395093
+      },
+      {
+        "time_step": 2000,
+        "acceptance_rate": 0.45057766367137353
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4449818621523579
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4444444444444444
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.45284974093264246
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.4565434565434565
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.46629213483146065
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.4734982332155477
+      },
+      {
+        "time_step": 3100,
+        "acceptance_rate": 0.47283531409168084
+      },
+      {
+        "time_step": 3600,
+        "acceptance_rate": 0.4751824817518248
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.4791386271870794
+      },
+      {
+        "time_step": 4200,
+        "acceptance_rate": 0.47972551466001245
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.4763922518159806
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.4704861111111111
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.470213996529786
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.46561443066516345
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.0
+      },
+      {
+        "time_step": 100,
+        "hops": 0.7196969696969697
+      },
+      {
+        "time_step": 100,
+        "hops": 0.7196969696969697
+      },
+      {
+        "time_step": 200,
+        "hops": 0.8008130081300812
+      },
+      {
+        "time_step": 300,
+        "hops": 0.9533333333333333
+      },
+      {
+        "time_step": 900,
+        "hops": 1.2233333333333334
+      },
+      {
+        "time_step": 1100,
+        "hops": 1.28
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.3233333333333333
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.1966666666666665
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.1966666666666665
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.46
+      },
+      {
+        "time_step": 2000,
+        "hops": 1.2066666666666666
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.0899999999999999
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.0899999999999999
+      },
+      {
+        "time_step": 2500,
+        "hops": 1.26
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.04
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8866666666666666
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.0199999999999998
+      },
+      {
+        "time_step": 3100,
+        "hops": 1.17
+      },
+      {
+        "time_step": 3600,
+        "hops": 1.4399999999999997
+      },
+      {
+        "time_step": 3900,
+        "hops": 1.4499999999999997
+      },
+      {
+        "time_step": 4200,
+        "hops": 1.04
+      },
+      {
+        "time_step": 4300,
+        "hops": 1.1533333333333333
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.22
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.22
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.2633333333333332
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.4,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 889,
+    "total_arrived": 1940,
+    "acceptance_rate": 0.45824742268041235,
+    "cumulative_reward": -742.1143389101263,
+    "active_vns": 18,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.4416947881514812,
+    "avg_time_per_vn_ms": 6.806506855070072,
+    "total_vn": 1940,
+    "accepted_vn": 889,
+    "rejected_vn": 1051,
+    "history": [
+      {
+        "time_step": 0,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6470588235294118
+      },
+      {
+        "time_step": 100,
+        "acceptance_rate": 0.6285714285714286
+      },
+      {
+        "time_step": 200,
+        "acceptance_rate": 0.5135135135135135
+      },
+      {
+        "time_step": 300,
+        "acceptance_rate": 0.45454545454545453
+      },
+      {
+        "time_step": 900,
+        "acceptance_rate": 0.4619883040935672
+      },
+      {
+        "time_step": 1100,
+        "acceptance_rate": 0.4482758620689655
+      },
+      {
+        "time_step": 1200,
+        "acceptance_rate": 0.451271186440678
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.44834307992202727
+      },
+      {
+        "time_step": 1300,
+        "acceptance_rate": 0.4474708171206226
+      },
+      {
+        "time_step": 1900,
+        "acceptance_rate": 0.44686648501362397
+      },
+      {
+        "time_step": 2000,
+        "acceptance_rate": 0.45057766367137353
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.4437726723095526
+      },
+      {
+        "time_step": 2100,
+        "acceptance_rate": 0.44323671497584544
+      },
+      {
+        "time_step": 2500,
+        "acceptance_rate": 0.45181347150259066
+      },
+      {
+        "time_step": 2600,
+        "acceptance_rate": 0.45454545454545453
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.46629213483146065
+      },
+      {
+        "time_step": 3000,
+        "acceptance_rate": 0.47703180212014135
+      },
+      {
+        "time_step": 3100,
+        "acceptance_rate": 0.47453310696095075
+      },
+      {
+        "time_step": 3600,
+        "acceptance_rate": 0.47737226277372263
+      },
+      {
+        "time_step": 3900,
+        "acceptance_rate": 0.48115746971736206
+      },
+      {
+        "time_step": 4200,
+        "acceptance_rate": 0.479101684341859
+      },
+      {
+        "time_step": 4300,
+        "acceptance_rate": 0.4745762711864407
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.4670138888888889
+      },
+      {
+        "time_step": 4500,
+        "acceptance_rate": 0.4667437825332562
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.46223224351747466
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 0,
+        "hops": 0.3333333333333333
+      },
+      {
+        "time_step": 100,
+        "hops": 1.159090909090909
+      },
+      {
+        "time_step": 100,
+        "hops": 1.159090909090909
+      },
+      {
+        "time_step": 200,
+        "hops": 1.307017543859649
+      },
+      {
+        "time_step": 300,
+        "hops": 1.3899999999999997
+      },
+      {
+        "time_step": 900,
+        "hops": 1.54
+      },
+      {
+        "time_step": 1100,
+        "hops": 1.6733333333333333
+      },
+      {
+        "time_step": 1200,
+        "hops": 1.7333333333333334
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.67
+      },
+      {
+        "time_step": 1300,
+        "hops": 1.67
+      },
+      {
+        "time_step": 1900,
+        "hops": 1.3633333333333335
+      },
+      {
+        "time_step": 2000,
+        "hops": 1.4633333333333334
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.2833333333333334
+      },
+      {
+        "time_step": 2100,
+        "hops": 1.2833333333333334
+      },
+      {
+        "time_step": 2500,
+        "hops": 1.3
+      },
+      {
+        "time_step": 2600,
+        "hops": 1.2466666666666666
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.12
+      },
+      {
+        "time_step": 3000,
+        "hops": 1.5066666666666668
+      },
+      {
+        "time_step": 3100,
+        "hops": 1.5566666666666669
+      },
+      {
+        "time_step": 3600,
+        "hops": 1.1033333333333333
+      },
+      {
+        "time_step": 3900,
+        "hops": 1.5433333333333332
+      },
+      {
+        "time_step": 4200,
+        "hops": 1.4700000000000002
+      },
+      {
+        "time_step": 4300,
+        "hops": 1.56
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.5966666666666667
+      },
+      {
+        "time_step": 4500,
+        "hops": 1.5966666666666667
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.5400000000000003
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.4,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "fig6b"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 2504.801580288136,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.979381443298969,
+    "avg_time_per_vn_ms": 1.1820797940485717,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.8263888888888888
+      },
+      {
+        "time_step": 500,
+        "hops": 1.0869565217391304
+      },
+      {
+        "time_step": 800,
+        "hops": 1.1133333333333333
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.0033333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.0366666666666666
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.0133333333333332
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.7599999999999999
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 20,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3415.150853027368,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.5876288659793815,
+    "avg_time_per_vn_ms": 5.2120931967420825,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.47222222222222215
+      },
+      {
+        "time_step": 500,
+        "hops": 0.5688405797101449
+      },
+      {
+        "time_step": 800,
+        "hops": 0.6366666666666666
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.5633333333333335
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.7533333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.6866666666666665
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.4033333333333334
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 20,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3440.6780031262388,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.5697594501718214,
+    "avg_time_per_vn_ms": 3.625874846847248,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.4861111111111111
+      },
+      {
+        "time_step": 500,
+        "hops": 0.5688405797101448
+      },
+      {
+        "time_step": 800,
+        "hops": 0.6399999999999999
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.6666666666666669
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.6033333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.5966666666666667
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.46
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 20,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 1512.623828541402,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.3752577319587629,
+    "avg_time_per_vn_ms": 0.45025422713076024,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 1.1805555555555556
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2246376811594202
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0866666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.36
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.4233333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.64
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.2366666666666664
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 30,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 2946.5082641203808,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.7738831615120275,
+    "avg_time_per_vn_ms": 4.411022064813711,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.611111111111111
+      },
+      {
+        "time_step": 500,
+        "hops": 0.713768115942029
+      },
+      {
+        "time_step": 800,
+        "hops": 0.8766666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.9666666666666666
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8866666666666667
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.9699999999999999
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.4333333333333333
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 30,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 485,
+    "total_arrived": 485,
+    "acceptance_rate": 1.0,
+    "cumulative_reward": 3058.08593459906,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.7278350515463917,
+    "avg_time_per_vn_ms": 4.132682473648378,
+    "total_vn": 485,
+    "accepted_vn": 485,
+    "rejected_vn": 0,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 1.0
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.5763888888888888
+      },
+      {
+        "time_step": 500,
+        "hops": 0.5579710144927535
+      },
+      {
+        "time_step": 800,
+        "hops": 0.6366666666666666
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.9333333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.6433333333333333
+      },
+      {
+        "time_step": 3800,
+        "hops": 0.7999999999999998
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.43999999999999995
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 30,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 473,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9752577319587629,
+    "cumulative_reward": 1579.8160733008224,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.3167723749119096,
+    "avg_time_per_vn_ms": 0.43608701317427084,
+    "total_vn": 485,
+    "accepted_vn": 473,
+    "rejected_vn": 12,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 1.1388888888888886
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2753623188405798
+      },
+      {
+        "time_step": 800,
+        "hops": 1.4166666666666665
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.3
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.39
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.2733333333333334
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.31
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 472,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9731958762886598,
+    "cumulative_reward": 2781.1320916140808,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.7877824858757062,
+    "avg_time_per_vn_ms": 4.583765977763177,
+    "total_vn": 485,
+    "accepted_vn": 472,
+    "rejected_vn": 13,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9488636363636364
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9658703071672355
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9662337662337662
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.9715536105032823
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.5486111111111112
+      },
+      {
+        "time_step": 500,
+        "hops": 0.6992753623188406
+      },
+      {
+        "time_step": 800,
+        "hops": 0.8766666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.8133333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.79
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1233333333333333
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.6099999999999999
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 5000,
+    "done": true,
+    "total_accepted": 473,
+    "total_arrived": 485,
+    "acceptance_rate": 0.9752577319587629,
+    "cumulative_reward": 2371.0701461208637,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.9661733615221986,
+    "avg_time_per_vn_ms": 3.6752400024477203,
+    "total_vn": 485,
+    "accepted_vn": 473,
+    "rejected_vn": 12,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.8402777777777777
+      },
+      {
+        "time_step": 500,
+        "hops": 0.9818840579710144
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0566666666666669
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1533333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8999999999999999
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1433333333333335
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.7033333333333331
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40,
+    "sweep_tag": "fig6c"
+  },
+  {
+    "time_step": 10000,
+    "done": true,
+    "total_accepted": 963,
+    "total_arrived": 987,
+    "acceptance_rate": 0.9756838905775076,
+    "cumulative_reward": 3501.0267691692097,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 1.2634129456559362,
+    "avg_time_per_vn_ms": 0.40033495283884724,
+    "total_vn": 987,
+    "accepted_vn": 963,
+    "rejected_vn": 24,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      },
+      {
+        "time_step": 5900,
+        "acceptance_rate": 0.9756944444444444
+      },
+      {
+        "time_step": 6400,
+        "acceptance_rate": 0.9762282091917591
+      },
+      {
+        "time_step": 6800,
+        "acceptance_rate": 0.9748520710059172
+      },
+      {
+        "time_step": 8200,
+        "acceptance_rate": 0.9781553398058253
+      },
+      {
+        "time_step": 8300,
+        "acceptance_rate": 0.9783653846153846
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 1.1388888888888886
+      },
+      {
+        "time_step": 500,
+        "hops": 1.2753623188405798
+      },
+      {
+        "time_step": 800,
+        "hops": 1.4166666666666665
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.3
+      },
+      {
+        "time_step": 2800,
+        "hops": 1.39
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.2733333333333334
+      },
+      {
+        "time_step": 4600,
+        "hops": 1.31
+      },
+      {
+        "time_step": 5900,
+        "hops": 1.2566666666666668
+      },
+      {
+        "time_step": 6400,
+        "hops": 1.5233333333333334
+      },
+      {
+        "time_step": 6800,
+        "hops": 1.2233333333333334
+      },
+      {
+        "time_step": 8200,
+        "hops": 1.04
+      },
+      {
+        "time_step": 8300,
+        "hops": 1.0433333333333332
+      }
+    ],
+    "strategy": "greedy",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "stability"
+  },
+  {
+    "time_step": 10000,
+    "done": true,
+    "total_accepted": 962,
+    "total_arrived": 987,
+    "acceptance_rate": 0.9746707193515705,
+    "cumulative_reward": 5572.551529080457,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.8130630630630632,
+    "avg_time_per_vn_ms": 6.151343565132269,
+    "total_vn": 987,
+    "accepted_vn": 962,
+    "rejected_vn": 25,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9488636363636364
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9658703071672355
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9662337662337662
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.9715536105032823
+      },
+      {
+        "time_step": 5900,
+        "acceptance_rate": 0.9739583333333334
+      },
+      {
+        "time_step": 6400,
+        "acceptance_rate": 0.9746434231378764
+      },
+      {
+        "time_step": 6800,
+        "acceptance_rate": 0.9733727810650887
+      },
+      {
+        "time_step": 8200,
+        "acceptance_rate": 0.9769417475728155
+      },
+      {
+        "time_step": 8300,
+        "acceptance_rate": 0.9771634615384616
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.5486111111111112
+      },
+      {
+        "time_step": 500,
+        "hops": 0.6992753623188406
+      },
+      {
+        "time_step": 800,
+        "hops": 0.8766666666666667
+      },
+      {
+        "time_step": 1600,
+        "hops": 0.8133333333333332
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.79
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1233333333333333
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.6099999999999999
+      },
+      {
+        "time_step": 5900,
+        "hops": 0.8600000000000001
+      },
+      {
+        "time_step": 6400,
+        "hops": 0.9200000000000002
+      },
+      {
+        "time_step": 6800,
+        "hops": 0.7733333333333333
+      },
+      {
+        "time_step": 8200,
+        "hops": 0.8299999999999998
+      },
+      {
+        "time_step": 8300,
+        "hops": 0.8133333333333335
+      }
+    ],
+    "strategy": "pretrain",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "stability"
+  },
+  {
+    "time_step": 10000,
+    "done": true,
+    "total_accepted": 962,
+    "total_arrived": 987,
+    "acceptance_rate": 0.9746707193515705,
+    "cumulative_reward": 4866.3816715996145,
+    "active_vns": 2,
+    "pending_vns": 0,
+    "avg_comm_delay": 0.9591129591129592,
+    "avg_time_per_vn_ms": 7.307903953189108,
+    "total_vn": 987,
+    "accepted_vn": 962,
+    "rejected_vn": 25,
+    "history": [
+      {
+        "time_step": 300,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 500,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 800,
+        "acceptance_rate": 1.0
+      },
+      {
+        "time_step": 1600,
+        "acceptance_rate": 0.9545454545454546
+      },
+      {
+        "time_step": 2800,
+        "acceptance_rate": 0.9692832764505119
+      },
+      {
+        "time_step": 3800,
+        "acceptance_rate": 0.9688311688311688
+      },
+      {
+        "time_step": 4600,
+        "acceptance_rate": 0.973741794310722
+      },
+      {
+        "time_step": 5900,
+        "acceptance_rate": 0.9756944444444444
+      },
+      {
+        "time_step": 6400,
+        "acceptance_rate": 0.9762282091917591
+      },
+      {
+        "time_step": 6800,
+        "acceptance_rate": 0.9748520710059172
+      },
+      {
+        "time_step": 8200,
+        "acceptance_rate": 0.9781553398058253
+      },
+      {
+        "time_step": 8300,
+        "acceptance_rate": 0.9783653846153846
+      }
+    ],
+    "hop_series": [
+      {
+        "time_step": 300,
+        "hops": 0.8402777777777777
+      },
+      {
+        "time_step": 500,
+        "hops": 0.9818840579710144
+      },
+      {
+        "time_step": 800,
+        "hops": 1.0566666666666669
+      },
+      {
+        "time_step": 1600,
+        "hops": 1.1533333333333333
+      },
+      {
+        "time_step": 2800,
+        "hops": 0.8999999999999999
+      },
+      {
+        "time_step": 3800,
+        "hops": 1.1433333333333335
+      },
+      {
+        "time_step": 4600,
+        "hops": 0.7033333333333331
+      },
+      {
+        "time_step": 5900,
+        "hops": 0.9766666666666666
+      },
+      {
+        "time_step": 6400,
+        "hops": 1.2100000000000002
+      },
+      {
+        "time_step": 6800,
+        "hops": 0.9433333333333332
+      },
+      {
+        "time_step": 8200,
+        "hops": 0.7566666666666666
+      },
+      {
+        "time_step": 8300,
+        "hops": 0.7099999999999999
+      }
+    ],
+    "strategy": "agentvne",
+    "arrival_rate": 0.1,
+    "mean_lifetime": 40.0,
+    "sweep_tag": "stability"
   }
 ]

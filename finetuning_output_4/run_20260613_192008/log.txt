@@ -1,0 +1,58 @@
+日志文件保存路径: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\log.txt
+============================================================
+  ? 使用预训练模型: E:\E桌面\AgentVNE\pretrain_outputs\checkpoint_latest.pt
+  Loaded pretrained policy: E:\E桌面\AgentVNE\pretrain_outputs\checkpoint_latest.pt
+  Using randomly initialized value network
+  PPO Agent created (device: cpu)
+
+批量训练统计:
+  更新 1: 平均每个 episode 的最终回报=899.60, 接受率=92.84%, 样本数=391
+  更新 2: 平均每个 episode 的最终回报=872.49, 接受率=93.46%, 样本数=382
+  更新 3: 平均每个 episode 的最终回报=856.76, 接受率=88.74%, 样本数=435
+  更新 4: 平均每个 episode 的最终回报=622.23, 接受率=89.86%, 样本数=414
+  更新 5: 平均每个 episode 的最终回报=954.99, 接受率=95.57%, 样本数=384
+  更新 6: 平均每个 episode 的最终回报=790.80, 接受率=88.42%, 样本数=449
+  更新 7: 平均每个 episode 的最终回报=838.78, 接受率=92.25%, 样本数=387
+  更新 8: 平均每个 episode 的最终回报=779.97, 接受率=93.59%, 样本数=390
+  更新 9: 平均每个 episode 的最终回报=803.28, 接受率=93.89%, 样本数=360
+  更新 10: 平均每个 episode 的最终回报=688.40, 接受率=92.16%, 样本数=408
+  更新 11: 平均每个 episode 的最终回报=821.20, 接受率=92.88%, 样本数=365
+  更新 12: 平均每个 episode 的最终回报=899.93, 接受率=96.73%, 样本数=367
+  更新 13: 平均每个 episode 的最终回报=796.58, 接受率=92.91%, 样本数=381
+  更新 14: 平均每个 episode 的最终回报=776.69, 接受率=94.10%, 样本数=390
+  更新 15: 平均每个 episode 的最终回报=855.48, 接受率=96.03%, 样本数=403
+  更新 16: 平均每个 episode 的最终回报=730.33, 接受率=94.13%, 样本数=375
+  更新 17: 平均每个 episode 的最终回报=685.03, 接受率=92.89%, 样本数=380
+  更新 18: 平均每个 episode 的最终回报=907.48, 接受率=93.80%, 样本数=387
+  更新 19: 平均每个 episode 的最终回报=753.26, 接受率=91.33%, 样本数=392
+  更新 20: 平均每个 episode 的最终回报=790.05, 接受率=92.25%, 样本数=413
+  更新 21: 平均每个 episode 的最终回报=728.49, 接受率=93.08%, 样本数=419
+  更新 22: 平均每个 episode 的最终回报=677.17, 接受率=91.03%, 样本数=390
+  更新 23: 平均每个 episode 的最终回报=557.75, 接受率=89.49%, 样本数=409
+  更新 24: 平均每个 episode 的最终回报=715.84, 接受率=94.80%, 样本数=404
+  更新 25: 平均每个 episode 的最终回报=602.35, 接受率=88.63%, 样本数=466
+  更新 26: 平均每个 episode 的最终回报=675.48, 接受率=92.82%, 样本数=404
+  更新 27: 平均每个 episode 的最终回报=558.44, 接受率=92.75%, 样本数=400
+  更新 28: 平均每个 episode 的最终回报=704.27, 接受率=92.38%, 样本数=433
+  更新 29: 平均每个 episode 的最终回报=791.43, 接受率=95.24%, 样本数=378
+  更新 30: 平均每个 episode 的最终回报=673.05, 接受率=88.29%, 样本数=444
+
+============================================================
+保存训练结果到: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008
+============================================================
+? 训练曲线图（总回报）已保存: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\training_curves_return.png
+? 训练曲线图（接受率）已保存: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\training_curves_acceptance.png
+? 训练曲线图（平均r_t）已保存: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\training_curves_rt.png
+? 策略网络已保存: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\policy_network.pth
+? 价值网络已保存: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\value_network.pth
+? 策略网络（最新）已保存: E:\E桌面\AgentVNE\finetuning_output_4\policy_network_latest.pth
+? 价值网络（最新）已保存: E:\E桌面\AgentVNE\finetuning_output_4\value_network_latest.pth
+? 训练统计已保存: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\training_stats.json
+? 训练摘要已保存: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\training_summary.txt
+
+============================================================
+所有结果已成功保存到: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008
+============================================================
+
+
+所有日志已保存到: E:\E桌面\AgentVNE\finetuning_output_4\run_20260613_192008\log.txt
